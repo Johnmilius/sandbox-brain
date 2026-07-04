@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Brain, LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -20,8 +21,14 @@ type AppHeaderProps = {
   avatarUrl?: string;
 };
 
+const NAV_LINKS = [
+  { href: "/projects", label: "Projects" },
+  { href: "/time", label: "Time" },
+];
+
 export function AppHeader({ email, name, avatarUrl }: AppHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
 
   async function signOut() {
     const supabase = createClient();
@@ -39,12 +46,28 @@ export function AppHeader({ email, name, avatarUrl }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Brain className="size-4" />
-          </span>
-          Sandbox Brain
-        </Link>
+        <div className="flex items-center gap-5">
+          <Link href="/" className="flex items-center gap-2 font-semibold">
+            <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <Brain className="size-4" />
+            </span>
+            <span className="hidden sm:inline">Sandbox Brain</span>
+          </Link>
+          <nav className="flex items-center gap-1">
+            {NAV_LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground",
+                  pathname.startsWith(href) && "bg-muted text-foreground",
+                )}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">

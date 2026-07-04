@@ -1,5 +1,12 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Clock, MessageSquareText, NotebookPen, Boxes } from "lucide-react";
+import {
+  Clock,
+  MessageSquareText,
+  NotebookPen,
+  Boxes,
+  FolderKanban,
+} from "lucide-react";
 import {
   Card,
   CardDescription,
@@ -12,24 +19,34 @@ import { createClient } from "@/lib/supabase/server";
 
 const SECTIONS = [
   {
+    title: "Projects",
+    description: "The companies and projects the team works on.",
+    icon: FolderKanban,
+    href: "/projects",
+  },
+  {
     title: "Time Tracking",
     description: "Start a timer or log hours against a project.",
     icon: Clock,
+    href: "/time",
   },
   {
     title: "Prompt Database",
     description: "Save, tag, and search the prompts you send to AI tools.",
     icon: MessageSquareText,
+    href: null,
   },
   {
     title: "Notes & Graph",
     description: "Linked markdown notes with an Obsidian-style graph view.",
     icon: NotebookPen,
+    href: null,
   },
   {
     title: "The Brain",
     description: "Reusable code, decisions, docs, contacts, and past projects.",
     icon: Boxes,
+    href: null,
   },
 ];
 
@@ -61,20 +78,36 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {SECTIONS.map(({ title, description, icon: Icon }) => (
-            <Card key={title} className="relative">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <span className="flex size-9 items-center justify-center rounded-lg bg-muted">
-                    <Icon className="size-4.5" />
-                  </span>
-                  <Badge variant="secondary">Coming soon</Badge>
-                </div>
-                <CardTitle className="pt-2">{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
+          {SECTIONS.map(({ title, description, icon: Icon, href }) => {
+            const card = (
+              <Card
+                key={title}
+                className={
+                  href
+                    ? "h-full transition-colors hover:border-foreground/25"
+                    : "h-full opacity-70"
+                }
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <span className="flex size-9 items-center justify-center rounded-lg bg-muted">
+                      <Icon className="size-4.5" />
+                    </span>
+                    {!href && <Badge variant="secondary">Coming soon</Badge>}
+                  </div>
+                  <CardTitle className="pt-2">{title}</CardTitle>
+                  <CardDescription>{description}</CardDescription>
+                </CardHeader>
+              </Card>
+            );
+            return href ? (
+              <Link key={title} href={href} className="block">
+                {card}
+              </Link>
+            ) : (
+              card
+            );
+          })}
         </div>
       </main>
     </>
