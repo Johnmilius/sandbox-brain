@@ -24,7 +24,14 @@ The team's central hub for the Sandbox entrepreneurship program: **time tracking
 3. In Supabase: **Authentication → Providers → Google** — it shows you the exact **redirect URL** to paste into the Google OAuth client's "Authorized redirect URIs".
 4. Paste the Google **Client ID** and **Client Secret** into the Supabase Google provider settings and enable it.
 
-### 3. Configure environment
+### 3. Apply the database schema
+
+1. Open [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql) and **add your two teammates' emails** to the `allowed_emails` seed at the bottom.
+2. Easiest: paste the whole file into the Supabase dashboard **SQL Editor** and run it.
+   Or with the CLI: `npm run db:link` (needs the project ref) then `npm run db:push`.
+3. After the schema is applied (and whenever it changes), generate TypeScript types: `npm run db:types`.
+
+### 4. Configure environment
 
 ```bash
 cp .env.example .env.local
@@ -32,7 +39,7 @@ cp .env.example .env.local
 
 Fill in the Supabase URL, anon key, and `ALLOWED_EMAILS` (the 3 Gmail addresses, comma-separated). Only those accounts can get in.
 
-### 4. Run locally
+### 5. Run locally
 
 ```bash
 npm install
@@ -41,7 +48,7 @@ npm run dev
 
 Open http://localhost:3000 — you should be redirected to the login page; sign in with an allowlisted Google account.
 
-### 5. Deploy to Vercel
+### 6. Deploy to Vercel
 
 1. Push this repo to GitHub.
 2. Import it at [vercel.com/new](https://vercel.com/new) (free Hobby plan).
