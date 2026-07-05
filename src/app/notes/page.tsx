@@ -47,7 +47,12 @@ export default async function NotesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" render={<Link href="/graph" />}>
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href="/graph" />}
+            >
               <Waypoints className="size-4" />
               Graph
             </Button>
