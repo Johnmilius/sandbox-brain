@@ -25,6 +25,8 @@ const NAV_LINKS = [
   { href: "/projects", label: "Projects" },
   { href: "/time", label: "Time" },
   { href: "/prompts", label: "Prompts" },
+  { href: "/notes", label: "Notes" },
+  { href: "/graph", label: "Graph" },
 ];
 
 export function AppHeader({ email, name, avatarUrl }: AppHeaderProps) {
@@ -54,7 +56,7 @@ export function AppHeader({ email, name, avatarUrl }: AppHeaderProps) {
             </span>
             <span className="hidden sm:inline">Sandbox Brain</span>
           </Link>
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-1 overflow-x-auto">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}

@@ -40,7 +40,7 @@ const SECTIONS = [
     title: "Notes & Graph",
     description: "Linked markdown notes with an Obsidian-style graph view.",
     icon: NotebookPen,
-    href: null,
+    href: "/notes",
   },
   {
     title: "The Brain",
