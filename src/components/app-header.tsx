@@ -24,6 +24,7 @@ type AppHeaderProps = {
 const NAV_LINKS = [
   { href: "/projects", label: "Projects" },
   { href: "/time", label: "Time" },
+  { href: "/prompts", label: "Prompts" },
 ];
 
 export function AppHeader({ email, name, avatarUrl }: AppHeaderProps) {

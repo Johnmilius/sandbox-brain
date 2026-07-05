@@ -34,7 +34,7 @@ const SECTIONS = [
     title: "Prompt Database",
     description: "Save, tag, and search the prompts you send to AI tools.",
     icon: MessageSquareText,
-    href: null,
+    href: "/prompts",
   },
   {
     title: "Notes & Graph",
