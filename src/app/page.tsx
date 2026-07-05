@@ -46,7 +46,7 @@ const SECTIONS = [
     title: "The Brain",
     description: "Reusable code, decisions, docs, contacts, and past projects.",
     icon: Boxes,
-    href: null,
+    href: "/brain",
   },
 ];
 

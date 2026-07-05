@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Brain, LogOut } from "lucide-react";
+import { Brain, LogOut, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,6 +26,7 @@ const NAV_LINKS = [
   { href: "/time", label: "Time" },
   { href: "/prompts", label: "Prompts" },
   { href: "/notes", label: "Notes" },
+  { href: "/brain", label: "Brain" },
   { href: "/graph", label: "Graph" },
 ];
 
@@ -72,6 +73,17 @@ export function AppHeader({ email, name, avatarUrl }: AppHeaderProps) {
           </nav>
         </div>
 
+        <div className="flex items-center gap-2">
+          <Link
+            href="/search"
+            aria-label="Search everything"
+            className={cn(
+              "flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground",
+              pathname.startsWith("/search") && "bg-muted text-foreground",
+            )}
+          >
+            <Search className="size-4" />
+          </Link>
         <DropdownMenu>
           <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <Avatar className="size-8">
@@ -91,6 +103,7 @@ export function AppHeader({ email, name, avatarUrl }: AppHeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
     </header>
   );
