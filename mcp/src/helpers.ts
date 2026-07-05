@@ -4,7 +4,7 @@
  * src/lib/wiki-links.ts) — keep them in sync if either changes.
  */
 
-import { supabase } from "./context.js";
+import { getActor, supabase } from "./context.js";
 
 export const CHARACTER_LIMIT = 25000;
 
@@ -46,8 +46,18 @@ export async function setTagsForEntity(
       .from("tags")
       .insert(missing.map((name) => ({ name })))
       .select("id, name");
-    if (createError) throw new Error(`Couldn't create tags: ${createError.message}`);
+    if (createError && createError.code !== "23505") {
+      throw new Error(`Couldn't create tags: ${createError.message}`);
+    }
     for (const t of created ?? []) idByName.set(t.name, t.id);
+    if (createError) {
+      // Lost a race with a concurrent insert — the tags exist now, re-read them.
+      const { data: refetched } = await db
+        .from("tags")
+        .select("id, name")
+        .in("name", names);
+      for (const t of refetched ?? []) idByName.set(t.name, t.id);
+    }
   }
 
   const { error: attachError } = await db.from("taggables").insert(
@@ -99,6 +109,7 @@ export async function syncWikiLinks(noteId: string, body: string): Promise<void>
     ]),
   );
 
+  const actor = await getActor();
   const rows = titles
     .map((t) => idByLower.get(t.toLowerCase()))
     .filter((id): id is string => Boolean(id))
@@ -108,8 +119,12 @@ export async function syncWikiLinks(noteId: string, body: string): Promise<void>
       target_type: "note",
       target_id: targetId,
       relationship: "wiki",
+      created_by: actor.id,
     }));
-  if (rows.length > 0) await db.from("links").insert(rows);
+  if (rows.length > 0) {
+    const { error } = await db.from("links").insert(rows);
+    if (error) throw new Error(`Couldn't save wiki links: ${error.message}`);
+  }
 }
 
 // ---------------------------------------------------------------------------

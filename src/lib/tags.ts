@@ -44,8 +44,18 @@ export async function setTagsForEntity(
       .from("tags")
       .insert(missing.map((name) => ({ name })))
       .select("id, name");
-    if (createError) return { error: createError.message };
-    for (const t of created) existingByName.set(t.name, t.id);
+    if (createError && createError.code !== "23505") {
+      return { error: createError.message };
+    }
+    for (const t of created ?? []) existingByName.set(t.name, t.id);
+    if (createError) {
+      // Lost a race with a concurrent insert — the tags exist now, re-read them.
+      const { data: refetched } = await supabase
+        .from("tags")
+        .select("id, name")
+        .in("name", names);
+      for (const t of refetched ?? []) existingByName.set(t.name, t.id);
+    }
   }
 
   const { error: attachError } = await supabase.from("taggables").insert(
