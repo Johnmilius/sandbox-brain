@@ -1,6 +1,5 @@
 "use client";
 
-import { useTransition } from "react";
 import {
   Archive,
   Code2,
@@ -10,7 +9,6 @@ import {
   FileText,
   Lightbulb,
   Pencil,
-  Trash2,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +32,7 @@ import {
   KIND_LABELS,
   KnowledgeFormDialog,
 } from "@/components/brain/knowledge-form-dialog";
+import { DeleteConfirmButton } from "@/components/delete-confirm-button";
 import { deleteKnowledgeItem } from "@/app/brain/actions";
 import { createClient } from "@/lib/supabase/client";
 import { formatDate } from "@/lib/format";
@@ -72,7 +71,6 @@ export function KnowledgeCard({
   projects,
   tagSuggestions,
 }: KnowledgeCardProps) {
-  const [pending, startTransition] = useTransition();
   const Icon = KIND_ICONS[item.kind];
   const data = (item.data ?? {}) as Record<string, string>;
 
@@ -94,15 +92,6 @@ export function KnowledgeCard({
         if (error || !signed) toast.error("Couldn't create a download link.");
         else window.open(signed.signedUrl, "_blank");
       });
-  }
-
-  function onDelete() {
-    if (!confirm(`Delete "${item.title}" from the brain?`)) return;
-    startTransition(async () => {
-      const { error } = await deleteKnowledgeItem(item.id);
-      if (error) toast.error(error);
-      else toast.success("Deleted.");
-    });
   }
 
   return (
@@ -223,15 +212,11 @@ export function KnowledgeCard({
               </Button>
             }
           />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onDelete}
-            disabled={pending}
-            aria-label="Delete item"
-          >
-            <Trash2 className="size-3.5 text-muted-foreground" />
-          </Button>
+          <DeleteConfirmButton
+            itemName={`"${item.title}" from the brain`}
+            ariaLabel="Delete item"
+            onDelete={() => deleteKnowledgeItem(item.id)}
+          />
         </div>
       </CardContent>
     </Card>

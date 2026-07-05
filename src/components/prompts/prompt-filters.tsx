@@ -50,8 +50,10 @@ export function PromptFilters({ tools, tags }: PromptFiltersProps) {
         value={searchParams.get("tool") ?? ALL}
         onValueChange={(v) => setParam("tool", v as string)}
       >
-        <SelectTrigger>
-          <SelectValue />
+        <SelectTrigger aria-label="Filter by AI tool">
+          <SelectValue>
+            {(value: string | null) => (value === ALL || !value ? "All tools" : value)}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={ALL}>All tools</SelectItem>
@@ -66,8 +68,10 @@ export function PromptFilters({ tools, tags }: PromptFiltersProps) {
         value={searchParams.get("tag") ?? ALL}
         onValueChange={(v) => setParam("tag", v as string)}
       >
-        <SelectTrigger>
-          <SelectValue />
+        <SelectTrigger aria-label="Filter by tag">
+          <SelectValue>
+            {(value: string | null) => (value === ALL || !value ? "All tags" : value)}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={ALL}>All tags</SelectItem>

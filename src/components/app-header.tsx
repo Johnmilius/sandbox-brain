@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Brain, LogOut, Search } from "lucide-react";
+import { Brain, LogOut, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -92,11 +93,17 @@ export function AppHeader({ email, name, avatarUrl }: AppHeaderProps) {
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel className="font-normal">
-              <div className="text-sm font-medium">{name ?? "Team member"}</div>
-              <div className="text-xs text-muted-foreground">{email}</div>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="font-normal">
+                <div className="text-sm font-medium">{name ?? "Team member"}</div>
+                <div className="text-xs text-muted-foreground">{email}</div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            <DropdownMenuItem render={<Link href="/profile" />}>
+              <User className="size-4" />
+              Profile
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={signOut}>
               <LogOut className="size-4" />
               Sign out

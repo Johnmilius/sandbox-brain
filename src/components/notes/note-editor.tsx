@@ -2,12 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Save, Trash2, X } from "lucide-react";
+import { Pencil, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MarkdownView } from "@/components/markdown-view";
+import { DeleteConfirmButton } from "@/components/delete-confirm-button";
 import { deleteNote, updateNote } from "@/app/notes/actions";
 import type { Note } from "@/lib/database.types";
 
@@ -42,19 +43,6 @@ export function NoteEditor({ note, renderedBody, startInEdit }: NoteEditorProps)
     });
   }
 
-  function onDelete() {
-    if (!confirm(`Delete note "${note.title}"?`)) return;
-    startTransition(async () => {
-      const { error } = await deleteNote(note.id);
-      if (error) {
-        toast.error(error);
-      } else {
-        toast.success("Note deleted.");
-        router.push("/notes");
-      }
-    });
-  }
-
   if (!editing) {
     return (
       <div className="flex flex-col gap-4">
@@ -65,15 +53,13 @@ export function NoteEditor({ note, renderedBody, startInEdit }: NoteEditorProps)
               <Pencil className="size-3.5" />
               Edit
             </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onDelete}
-              disabled={pending}
-              aria-label="Delete note"
-            >
-              <Trash2 className="size-3.5 text-muted-foreground" />
-            </Button>
+            <DeleteConfirmButton
+              itemName={`note "${note.title}"`}
+              ariaLabel="Delete note"
+              successMessage="Note deleted."
+              onDelete={() => deleteNote(note.id)}
+              onDeleted={() => router.push("/notes")}
+            />
           </div>
         </div>
         {note.body.trim() === "" ? (

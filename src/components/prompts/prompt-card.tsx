@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Copy, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Copy, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PromptFormDialog } from "@/components/prompts/prompt-form-dialog";
+import { DeleteConfirmButton } from "@/components/delete-confirm-button";
 import { deletePrompt } from "@/app/prompts/actions";
 import { formatDate } from "@/lib/format";
 import type { Project, Prompt } from "@/lib/database.types";
@@ -41,7 +42,6 @@ export function PromptCard({
   projects,
   tagSuggestions,
 }: PromptCardProps) {
-  const [pending, startTransition] = useTransition();
   const [viewOpen, setViewOpen] = useState(false);
 
   function copyPrompt() {
@@ -49,15 +49,6 @@ export function PromptCard({
       () => toast.success("Prompt copied to clipboard."),
       () => toast.error("Couldn't copy to clipboard."),
     );
-  }
-
-  function onDelete() {
-    if (!confirm(`Delete prompt "${prompt.title}"?`)) return;
-    startTransition(async () => {
-      const { error } = await deletePrompt(prompt.id);
-      if (error) toast.error(error);
-      else toast.success("Prompt deleted.");
-    });
   }
 
   return (
@@ -150,15 +141,12 @@ export function PromptCard({
               </Button>
             }
           />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onDelete}
-            disabled={pending}
-            aria-label="Delete prompt"
-          >
-            <Trash2 className="size-3.5 text-muted-foreground" />
-          </Button>
+          <DeleteConfirmButton
+            itemName={`"${prompt.title}"`}
+            ariaLabel="Delete prompt"
+            successMessage="Prompt deleted."
+            onDelete={() => deletePrompt(prompt.id)}
+          />
         </div>
       </CardContent>
     </Card>

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { createNote } from "@/app/notes/actions";
 
 export function NewNoteDialog({
@@ -27,18 +28,21 @@ export function NewNoteDialog({
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const title = String(new FormData(event.currentTarget).get("title") ?? "").trim();
+    const form = new FormData(event.currentTarget);
+    const title = String(form.get("title") ?? "").trim();
+    const body = String(form.get("body") ?? "");
     if (!title) {
       toast.error("Title is required.");
       return;
     }
     startTransition(async () => {
-      const { id, error } = await createNote(title);
+      const { id, error } = await createNote(title, body);
       if (error || !id) {
         toast.error(error ?? "Couldn't create the note.");
       } else {
+        toast.success("Note created.");
         setOpen(false);
-        router.push(`/notes/${id}?edit=1`);
+        router.push(`/notes/${id}`);
       }
     });
   }
@@ -64,8 +68,18 @@ export function NewNoteDialog({
               required
             />
           </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="body">Note</Label>
+            <Textarea
+              id="body"
+              name="body"
+              rows={8}
+              placeholder={"Write markdown…\n\nLink to other notes with [[Note Title]]."}
+              className="font-mono text-sm"
+            />
+          </div>
           <Button type="submit" disabled={pending}>
-            {pending ? "Creating…" : "Create & edit"}
+            {pending ? "Saving…" : "Save note"}
           </Button>
         </form>
       </DialogContent>

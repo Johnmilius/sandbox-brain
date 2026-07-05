@@ -106,7 +106,12 @@ export function TimerCard({ projects, runningEntry }: TimerCardProps) {
                 onValueChange={(v) => setSelectedProject(v as string)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue />
+                  <SelectValue>
+                    {(value: string | null) =>
+                      projects.find((p) => p.id === value)?.name ??
+                      "Select a project"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {projects.map((p) => (

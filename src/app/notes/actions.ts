@@ -45,11 +45,12 @@ async function syncWikiLinks(
 
 export async function createNote(
   title: string,
+  body = "",
 ): Promise<{ id: string | null; error: string | null }> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("notes")
-    .insert({ title: title.trim() })
+    .insert({ title: title.trim(), body })
     .select("id")
     .single();
   if (error) {
@@ -58,7 +59,12 @@ export async function createNote(
     }
     return { id: null, error: error.message };
   }
+
+  // Body may already contain [[wiki-links]] — wire up graph edges on create.
+  if (body.trim() !== "") await syncWikiLinks(supabase, data.id, body);
+
   revalidatePath("/notes");
+  revalidatePath("/graph");
   return { id: data.id, error: null };
 }
 
