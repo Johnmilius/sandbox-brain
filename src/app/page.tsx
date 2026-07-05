@@ -73,7 +73,7 @@ export default async function DashboardPage() {
             Welcome back, {firstName}
           </h1>
           <p className="text-sm text-muted-foreground">
-            The team hub is live. Features unlock as each phase ships.
+            Track time, save prompts, link notes, and grow the brain.
           </p>
         </div>
 

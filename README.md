@@ -27,7 +27,7 @@ The team's central hub for the Sandbox entrepreneurship program: **time tracking
 ### 3. Apply the database schema
 
 1. Open [supabase/migrations/0001_init.sql](supabase/migrations/0001_init.sql) and **add your two teammates' emails** to the `allowed_emails` seed at the bottom.
-2. Easiest: paste the whole file into the Supabase dashboard **SQL Editor** and run it.
+2. Easiest: paste each file in [supabase/migrations](supabase/migrations) (0001, then 0002) into the Supabase dashboard **SQL Editor** and run it.
    Or with the CLI: `npm run db:link` (needs the project ref) then `npm run db:push`.
 3. After the schema is applied (and whenever it changes), generate TypeScript types: `npm run db:types`.
 
@@ -62,15 +62,19 @@ Everyone then uses the production URL — it's always on, shared, and live.
 - **Supabase pauses free projects after ~1 week of inactivity.** Regular use avoids this; if paused, restore it from the dashboard in one click.
 - Storage cap is 1 GB — prefer GitHub URLs for project archives; use zip uploads sparingly.
 
-## Roadmap
+## What's inside (V1)
 
-- [x] **Phase 0** — live shell: auth, allowlist, dashboard, deploy
-- [ ] **Phase 1** — database schema + Row Level Security
-- [ ] **Phase 2** — projects + time tracking (timer + manual entry)
-- [ ] **Phase 3** — prompt database (tags, search, insights)
-- [ ] **Phase 4** — notes + `[[wiki-links]]` + interactive graph
-- [ ] **Phase 5** — the Brain: code snippets, decisions, docs, contacts, project archives
-- [ ] **Phase 6** — AI-ready polish (search coverage, read API for a future AI agent)
+- **Projects** — the companies/projects the team works on
+- **Time** — live start/stop timer (survives refresh) + manual backfill, 7-day summaries
+- **Prompts** — the team prompt database: full text, result notes, tool, 1–5 rating, tags, full-text search
+- **Notes** — markdown wiki with `[[wiki-links]]` and backlinks
+- **Graph** — Obsidian-style force graph over everything (notes, prompts, projects, brain items, people)
+- **Brain** — reusable knowledge: code snippets, decisions/learnings, documents, contacts, project archives (GitHub URL or zip upload)
+- **Search** — one box across projects, notes, prompts, and the brain
+
+All phases (0–6) of the V1 build plan are implemented. The AI layer
+(semantic search / analysis agent) is deliberately deferred — see
+[docs/ai-readiness.md](docs/ai-readiness.md) for the drop-in plan.
 
 ## Project conventions
 

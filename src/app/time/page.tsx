@@ -172,7 +172,7 @@ export default async function TimePage() {
             Nothing logged yet. Start the timer or log time manually.
           </p>
         ) : (
-          <div className="rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
