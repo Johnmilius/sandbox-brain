@@ -76,6 +76,13 @@ All phases (0–6) of the V1 build plan are implemented. The AI layer
 (semantic search / analysis agent) is deliberately deferred — see
 [docs/ai-readiness.md](docs/ai-readiness.md) for the drop-in plan.
 
+## Talk to it from Claude (MCP)
+
+The [mcp/](mcp/README.md) folder has an MCP server so Claude can drive the hub
+from chat — start timers, log time, save prompts, append to notes, add
+knowledge, and search everything, attributed to whoever's machine it runs on.
+Setup takes ~2 minutes per teammate; see [mcp/README.md](mcp/README.md).
+
 ## Project conventions
 
 - Supabase access goes through `src/lib/supabase/client.ts` (browser) and `src/lib/supabase/server.ts` (server) — never instantiate clients directly.
