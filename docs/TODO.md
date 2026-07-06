@@ -53,21 +53,24 @@ Normal-sized features, touches a handful of files, requirements already clear.
 
 ---
 
-## Tier 3 — Design-Judgment Features
+## Tier 3 — Design-Judgment Features ✅ DONE (v1 per docs/TIER3_PLAN.md)
 **Suggested model: Opus 4.8** (sketch the data model / approach first, then hand implementation to Sonnet 5)
 Real ambiguity in *how* to build it — data model decisions, sync/consistency concerns, or cross-entity matching logic.
 
-**4.** A way to save highly valuable prompts in the prompt section — like a favorite/star system that syncs and keeps consistent prompts across developers, so instructions to AI agents are consistent and uniform. Also enables fine-tuning agents, etc.
+> Migrations `0003_prompt_favorites.sql` and `0004_agents.sql` must be applied to Supabase
+> (dashboard SQL editor or `npm run db:push`) for #4 and #4b to work at runtime.
 
-**4b.** Related to #4 — an agents section (own page or within this page) to save used/active agents.
+**4.** ✅ A way to save highly valuable prompts in the prompt section — like a favorite/star system that syncs and keeps consistent prompts across developers, so instructions to AI agents are consistent and uniform. Also enables fine-tuning agents, etc.
 
-**7.** In the graph, filter by certain parameters to see relationships more clearly — e.g., by person ID. Does each note have a person ID attached so we know who recorded it? This is important information we need to track.
+**4b.** ✅ Related to #4 — an agents section (own page or within this page) to save used/active agents.
 
-**7b.** Along with the graph — can it programmatically add linking tags to items themselves, so we don't have to manage that ourselves? Should be automated so relationships surface faster.
+**7.** ✅ In the graph, filter by certain parameters to see relationships more clearly — e.g., by person ID. Does each note have a person ID attached so we know who recorded it? This is important information we need to track. *(Yes — notes have author_id; the graph now draws authorship edges and filters by person/project/type.)*
 
-**12.** Along with the time page — link items to things done during that time frame, attached to the time log. A search function that links dates of notes/prompts, etc., automatically by date range and person ID, so we can see what was done during which session.
+**7b.** ✅ Along with the graph — can it programmatically add linking tags to items themselves, so we don't have to manage that ourselves? Should be automated so relationships surface faster. *(Phase A: computed shared-tag "suggested" edges + suggested-tag chips in forms. Persisted auto-links / embeddings deferred.)*
 
-**15.** File and folder uploadability for the brain (and potentially elsewhere). E.g., adding an entire project via GitHub repo, file, or folder upload instead of copy/paste.
+**12.** ✅ Along with the time page — link items to things done during that time frame, attached to the time log. A search function that links dates of notes/prompts, etc., automatically by date range and person ID, so we can see what was done during which session. *(Automatic session activity + person filter; explicit pinning deferred.)*
+
+**15.** ✅ File and folder uploadability for the brain (and potentially elsewhere). E.g., adding an entire project via GitHub repo, file, or folder upload instead of copy/paste. *(Phase 1: multi-file + folder upload with manifest. GitHub-repo import deferred to Phase 2.)*
 
 ---
 

@@ -85,6 +85,12 @@ export function registerPromptTools(server: McpServer): void {
           .optional()
           .describe("Search terms (omit to list the most recent prompts)"),
         ai_tool: z.string().optional().describe("Filter by AI tool name"),
+        favorites_only: z
+          .boolean()
+          .default(false)
+          .describe(
+            "Only return team-favorited (canonical) prompts — the vetted ones to reuse",
+          ),
         limit: z.number().int().min(1).max(50).default(10),
       },
       annotations: {
@@ -94,16 +100,20 @@ export function registerPromptTools(server: McpServer): void {
         openWorldHint: true,
       },
     },
-    guarded(async ({ query, ai_tool, limit }) => {
+    guarded(async ({ query, ai_tool, favorites_only, limit }) => {
       let q = supabase()
         .from("prompts")
-        .select("title, prompt_text, response_notes, ai_tool, rating, created_at")
+        .select(
+          "title, prompt_text, response_notes, ai_tool, rating, is_favorite, created_at",
+        )
+        .order("is_favorite", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(limit);
       if (query?.trim()) {
         q = q.textSearch("search_document", query.trim(), { type: "websearch" });
       }
       if (ai_tool?.trim()) q = q.eq("ai_tool", ai_tool.trim().toLowerCase());
+      if (favorites_only) q = q.eq("is_favorite", true);
 
       const { data, error } = await q;
       if (error) return fail(error.message);
@@ -117,6 +127,7 @@ export function registerPromptTools(server: McpServer): void {
 
       const blocks = data.map((p) => {
         const meta = [
+          p.is_favorite ? "★ favorite" : null,
           p.ai_tool,
           p.rating != null ? `${"★".repeat(p.rating)}` : null,
           new Date(p.created_at).toISOString().slice(0, 10),

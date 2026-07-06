@@ -8,21 +8,52 @@ const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
 });
 
+export type GraphNodeType =
+  | "project"
+  | "note"
+  | "prompt"
+  | "knowledge_item"
+  | "profile"
+  | "agent";
+
 export type GraphNode = {
   id: string;
   label: string;
-  type: "project" | "note" | "prompt" | "knowledge_item" | "profile";
+  type: GraphNodeType;
   url: string | null;
+  /** Person who authored/created this item (profile id), for person filtering. */
+  authorId?: string;
+  /** Project this item belongs to (project id), for project filtering. */
+  projectId?: string;
+  /** Tag names on this item, for tag-based suggested links. */
+  tags?: string[];
 };
 
-export type GraphEdge = { source: string; target: string };
+/** "explicit" = a real link/relation; the rest are computed, soft suggestions. */
+export type GraphEdgeKind = "explicit" | "shared_tag" | "shared_project";
 
-export const TYPE_COLORS: Record<GraphNode["type"], string> = {
+export type GraphEdge = {
+  source: string;
+  target: string;
+  kind?: GraphEdgeKind;
+};
+
+export const TYPE_COLORS: Record<GraphNodeType, string> = {
   project: "#3b82f6",
   note: "#22c55e",
   prompt: "#f59e0b",
   knowledge_item: "#a855f7",
   profile: "#94a3b8",
+  agent: "#ec4899",
+};
+
+export const TYPE_LABELS: Record<GraphNodeType, string> = {
+  project: "Projects",
+  note: "Notes",
+  prompt: "Prompts",
+  knowledge_item: "Knowledge",
+  profile: "People",
+  agent: "Agents",
 };
 
 type PositionedNode = GraphNode & { x?: number; y?: number };
@@ -59,7 +90,16 @@ export function GraphView({
           height={size.height}
           graphData={{ nodes, links: edges }}
           nodeLabel={(node) => (node as PositionedNode).label}
-          linkColor={() => "#9ca3af55"}
+          linkColor={(link) =>
+            (link as GraphEdge).kind && (link as GraphEdge).kind !== "explicit"
+              ? "#a855f733" // soft / suggested edges: fainter, purple-ish
+              : "#9ca3af55"
+          }
+          linkLineDash={(link) =>
+            (link as GraphEdge).kind && (link as GraphEdge).kind !== "explicit"
+              ? [3, 3]
+              : null
+          }
           nodeCanvasObject={(node, ctx, globalScale) => {
             const n = node as PositionedNode;
             if (n.x == null || n.y == null) return;

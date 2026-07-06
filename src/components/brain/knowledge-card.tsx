@@ -35,6 +35,7 @@ import {
 import { DeleteConfirmButton } from "@/components/delete-confirm-button";
 import { deleteKnowledgeItem } from "@/app/brain/actions";
 import { createClient } from "@/lib/supabase/client";
+import { formatBytes, readManifest } from "@/lib/knowledge-files";
 import { formatDate } from "@/lib/format";
 import type {
   KnowledgeItem,
@@ -73,6 +74,7 @@ export function KnowledgeCard({
 }: KnowledgeCardProps) {
   const Icon = KIND_ICONS[item.kind];
   const data = (item.data ?? {}) as Record<string, string>;
+  const files = readManifest(item.data);
 
   function copyContent() {
     if (!item.content) return;
@@ -82,12 +84,11 @@ export function KnowledgeCard({
     );
   }
 
-  function downloadFile() {
-    if (!item.file_path) return;
+  function downloadPath(path: string) {
     const supabase = createClient();
     supabase.storage
       .from("files")
-      .createSignedUrl(item.file_path, 60)
+      .createSignedUrl(path, 60)
       .then(({ data: signed, error }) => {
         if (error || !signed) toast.error("Couldn't create a download link.");
         else window.open(signed.signedUrl, "_blank");
@@ -149,6 +150,27 @@ export function KnowledgeCard({
                       {item.content}
                     </pre>
                   )}
+                  {files.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <p className="text-xs font-medium text-muted-foreground uppercase">
+                        Files ({files.length})
+                      </p>
+                      {files.map((f) => (
+                        <button
+                          key={f.path}
+                          type="button"
+                          onClick={() => downloadPath(f.path)}
+                          className="flex items-center gap-2 text-left text-sm hover:underline"
+                        >
+                          <Download className="size-3.5 shrink-0 text-muted-foreground" />
+                          <span className="flex-1 truncate">{f.name}</span>
+                          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                            {formatBytes(f.size)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {item.content && item.kind === "code_snippet" && (
@@ -167,7 +189,10 @@ export function KnowledgeCard({
                     </Button>
                   )}
                   {item.file_path && (
-                    <Button variant="outline" onClick={downloadFile}>
+                    <Button
+                      variant="outline"
+                      onClick={() => downloadPath(item.file_path!)}
+                    >
                       <Download className="size-4" />
                       Download file
                     </Button>

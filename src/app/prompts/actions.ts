@@ -65,6 +65,20 @@ export async function updatePrompt(
   return { error: null };
 }
 
+export async function togglePromptFavorite(
+  id: string,
+  value: boolean,
+): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("prompts")
+    .update({ is_favorite: value })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/prompts");
+  return { error: null };
+}
+
 export async function deletePrompt(
   id: string,
 ): Promise<{ error: string | null }> {

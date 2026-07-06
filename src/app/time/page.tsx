@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,8 +10,6 @@ import {
 } from "@/components/ui/card";
 import {
   Table,
-  TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -20,8 +17,13 @@ import {
 import { AppHeader } from "@/components/app-header";
 import { TimerCard } from "@/components/time/timer-card";
 import { ManualEntryDialog } from "@/components/time/manual-entry-dialog";
-import { DeleteEntryButton } from "@/components/time/delete-entry-button";
 import { DailyHoursChart } from "@/components/time/daily-hours-chart";
+import { TimePeopleFilter } from "@/components/time/time-people-filter";
+import {
+  SessionTable,
+  type SessionActivityItem,
+  type SessionEntry,
+} from "@/components/time/session-table";
 import { createClient } from "@/lib/supabase/server";
 import {
   daysAgoISO,
@@ -30,7 +32,12 @@ import {
   formatDuration,
 } from "@/lib/format";
 
-export default async function TimePage() {
+export default async function TimePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ who?: string }>;
+}) {
+  const { who } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,15 +47,18 @@ export default async function TimePage() {
   const weekAgo = daysAgoISO(7);
   const twoWeeksAgo = daysAgoISO(14);
 
+  let entriesQuery = supabase
+    .from("time_entries")
+    .select("*")
+    .not("ended_at", "is", null)
+    .order("started_at", { ascending: false })
+    .limit(50);
+  if (who) entriesQuery = entriesQuery.eq("user_id", who);
+
   const [projectsRes, entriesRes, metricsRes, runningRes, profilesRes] =
     await Promise.all([
       supabase.from("projects").select("*").order("name"),
-      supabase
-        .from("time_entries")
-        .select("*")
-        .not("ended_at", "is", null)
-        .order("started_at", { ascending: false })
-        .limit(50),
+      entriesQuery,
       // Uncapped 14-day window that backs the metrics/charts.
       supabase
         .from("time_entries")
@@ -133,6 +143,73 @@ export default async function TimePage() {
     label: d.label,
     fullLabel: d.fullLabel,
     ms: msByDay.get(d.key)!,
+  }));
+
+  // Session activity: items each person created *during* one of their entries.
+  // Fetch once over the window the displayed entries span, then bucket per entry.
+  const oldestStart = entries.reduce(
+    (min, e) => (e.started_at < min ? e.started_at : min),
+    entries[0]?.started_at ?? new Date().toISOString(),
+  );
+  const [notesRes, activityPromptsRes, knowledgeRes] =
+    entries.length > 0
+      ? await Promise.all([
+          supabase
+            .from("notes")
+            .select("id, title, author_id, created_at")
+            .gte("created_at", oldestStart),
+          supabase
+            .from("prompts")
+            .select("id, title, user_id, created_at")
+            .gte("created_at", oldestStart),
+          supabase
+            .from("knowledge_items")
+            .select("id, title, created_by, created_at")
+            .gte("created_at", oldestStart),
+        ])
+      : [null, null, null];
+
+  const within = (created: string, start: string, end: string | null) => {
+    const t = new Date(created).getTime();
+    return (
+      t >= new Date(start).getTime() &&
+      (end == null || t <= new Date(end).getTime())
+    );
+  };
+
+  const sessionEntries: SessionEntry[] = entries.map((entry) => {
+    const activity: SessionActivityItem[] = [];
+    for (const n of notesRes?.data ?? []) {
+      if (n.author_id === entry.user_id && within(n.created_at, entry.started_at, entry.ended_at)) {
+        activity.push({ id: n.id, title: n.title, kind: "note", href: `/notes/${n.id}` });
+      }
+    }
+    for (const p of activityPromptsRes?.data ?? []) {
+      if (p.user_id === entry.user_id && within(p.created_at, entry.started_at, entry.ended_at)) {
+        activity.push({ id: p.id, title: p.title, kind: "prompt", href: "/prompts" });
+      }
+    }
+    for (const k of knowledgeRes?.data ?? []) {
+      if (k.created_by === entry.user_id && within(k.created_at, entry.started_at, entry.ended_at)) {
+        activity.push({ id: k.id, title: k.title, kind: "knowledge", href: "/brain" });
+      }
+    }
+    const profile = profileById.get(entry.user_id);
+    return {
+      id: entry.id,
+      projectName: projectById.get(entry.project_id)?.name ?? "—",
+      whoName: profile?.full_name ?? profile?.email ?? "—",
+      when: formatDateTime(entry.started_at),
+      durationLabel: formatDuration(entryDurationMs(entry.started_at, entry.ended_at)),
+      notes: entry.notes,
+      source: entry.source,
+      activity,
+    };
+  });
+
+  const peopleOptions = profiles.map((p) => ({
+    id: p.id,
+    label: p.full_name ?? p.email,
   }));
 
   const name =
@@ -270,10 +347,15 @@ export default async function TimePage() {
           </Card>
         </div>
 
-        <h2 className="mt-8 mb-3 text-lg font-semibold">Recent entries</h2>
+        <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Recent entries</h2>
+          <TimePeopleFilter people={peopleOptions} />
+        </div>
         {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nothing logged yet. Start the timer or log time manually.
+            {who
+              ? "No entries for this person yet."
+              : "Nothing logged yet. Start the timer or log time manually."}
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg border">
@@ -288,42 +370,7 @@ export default async function TimePage() {
                   <TableHead />
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {entries.map((entry) => {
-                  const profile = profileById.get(entry.user_id);
-                  return (
-                    <TableRow key={entry.id}>
-                      <TableCell className="font-medium">
-                        {projectById.get(entry.project_id)?.name ?? "—"}
-                      </TableCell>
-                      <TableCell>
-                        {profile?.full_name ?? profile?.email ?? "—"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDateTime(entry.started_at)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatDuration(
-                          entryDurationMs(entry.started_at, entry.ended_at),
-                        )}
-                      </TableCell>
-                      <TableCell className="max-w-56">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate text-muted-foreground">
-                            {entry.notes ?? ""}
-                          </span>
-                          {entry.source === "manual" && (
-                            <Badge variant="outline">manual</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="w-10">
-                        <DeleteEntryButton entryId={entry.id} />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
+              <SessionTable entries={sessionEntries} />
             </Table>
           </div>
         )}

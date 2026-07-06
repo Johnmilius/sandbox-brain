@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TagInput } from "@/components/tag-input";
+import { TagSuggestions } from "@/components/tag-suggestions";
 import { createPrompt, updatePrompt } from "@/app/prompts/actions";
 import type { Project, Prompt } from "@/lib/database.types";
 
@@ -57,7 +58,18 @@ export function PromptFormDialog({
   const [rating, setRating] = useState<string>(
     prompt?.rating != null ? String(prompt.rating) : NONE,
   );
+  // Observed (not controlled) so we can suggest tags from what's typed.
+  const [scanText, setScanText] = useState(
+    `${prompt?.title ?? ""} ${prompt?.prompt_text ?? ""}`,
+  );
   const [pending, startTransition] = useTransition();
+
+  function rescan(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    const form = event.currentTarget.form;
+    if (!form) return;
+    const fd = new FormData(form);
+    setScanText(`${fd.get("title") ?? ""} ${fd.get("prompt_text") ?? ""}`);
+  }
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -111,6 +123,7 @@ export function PromptFormDialog({
               id="title"
               name="title"
               defaultValue={prompt?.title}
+              onChange={rescan}
               placeholder="e.g. Landing page hero copy v2"
               required
             />
@@ -121,6 +134,7 @@ export function PromptFormDialog({
               id="prompt_text"
               name="prompt_text"
               defaultValue={prompt?.prompt_text}
+              onChange={rescan}
               placeholder="Paste the full prompt you sent…"
               rows={6}
               required
@@ -194,6 +208,12 @@ export function PromptFormDialog({
               value={tags}
               onChange={setTags}
               suggestions={tagSuggestions}
+            />
+            <TagSuggestions
+              text={scanText}
+              vocabulary={tagSuggestions}
+              selected={tags}
+              onAdd={(t) => setTags((prev) => [...prev, t])}
             />
           </div>
           <Button type="submit" disabled={pending}>

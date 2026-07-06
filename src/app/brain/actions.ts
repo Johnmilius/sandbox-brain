@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { setTagsForEntity } from "@/lib/tags";
+import { readManifest } from "@/lib/knowledge-files";
 import type { Json, KnowledgeKind } from "@/lib/database.types";
 
 export type KnowledgeInput = {
@@ -81,15 +82,20 @@ export async function deleteKnowledgeItem(
 
   const { data: item } = await supabase
     .from("knowledge_items")
-    .select("file_path")
+    .select("file_path, data")
     .eq("id", id)
     .maybeSingle();
 
   const { error } = await supabase.from("knowledge_items").delete().eq("id", id);
   if (error) return { error: error.message };
 
-  if (item?.file_path) {
-    await supabase.storage.from("files").remove([item.file_path]);
+  // Clean up storage: the legacy single file and every manifest file.
+  const paths = [
+    ...(item?.file_path ? [item.file_path] : []),
+    ...readManifest(item?.data).map((f) => f.path),
+  ];
+  if (paths.length > 0) {
+    await supabase.storage.from("files").remove(paths);
   }
   await supabase
     .from("taggables")

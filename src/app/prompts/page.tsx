@@ -17,9 +17,10 @@ import { getTagsByEntity } from "@/lib/tags";
 export default async function PromptsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; tool?: string; tag?: string }>;
+  searchParams: Promise<{ q?: string; tool?: string; tag?: string; favorite?: string }>;
 }) {
-  const { q, tool, tag } = await searchParams;
+  const { q, tool, tag, favorite } = await searchParams;
+  const favoriteOnly = favorite === "1";
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,10 +30,13 @@ export default async function PromptsPage({
   let query = supabase
     .from("prompts")
     .select("*")
+    // Favorites float to the top, newest-first within each group.
+    .order("is_favorite", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(100);
   if (q) query = query.textSearch("search_document", q, { type: "websearch" });
   if (tool) query = query.eq("ai_tool", tool);
+  if (favoriteOnly) query = query.eq("is_favorite", true);
 
   const [promptsRes, projectsRes, profilesRes, tagsRes, promptTags] =
     await Promise.all([
@@ -66,6 +70,7 @@ export default async function PromptsPage({
     if (p.ai_tool) byTool.set(p.ai_tool, (byTool.get(p.ai_tool) ?? 0) + 1);
   }
   const distinctTools = [...byTool.keys()].sort();
+  const favoriteCount = prompts.filter((p) => p.is_favorite).length;
 
   const name =
     (user.user_metadata.full_name as string | undefined) ??
@@ -84,7 +89,8 @@ export default async function PromptsPage({
             <h1 className="text-2xl font-semibold tracking-tight">Prompts</h1>
             <p className="text-sm text-muted-foreground">
               {prompts.length} saved
-              {avgRating && ` · ★ ${avgRating} average`}
+              {favoriteCount > 0 && ` · ★ ${favoriteCount} favorite${favoriteCount === 1 ? "" : "s"}`}
+              {avgRating && ` · ${avgRating} avg rating`}
               {distinctTools.length > 0 && ` · ${distinctTools.join(", ")}`}
             </p>
           </div>
@@ -109,10 +115,12 @@ export default async function PromptsPage({
             <CardHeader className="items-center text-center">
               <MessageSquareText className="mx-auto size-8 text-muted-foreground" />
               <CardTitle>
-                {q || tool || tag ? "No prompts match" : "No prompts yet"}
+                {q || tool || tag || favoriteOnly
+                  ? "No prompts match"
+                  : "No prompts yet"}
               </CardTitle>
               <CardDescription>
-                {q || tool || tag
+                {q || tool || tag || favoriteOnly
                   ? "Try clearing the search or filters."
                   : "Save the prompts you send to AI tools so the team can reuse what works."}
               </CardDescription>

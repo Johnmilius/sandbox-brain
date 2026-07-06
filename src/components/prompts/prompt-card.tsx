@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, Pencil } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Copy, Pencil, Star } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { PromptFormDialog } from "@/components/prompts/prompt-form-dialog";
 import { DeleteConfirmButton } from "@/components/delete-confirm-button";
-import { deletePrompt } from "@/app/prompts/actions";
+import { deletePrompt, togglePromptFavorite } from "@/app/prompts/actions";
 import { formatDate } from "@/lib/format";
 import type { Project, Prompt } from "@/lib/database.types";
 
@@ -43,12 +44,21 @@ export function PromptCard({
   tagSuggestions,
 }: PromptCardProps) {
   const [viewOpen, setViewOpen] = useState(false);
+  const [favPending, startFav] = useTransition();
 
   function copyPrompt() {
     navigator.clipboard.writeText(prompt.prompt_text).then(
       () => toast.success("Prompt copied to clipboard."),
       () => toast.error("Couldn't copy to clipboard."),
     );
+  }
+
+  function toggleFavorite() {
+    startFav(async () => {
+      const { error } = await togglePromptFavorite(prompt.id, !prompt.is_favorite);
+      if (error) toast.error(error);
+      else toast.success(prompt.is_favorite ? "Removed from favorites." : "Added to favorites.");
+    });
   }
 
   return (
@@ -101,11 +111,16 @@ export function PromptCard({
               </Button>
             </DialogContent>
           </Dialog>
-          {prompt.rating != null && (
-            <span className="shrink-0 text-sm text-amber-500">
-              {"★".repeat(prompt.rating)}
-            </span>
-          )}
+          <div className="flex shrink-0 items-center gap-1">
+            {prompt.is_favorite && (
+              <Star className="size-3.5 fill-amber-400 text-amber-400" />
+            )}
+            {prompt.rating != null && (
+              <span className="text-sm text-amber-500">
+                {"★".repeat(prompt.rating)}
+              </span>
+            )}
+          </div>
         </div>
         <CardDescription className="line-clamp-2">
           {prompt.prompt_text}
@@ -122,6 +137,23 @@ export function PromptCard({
           ))}
         </div>
         <div className="flex shrink-0 items-center">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={toggleFavorite}
+            disabled={favPending}
+            aria-label={prompt.is_favorite ? "Remove from favorites" : "Add to favorites"}
+            aria-pressed={prompt.is_favorite}
+          >
+            <Star
+              className={cn(
+                "size-3.5",
+                prompt.is_favorite
+                  ? "fill-amber-400 text-amber-400"
+                  : "text-muted-foreground",
+              )}
+            />
+          </Button>
           <Button
             variant="ghost"
             size="icon-sm"

@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -35,8 +36,21 @@ export function PromptFilters({ tools, tags }: PromptFiltersProps) {
     }
   }
 
+  const favoriteOnly = searchParams.get("favorite") === "1";
+
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <Button
+        type="button"
+        variant={favoriteOnly ? "secondary" : "outline"}
+        aria-pressed={favoriteOnly}
+        onClick={() => setParam("favorite", favoriteOnly ? null : "1")}
+      >
+        <Star
+          className={favoriteOnly ? "size-4 fill-amber-400 text-amber-400" : "size-4"}
+        />
+        Favorites
+      </Button>
       <div className="relative min-w-52 flex-1">
         <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input

@@ -1,20 +1,8 @@
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/app-header";
-import {
-  GraphView,
-  TYPE_COLORS,
-  type GraphEdge,
-  type GraphNode,
-} from "@/components/graph/graph-view";
+import { GraphExplorer } from "@/components/graph/graph-explorer";
+import type { GraphEdge, GraphNode } from "@/components/graph/graph-view";
 import { createClient } from "@/lib/supabase/server";
-
-const TYPE_LABELS: Record<GraphNode["type"], string> = {
-  project: "Projects",
-  note: "Notes",
-  prompt: "Prompts",
-  knowledge_item: "Knowledge",
-  profile: "People",
-};
 
 export default async function GraphPage() {
   const supabase = await createClient();
@@ -23,16 +11,41 @@ export default async function GraphPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [projects, notes, prompts, knowledge, profiles, links, timeEntries] =
-    await Promise.all([
-      supabase.from("projects").select("id, name"),
-      supabase.from("notes").select("id, title"),
-      supabase.from("prompts").select("id, title, project_id"),
-      supabase.from("knowledge_items").select("id, title, project_id"),
-      supabase.from("profiles").select("id, full_name, email"),
-      supabase.from("links").select("source_type, source_id, target_type, target_id"),
-      supabase.from("time_entries").select("user_id, project_id"),
-    ]);
+  const [
+    projects,
+    notes,
+    prompts,
+    knowledge,
+    profiles,
+    agents,
+    links,
+    timeEntries,
+    taggables,
+    tags,
+  ] = await Promise.all([
+    supabase.from("projects").select("id, name"),
+    supabase.from("notes").select("id, title, author_id"),
+    supabase.from("prompts").select("id, title, project_id, user_id"),
+    supabase.from("knowledge_items").select("id, title, project_id, created_by"),
+    supabase.from("profiles").select("id, full_name, email"),
+    supabase.from("agents").select("id, name, project_id, created_by"),
+    supabase.from("links").select("source_type, source_id, target_type, target_id"),
+    supabase.from("time_entries").select("user_id, project_id"),
+    supabase.from("taggables").select("entity_type, entity_id, tag_id"),
+    supabase.from("tags").select("id, name"),
+  ]);
+
+  // node id (`type:id`) -> tag names, for attaching to nodes + shared-tag edges.
+  const tagNameById = new Map((tags.data ?? []).map((t) => [t.id, t.name]));
+  const tagsByNode = new Map<string, string[]>();
+  const nodesByTag = new Map<string, string[]>();
+  for (const t of taggables.data ?? []) {
+    const nodeId = `${t.entity_type}:${t.entity_id}`;
+    const name = tagNameById.get(t.tag_id);
+    if (!name) continue;
+    (tagsByNode.get(nodeId) ?? tagsByNode.set(nodeId, []).get(nodeId)!).push(name);
+    (nodesByTag.get(t.tag_id) ?? nodesByTag.set(t.tag_id, []).get(t.tag_id)!).push(nodeId);
+  }
 
   const nodes: GraphNode[] = [
     ...(projects.data ?? []).map((p) => ({
@@ -40,24 +53,30 @@ export default async function GraphPage() {
       label: p.name,
       type: "project" as const,
       url: "/projects",
+      projectId: p.id,
     })),
     ...(notes.data ?? []).map((n) => ({
       id: `note:${n.id}`,
       label: n.title,
       type: "note" as const,
       url: `/notes/${n.id}`,
+      authorId: n.author_id,
     })),
     ...(prompts.data ?? []).map((p) => ({
       id: `prompt:${p.id}`,
       label: p.title,
       type: "prompt" as const,
       url: "/prompts",
+      authorId: p.user_id,
+      projectId: p.project_id ?? undefined,
     })),
     ...(knowledge.data ?? []).map((k) => ({
       id: `knowledge_item:${k.id}`,
       label: k.title,
       type: "knowledge_item" as const,
       url: "/brain",
+      authorId: k.created_by,
+      projectId: k.project_id ?? undefined,
     })),
     ...(profiles.data ?? []).map((p) => ({
       id: `profile:${p.id}`,
@@ -65,14 +84,37 @@ export default async function GraphPage() {
       type: "profile" as const,
       url: null,
     })),
+    ...(agents.data ?? []).map((a) => ({
+      id: `agent:${a.id}`,
+      label: a.name,
+      type: "agent" as const,
+      url: "/agents",
+      authorId: a.created_by,
+      projectId: a.project_id ?? undefined,
+    })),
   ];
   const nodeIds = new Set(nodes.map((n) => n.id));
+  for (const n of nodes) n.tags = tagsByNode.get(n.id);
 
   const edges: GraphEdge[] = [];
+  // Dedupe undirected pairs so an explicit edge suppresses a redundant soft one.
+  const pairSeen = new Set<string>();
+  const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
   function addEdge(source: string, target: string) {
-    if (nodeIds.has(source) && nodeIds.has(target)) {
-      edges.push({ source, target });
-    }
+    if (source === target || !nodeIds.has(source) || !nodeIds.has(target)) return;
+    const key = pairKey(source, target);
+    if (pairSeen.has(key)) return;
+    pairSeen.add(key);
+    edges.push({ source, target, kind: "explicit" });
+  }
+
+  function addSoftEdge(source: string, target: string, kind: GraphEdge["kind"]) {
+    if (source === target || !nodeIds.has(source) || !nodeIds.has(target)) return;
+    const key = pairKey(source, target);
+    if (pairSeen.has(key)) return;
+    pairSeen.add(key);
+    edges.push({ source, target, kind });
   }
 
   // Explicit edges (wiki-links and future manual links).
@@ -86,6 +128,20 @@ export default async function GraphPage() {
   for (const k of knowledge.data ?? []) {
     if (k.project_id) addEdge(`knowledge_item:${k.id}`, `project:${k.project_id}`);
   }
+  // Authorship: connect people to what they recorded, so "filter by person" works.
+  for (const n of notes.data ?? []) {
+    if (n.author_id) addEdge(`profile:${n.author_id}`, `note:${n.id}`);
+  }
+  for (const p of prompts.data ?? []) {
+    if (p.user_id) addEdge(`profile:${p.user_id}`, `prompt:${p.id}`);
+  }
+  for (const k of knowledge.data ?? []) {
+    if (k.created_by) addEdge(`profile:${k.created_by}`, `knowledge_item:${k.id}`);
+  }
+  for (const a of agents.data ?? []) {
+    if (a.project_id) addEdge(`agent:${a.id}`, `project:${a.project_id}`);
+    if (a.created_by) addEdge(`profile:${a.created_by}`, `agent:${a.id}`);
+  }
   // People connect to projects they've logged time on.
   const worked = new Set(
     (timeEntries.data ?? []).map((t) => `${t.user_id}|${t.project_id}`),
@@ -94,6 +150,31 @@ export default async function GraphPage() {
     const [userId, projectId] = pair.split("|");
     addEdge(`profile:${userId}`, `project:${projectId}`);
   }
+
+  // Suggested (soft) edges: items that share a tag. Skip tags used so widely
+  // they'd just add a hairball; connect members pairwise, capped per tag.
+  const MAX_TAG_MEMBERS = 8; // ignore tags on more than this many items
+  const MAX_PAIRS_PER_TAG = 20;
+  for (const members of nodesByTag.values()) {
+    const unique = [...new Set(members)].filter((id) => nodeIds.has(id));
+    if (unique.length < 2 || unique.length > MAX_TAG_MEMBERS) continue;
+    let added = 0;
+    for (let i = 0; i < unique.length && added < MAX_PAIRS_PER_TAG; i++) {
+      for (let j = i + 1; j < unique.length && added < MAX_PAIRS_PER_TAG; j++) {
+        addSoftEdge(unique[i], unique[j], "shared_tag");
+        added++;
+      }
+    }
+  }
+
+  const people = (profiles.data ?? []).map((p) => ({
+    id: p.id,
+    label: p.full_name ?? p.email,
+  }));
+  const projectOptions = (projects.data ?? []).map((p) => ({
+    id: p.id,
+    label: p.name,
+  }));
 
   const name =
     (user.user_metadata.full_name as string | undefined) ??
@@ -107,24 +188,12 @@ export default async function GraphPage() {
         avatarUrl={user.user_metadata.avatar_url as string | undefined}
       />
       <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Graph</h1>
-            <p className="text-sm text-muted-foreground">
-              Everything in the brain and how it connects. Click a node to open it.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            {(Object.keys(TYPE_LABELS) as GraphNode["type"][]).map((type) => (
-              <span key={type} className="flex items-center gap-1.5">
-                <span
-                  className="size-2.5 rounded-full"
-                  style={{ backgroundColor: TYPE_COLORS[type] }}
-                />
-                {TYPE_LABELS[type]}
-              </span>
-            ))}
-          </div>
+        <div className="mb-4">
+          <h1 className="text-2xl font-semibold tracking-tight">Graph</h1>
+          <p className="text-sm text-muted-foreground">
+            Everything in the brain and how it connects. Filter by person or
+            project, toggle types, and click a node to open it.
+          </p>
         </div>
 
         {nodes.length === 0 ? (
@@ -132,7 +201,12 @@ export default async function GraphPage() {
             Nothing to show yet — add projects, notes, or prompts first.
           </p>
         ) : (
-          <GraphView nodes={nodes} edges={edges} />
+          <GraphExplorer
+            nodes={nodes}
+            edges={edges}
+            people={people}
+            projects={projectOptions}
+          />
         )}
       </main>
     </>

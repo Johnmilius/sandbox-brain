@@ -27,7 +27,10 @@ export type EntityType =
   | "prompt"
   | "note"
   | "knowledge_item"
-  | "profile";
+  | "profile"
+  | "agent";
+
+export type AgentStatus = "active" | "archived";
 
 export type Database = {
   public: {
@@ -141,6 +144,7 @@ export type Database = {
           response_notes: string | null;
           ai_tool: string | null;
           rating: number | null;
+          is_favorite: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -153,6 +157,7 @@ export type Database = {
           response_notes?: string | null;
           ai_tool?: string | null;
           rating?: number | null;
+          is_favorite?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -165,6 +170,7 @@ export type Database = {
           response_notes?: string | null;
           ai_tool?: string | null;
           rating?: number | null;
+          is_favorite?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -235,6 +241,48 @@ export type Database = {
           data?: Json;
           url?: string | null;
           file_path?: string | null;
+          project_id?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      agents: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          system_prompt: string | null;
+          model: string | null;
+          tools: string[];
+          status: AgentStatus;
+          project_id: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          system_prompt?: string | null;
+          model?: string | null;
+          tools?: string[];
+          status?: AgentStatus;
+          project_id?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          system_prompt?: string | null;
+          model?: string | null;
+          tools?: string[];
+          status?: AgentStatus;
           project_id?: string | null;
           created_by?: string;
           created_at?: string;
@@ -319,5 +367,6 @@ export type TimeEntry = Database["public"]["Tables"]["time_entries"]["Row"];
 export type Prompt = Database["public"]["Tables"]["prompts"]["Row"];
 export type Note = Database["public"]["Tables"]["notes"]["Row"];
 export type KnowledgeItem = Database["public"]["Tables"]["knowledge_items"]["Row"];
+export type Agent = Database["public"]["Tables"]["agents"]["Row"];
 export type Tag = Database["public"]["Tables"]["tags"]["Row"];
 export type LinkRow = Database["public"]["Tables"]["links"]["Row"];
