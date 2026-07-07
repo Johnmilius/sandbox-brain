@@ -49,7 +49,8 @@ function Dashboard() {
     !Array.isArray(data.projects) ||
     !Array.isArray(data.people) ||
     !Array.isArray(data.activeTimers) ||
-    typeof data.windowStartIso !== "string"
+    typeof data.windowStartIso !== "string" ||
+    typeof data.teamHours !== "number"
   ) {
     return <div className="state">Couldn&apos;t load dashboard data.</div>;
   }

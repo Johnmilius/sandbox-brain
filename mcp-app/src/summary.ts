@@ -117,7 +117,7 @@ export function buildDashboardSummary(
       hours: round2(p.hours),
       color: colorByEmail.get(email)!,
     }))
-    .sort((a, b) => b.hours - a.hours);
+    .sort((a, b) => b.hours - a.hours || a.email.localeCompare(b.email));
 
   const projects: ProjectBar[] = [...hoursByProject.entries()]
     .map(([project, sliceMap]) => {
@@ -128,7 +128,7 @@ export function buildDashboardSummary(
           hours: round2(s.hours),
           color: colorByEmail.get(email)!,
         }))
-        .sort((a, b) => b.hours - a.hours);
+        .sort((a, b) => b.hours - a.hours || a.email.localeCompare(b.email));
       // Sum raw (unrounded) hours per project/team so totals don't drift
       // from adding up already-rounded per-slice/per-person display values.
       const rawTotal = [...sliceMap.values()].reduce((sum, s) => sum + s.hours, 0);
@@ -138,7 +138,7 @@ export function buildDashboardSummary(
         slices,
       };
     })
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => b.total - a.total || a.project.localeCompare(b.project));
 
   const rawTeamHours = [...hoursByPerson.values()].reduce((sum, p) => sum + p.hours, 0);
 
