@@ -41,11 +41,12 @@ function Dashboard() {
   if (isPending) {
     return <div className="state">Loading the week…</div>;
   }
-  if (!output) {
+  const data = output as DashboardData | undefined;
+  // isError tool results carry no structuredContent, so `output` can be a
+  // truthy non-dashboard object — validate the shape, not just truthiness.
+  if (!data || !Array.isArray(data.projects) || !Array.isArray(data.people)) {
     return <div className="state">Couldn&apos;t load dashboard data.</div>;
   }
-
-  const data = output as DashboardData;
   const maxProject = Math.max(...data.projects.map((p) => p.total), 1);
 
   return (
