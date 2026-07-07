@@ -1,1 +1,172 @@
-/* widget styles land in Task 4 */
+:root {
+  --bg: #ffffff;
+  --card: #f7f7f6;
+  --text: #171717;
+  --text-2: #6b6b6b;
+  --border: #e5e5e4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171717;
+    --card: #232322;
+    --text: #fafafa;
+    --text-2: #a3a3a3;
+    --border: #333332;
+  }
+}
+
+.dash {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  padding: 4px 2px;
+}
+
+.dash-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.dash-header h1 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dash-sub {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.kpi {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.kpi-label {
+  font-size: 12px;
+  color: var(--text-2);
+  margin: 0 0 2px;
+}
+
+.kpi-value {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--text-2);
+  margin: 2px 0 0;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.bars {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 48px;
+  align-items: center;
+  gap: 10px;
+}
+
+.bar-name {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-track {
+  display: flex;
+  height: 18px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.bar-slice {
+  height: 100%;
+}
+
+.bar-slice + .bar-slice {
+  border-left: 2px solid var(--bg);
+}
+
+.bar-total {
+  font-size: 12px;
+  color: var(--text-2);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.timers {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.timers-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin: 0 0 6px;
+}
+
+.timer-row {
+  font-size: 13px;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.timer-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1baf7a;
+}
+
+.state {
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-2);
+}
