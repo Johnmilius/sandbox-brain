@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { AppHeader } from "@/components/app-header";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { McpAccess } from "@/components/profile/mcp-access";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ProfilePage() {
@@ -65,6 +66,18 @@ export default async function ProfilePage() {
               initialName={name ?? ""}
               email={user.email ?? ""}
             />
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-base">MCP access</CardTitle>
+            <CardDescription>
+              A personal token so Claude&apos;s MCP server acts as you.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <McpAccess />
           </CardContent>
         </Card>
       </main>
