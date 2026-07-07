@@ -347,6 +347,6 @@ create policy "team full access on links"
 
 insert into public.allowed_emails (email) values
   ('jwmilius@gmail.com')
-  -- , ('teammate2@gmail.com')
+  , ('lukebmoffat@gmail.com')
   -- , ('teammate3@gmail.com')
 on conflict do nothing;
