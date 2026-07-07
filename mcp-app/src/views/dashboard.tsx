@@ -44,7 +44,13 @@ function Dashboard() {
   const data = output as DashboardData | undefined;
   // isError tool results carry no structuredContent, so `output` can be a
   // truthy non-dashboard object — validate the shape, not just truthiness.
-  if (!data || !Array.isArray(data.projects) || !Array.isArray(data.people)) {
+  if (
+    !data ||
+    !Array.isArray(data.projects) ||
+    !Array.isArray(data.people) ||
+    !Array.isArray(data.activeTimers) ||
+    typeof data.windowStartIso !== "string"
+  ) {
     return <div className="state">Couldn&apos;t load dashboard data.</div>;
   }
   const maxProject = Math.max(...data.projects.map((p) => p.total), 1);
