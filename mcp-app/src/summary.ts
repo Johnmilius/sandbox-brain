@@ -64,11 +64,6 @@ export function buildDashboardSummary(
       new Date(r.started_at).getTime() >= windowStart.getTime(),
   );
 
-  const emails = [...new Set(valid.map((r) => r.profiles!.email))].sort();
-  const colorByEmail = new Map(
-    emails.map((email, i) => [email, PERSON_COLORS[i % PERSON_COLORS.length]]),
-  );
-
   const activeTimers: ActiveTimer[] = [];
   const hoursByPerson = new Map<string, { name: string; hours: number }>();
   const hoursByProject = new Map<string, Map<string, { name: string; hours: number }>>();
@@ -107,6 +102,14 @@ export function buildDashboardSummary(
     hoursByProject.set(project, projectMap);
   }
 
+  // Colors are assigned only to people who have counted (completed) hours,
+  // i.e. those who end up in hoursByPerson. A running-timer-only person
+  // shows up in activeTimers and never consumes a color slot.
+  const emails = [...hoursByPerson.keys()].sort();
+  const colorByEmail = new Map(
+    emails.map((email, i) => [email, PERSON_COLORS[i % PERSON_COLORS.length]]),
+  );
+
   const people: PersonSlice[] = [...hoursByPerson.entries()]
     .map(([email, p]) => ({
       email,
@@ -126,17 +129,22 @@ export function buildDashboardSummary(
           color: colorByEmail.get(email)!,
         }))
         .sort((a, b) => b.hours - a.hours);
+      // Sum raw (unrounded) hours per project/team so totals don't drift
+      // from adding up already-rounded per-slice/per-person display values.
+      const rawTotal = [...sliceMap.values()].reduce((sum, s) => sum + s.hours, 0);
       return {
         project,
-        total: round2(slices.reduce((sum, s) => sum + s.hours, 0)),
+        total: round2(rawTotal),
         slices,
       };
     })
     .sort((a, b) => b.total - a.total);
 
+  const rawTeamHours = [...hoursByPerson.values()].reduce((sum, p) => sum + p.hours, 0);
+
   return {
     windowStartIso: windowStart.toISOString(),
-    teamHours: round2(people.reduce((sum, p) => sum + p.hours, 0)),
+    teamHours: round2(rawTeamHours),
     people,
     projects,
     activeTimers,

@@ -106,4 +106,53 @@ describe("buildDashboardSummary", () => {
     );
     expect(data.people[0].hours).toBe(0.33);
   });
+
+  it("does not consume a color slot for a person who only has a running timer", () => {
+    const data = buildDashboardSummary(
+      [
+        row({
+          profiles: { email: "alice@test.com", full_name: "Alice" },
+          ended_at: null,
+        }), // Alice, running timer only, no counted hours
+        row({
+          profiles: { email: "bob@test.com", full_name: "Bob" },
+          started_at: "2026-07-06T09:00:00Z",
+          ended_at: "2026-07-06T10:00:00Z",
+        }), // Bob, 1h completed
+      ],
+      NOW,
+    );
+    expect(data.people).toHaveLength(1);
+    expect(data.people[0]).toMatchObject({ email: "bob@test.com", color: PERSON_COLORS[0] });
+    expect(data.activeTimers).toEqual([
+      { name: "Alice", project: "Acme CRM", startedAt: "2026-07-06T10:00:00Z" },
+    ]);
+  });
+
+  it("sums project total and teamHours from raw hours, not pre-rounded slices", () => {
+    const data = buildDashboardSummary(
+      [
+        row({
+          profiles: { email: "a@test.com", full_name: "A" },
+          started_at: "2026-07-06T09:00:00Z",
+          ended_at: "2026-07-06T09:20:00Z",
+        }),
+        row({
+          profiles: { email: "b@test.com", full_name: "B" },
+          started_at: "2026-07-06T09:00:00Z",
+          ended_at: "2026-07-06T09:20:00Z",
+        }),
+        row({
+          profiles: { email: "c@test.com", full_name: "C" },
+          started_at: "2026-07-06T09:00:00Z",
+          ended_at: "2026-07-06T09:20:00Z",
+        }),
+      ],
+      NOW,
+    );
+    const acme = data.projects.find((p) => p.project === "Acme CRM");
+    expect(acme?.slices.every((s) => s.hours === 0.33)).toBe(true);
+    expect(acme?.total).toBe(1);
+    expect(data.teamHours).toBe(1);
+  });
 });
