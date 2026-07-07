@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:link": "supabase link",
     "db:push": "supabase db push",
-    "db:types": "supabase gen types typescript --linked > src/lib/database.types.ts"
+    "db:types": "supabase gen types typescript --linked > src/lib/database.types.ts",
+    "seed:academy": "tsx scripts/seed-academy.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -39,6 +40,7 @@
     "eslint-config-next": "16.2.10",
     "supabase": "^2.109.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.0",
     "typescript": "^5"
   }
 }

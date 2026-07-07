@@ -28,9 +28,13 @@ export type EntityType =
   | "note"
   | "knowledge_item"
   | "profile"
-  | "agent";
+  | "agent"
+  | "academy_module"
+  | "academy_outcome";
 
 export type AgentStatus = "active" | "archived";
+export type ModuleKind = "course" | "workshop" | "custom";
+export type AcademyStepType = "chat" | "coding_agent" | "video";
 
 export type Database = {
   public: {
@@ -290,6 +294,174 @@ export type Database = {
         };
         Relationships: [];
       };
+      academy_modules: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          description: string | null;
+          kind: ModuleKind;
+          sort_order: number;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          description?: string | null;
+          kind?: ModuleKind;
+          sort_order: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          description?: string | null;
+          kind?: ModuleKind;
+          sort_order?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      academy_steps: {
+        Row: {
+          id: string;
+          module_id: string;
+          step_no: number;
+          title: string;
+          prompt_text: string;
+          step_type: AcademyStepType;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          module_id: string;
+          step_no: number;
+          title: string;
+          prompt_text?: string;
+          step_type?: AcademyStepType;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          module_id?: string;
+          step_no?: number;
+          title?: string;
+          prompt_text?: string;
+          step_type?: AcademyStepType;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      academy_step_progress: {
+        Row: {
+          id: string;
+          user_id: string;
+          step_id: string;
+          completed_at: string;
+          notes: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          step_id: string;
+          completed_at?: string;
+          notes?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          step_id?: string;
+          completed_at?: string;
+          notes?: string | null;
+        };
+        Relationships: [];
+      };
+      academy_outcomes: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          description: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name: string;
+          description?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name?: string;
+          description?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      academy_module_outcomes: {
+        Row: {
+          module_id: string;
+          outcome_id: string;
+        };
+        Insert: {
+          module_id: string;
+          outcome_id: string;
+        };
+        Update: {
+          module_id?: string;
+          outcome_id?: string;
+        };
+        Relationships: [];
+      };
+      academy_outcome_assessments: {
+        Row: {
+          id: string;
+          user_id: string;
+          outcome_id: string;
+          rating: number;
+          confidence: number | null;
+          note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          outcome_id: string;
+          rating: number;
+          confidence?: number | null;
+          note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          outcome_id?: string;
+          rating?: number;
+          confidence?: number | null;
+          note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       tags: {
         Row: { id: string; name: string; created_at: string };
         Insert: { id?: string; name: string; created_at?: string };
@@ -370,3 +542,10 @@ export type KnowledgeItem = Database["public"]["Tables"]["knowledge_items"]["Row
 export type Agent = Database["public"]["Tables"]["agents"]["Row"];
 export type Tag = Database["public"]["Tables"]["tags"]["Row"];
 export type LinkRow = Database["public"]["Tables"]["links"]["Row"];
+export type AcademyModule = Database["public"]["Tables"]["academy_modules"]["Row"];
+export type AcademyStep = Database["public"]["Tables"]["academy_steps"]["Row"];
+export type AcademyStepProgress =
+  Database["public"]["Tables"]["academy_step_progress"]["Row"];
+export type AcademyOutcome = Database["public"]["Tables"]["academy_outcomes"]["Row"];
+export type AcademyOutcomeAssessment =
+  Database["public"]["Tables"]["academy_outcome_assessments"]["Row"];

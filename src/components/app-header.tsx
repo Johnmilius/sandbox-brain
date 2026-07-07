@@ -27,6 +27,7 @@ const NAV_LINKS = [
   { href: "/time", label: "Time" },
   { href: "/prompts", label: "Prompts" },
   { href: "/agents", label: "Agents" },
+  { href: "/academy", label: "Academy" },
   { href: "/notes", label: "Notes" },
   { href: "/brain", label: "Brain" },
   { href: "/graph", label: "Graph" },
