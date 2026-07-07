@@ -1,11 +1,10 @@
 import { supabase } from "./supabase.js";
 import {
   buildDashboardSummary,
+  WEEK_MS,
   type DashboardData,
   type TimeEntryRow,
 } from "./summary.js";
-
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function dashboardHandler(): Promise<{
   structuredContent?: DashboardData;
@@ -23,6 +22,9 @@ export async function dashboardHandler(): Promise<{
 
     if (error) throw new Error(error.message);
 
+    // Assumes profiles/projects embed as single objects: time_entries has exactly
+    // one FK to each (0001_init.sql). A second FK to either would make it an array,
+    // needing a `!user_id`/`!project_id` hint above plus a TimeEntryRow update.
     const summary = buildDashboardSummary(
       (data ?? []) as unknown as TimeEntryRow[],
       new Date(),

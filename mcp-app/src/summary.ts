@@ -40,7 +40,7 @@ export const PERSON_COLORS = [
   "#4a3aa7",
 ];
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+export const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;

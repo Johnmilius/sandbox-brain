@@ -1,16 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const selectMock = vi.fn();
+const { fromMock, selectArgsMock, gteMock, orderMock, selectMock } = vi.hoisted(() => {
+  const selectMock = vi.fn();
+  const gteMock = vi.fn(() => ({ order: selectMock }));
+  const selectArgsMock = vi.fn(() => ({ gte: gteMock }));
+  const fromMock = vi.fn(() => ({ select: selectArgsMock }));
+  const orderMock = selectMock;
+  return { fromMock, selectArgsMock, gteMock, orderMock, selectMock };
+});
 
 vi.mock("./supabase.js", () => ({
   supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        gte: vi.fn(() => ({
-          order: selectMock,
-        })),
-      })),
-    })),
+    from: fromMock,
   },
 }));
 
@@ -19,6 +20,9 @@ import { dashboardHandler } from "./dashboard-tool.js";
 describe("dashboardHandler", () => {
   beforeEach(() => {
     selectMock.mockReset();
+    fromMock.mockClear();
+    selectArgsMock.mockClear();
+    gteMock.mockClear();
   });
 
   it("returns structured dashboard data on success", async () => {
@@ -41,6 +45,13 @@ describe("dashboardHandler", () => {
     expect(result.structuredContent?.projects[0].project).toBe("Acme CRM");
     expect(result.content[0].type).toBe("text");
     expect(JSON.parse(result.content[0].text).teamHours).toBe(2);
+
+    expect(fromMock).toHaveBeenCalledWith("time_entries");
+    expect(selectArgsMock).toHaveBeenCalledWith(
+      "started_at, ended_at, profiles(email, full_name), projects(name)",
+    );
+    expect(gteMock).toHaveBeenCalledWith("started_at", expect.any(String));
+    expect(orderMock).toHaveBeenCalledWith("started_at", { ascending: false });
   });
 
   it("returns isError with a message when the query fails", async () => {
