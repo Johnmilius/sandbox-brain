@@ -22,6 +22,9 @@ export default async function GraphPage() {
     timeEntries,
     taggables,
     tags,
+    academyModules,
+    academySteps,
+    academyProgress,
   ] = await Promise.all([
     supabase.from("projects").select("id, name"),
     supabase.from("notes").select("id, title, author_id"),
@@ -33,6 +36,9 @@ export default async function GraphPage() {
     supabase.from("time_entries").select("user_id, project_id"),
     supabase.from("taggables").select("entity_type, entity_id, tag_id"),
     supabase.from("tags").select("id, name"),
+    supabase.from("academy_modules").select("id, title"),
+    supabase.from("academy_steps").select("id, module_id"),
+    supabase.from("academy_step_progress").select("user_id, step_id"),
   ]);
 
   // node id (`type:id`) -> tag names, for attaching to nodes + shared-tag edges.
@@ -92,6 +98,12 @@ export default async function GraphPage() {
       authorId: a.created_by,
       projectId: a.project_id ?? undefined,
     })),
+    ...(academyModules.data ?? []).map((m) => ({
+      id: `academy_module:${m.id}`,
+      label: m.title,
+      type: "academy_module" as const,
+      url: `/academy/${m.id}`,
+    })),
   ];
   const nodeIds = new Set(nodes.map((n) => n.id));
   for (const n of nodes) n.tags = tagsByNode.get(n.id);
@@ -149,6 +161,22 @@ export default async function GraphPage() {
   for (const pair of worked) {
     const [userId, projectId] = pair.split("|");
     addEdge(`profile:${userId}`, `project:${projectId}`);
+  }
+  // People connect to academy modules they've completed steps in.
+  const moduleByStep = new Map(
+    (academySteps.data ?? []).map((s) => [s.id, s.module_id]),
+  );
+  const studied = new Set(
+    (academyProgress.data ?? [])
+      .map((p) => {
+        const moduleId = moduleByStep.get(p.step_id);
+        return moduleId ? `${p.user_id}|${moduleId}` : null;
+      })
+      .filter((pair): pair is string => pair !== null),
+  );
+  for (const pair of studied) {
+    const [userId, moduleId] = pair.split("|");
+    addEdge(`profile:${userId}`, `academy_module:${moduleId}`);
   }
 
   // Suggested (soft) edges: items that share a tag. Skip tags used so widely

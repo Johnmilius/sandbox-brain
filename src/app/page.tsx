@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   Clock,
+  GraduationCap,
   MessageSquareText,
   NotebookPen,
   Boxes,
@@ -47,6 +48,12 @@ const SECTIONS = [
     description: "Reusable code, decisions, docs, contacts, and past projects.",
     icon: Boxes,
     href: "/brain",
+  },
+  {
+    title: "Academy",
+    description: "Work through the Sandbox curriculum and track competencies.",
+    icon: GraduationCap,
+    href: "/academy",
   },
 ];
 

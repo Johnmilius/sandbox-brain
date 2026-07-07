@@ -14,7 +14,8 @@ export type GraphNodeType =
   | "prompt"
   | "knowledge_item"
   | "profile"
-  | "agent";
+  | "agent"
+  | "academy_module";
 
 export type GraphNode = {
   id: string;
@@ -45,6 +46,7 @@ export const TYPE_COLORS: Record<GraphNodeType, string> = {
   knowledge_item: "#a855f7",
   profile: "#94a3b8",
   agent: "#ec4899",
+  academy_module: "#14b8a6",
 };
 
 export const TYPE_LABELS: Record<GraphNodeType, string> = {
@@ -54,6 +56,7 @@ export const TYPE_LABELS: Record<GraphNodeType, string> = {
   knowledge_item: "Knowledge",
   profile: "People",
   agent: "Agents",
+  academy_module: "Academy",
 };
 
 type PositionedNode = GraphNode & { x?: number; y?: number };
