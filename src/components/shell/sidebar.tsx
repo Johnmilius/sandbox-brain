@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TimerChip } from "@/components/shell/timer-chip";
 import type { TimeEntry } from "@/lib/database.types";
 
 export type NavBadges = {
@@ -53,11 +54,10 @@ type SidebarProps = {
   badges: NavBadges;
   name: string;
   initials: string;
-  // Reserved for the live timer chip (wired up alongside realtime presence).
   runningEntry: RunningEntry | null;
 };
 
-export function Sidebar({ badges, name, initials }: SidebarProps) {
+export function Sidebar({ badges, name, initials, runningEntry }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -117,6 +117,8 @@ export function Sidebar({ badges, name, initials }: SidebarProps) {
       </nav>
 
       <div className="mt-2 flex flex-col gap-2">
+        <TimerChip runningEntry={runningEntry} />
+
         <div className="flex items-center gap-2 px-1 py-1">
           <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#e7e5e0] text-[10px] font-medium text-[#57534e]">
             {initials}
