@@ -1,20 +1,13 @@
 import { redirect } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Table,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AppHeader } from "@/components/app-header";
+import { EmptyState } from "@/components/empty-state";
 import { TimerCard } from "@/components/time/timer-card";
 import { ManualEntryDialog } from "@/components/time/manual-entry-dialog";
 import { DailyHoursChart } from "@/components/time/daily-hours-chart";
@@ -130,6 +123,8 @@ export default async function TimePage({
         month: "short",
         day: "numeric",
       }),
+      dayLetter: d.toLocaleDateString(undefined, { weekday: "narrow" }),
+      isToday: dayKey(d) === dayKey(now),
     };
   });
   const msByDay = new Map(days.map((d) => [d.key, 0]));
@@ -144,6 +139,14 @@ export default async function TimePage({
     fullLabel: d.fullLabel,
     ms: msByDay.get(d.key)!,
   }));
+  // Display-only slice of the same 14-day dataset for the week mini bar
+  // chart (spec calls for 7 day columns) — no additional query, no change
+  // to what's tracked.
+  const weekBars = days.slice(-7).map((d) => ({
+    ...d,
+    ms: msByDay.get(d.key)!,
+  }));
+  const weekBarsMax = Math.max(1, ...weekBars.map((d) => d.ms));
 
   // Session activity: items each person created *during* one of their entries.
   // Fetch once over the window the displayed entries span, then bucket per entry.
@@ -212,169 +215,242 @@ export default async function TimePage({
     label: p.full_name ?? p.email,
   }));
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
-
   return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
-      />
-      <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Time</h1>
-            <p className="text-sm text-muted-foreground">
-              Track work with a live timer, or backfill sessions manually.
-            </p>
+    <main className="mx-auto w-full max-w-[860px] flex-1 px-[34px] py-[30px]">
+      <div className="mb-7 flex items-start justify-between gap-4">
+        <div>
+          <h1
+            className="font-display text-[26px] text-[var(--v2-ink-1)]"
+            style={{ letterSpacing: "-0.01em" }}
+          >
+            Time
+          </h1>
+          <p className="mt-1 text-[13.5px] text-[var(--v2-ink-2)]">
+            Team logged {formatDuration(teamMs)} this week · you{" "}
+            {formatDuration(myMs)}.
+          </p>
+        </div>
+        <ManualEntryDialog
+          projects={activeProjects}
+          trigger={
+            <Button
+              variant="outline"
+              className="rounded-full border-[#e2ddd6] bg-white px-4 text-[var(--v2-ink-1)] hover:bg-[#f6f4f1]"
+            >
+              <Plus className="size-4" />
+              Log time
+            </Button>
+          }
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <TimerCard
+          projects={activeProjects}
+          runningEntry={
+            running
+              ? {
+                  ...running,
+                  projectName:
+                    projectById.get(running.project_id)?.name ?? "a project",
+                }
+              : null
+          }
+        />
+
+        <div
+          className="rounded-[13px] bg-white"
+          style={{ border: "1px solid #ededeb", padding: "20px 22px" }}
+        >
+          <p className="font-mono-label">Last 7 days</p>
+          <div className="mt-2 text-3xl font-semibold text-[var(--v2-ink-1)] tabular-nums">
+            {formatDuration(myMs)}
           </div>
-          <ManualEntryDialog
-            projects={activeProjects}
-            trigger={
-              <Button variant="outline">
-                <Plus className="size-4" />
-                Log time
-              </Button>
-            }
-          />
+          <p className="mt-1 text-[13px] text-[var(--v2-ink-2)]">
+            you · {formatDuration(teamMs)} as a team
+          </p>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          <TimerCard
-            projects={activeProjects}
-            runningEntry={
-              running
-                ? {
-                    ...running,
-                    projectName:
-                      projectById.get(running.project_id)?.name ?? "a project",
-                  }
-                : null
-            }
-          />
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Last 7 days</CardTitle>
-              <CardDescription>Completed sessions only</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-1">
-              <div className="text-3xl font-semibold">{formatDuration(myMs)}</div>
-              <p className="text-sm text-muted-foreground">
-                you · {formatDuration(teamMs)} as a team
+        <div
+          className="rounded-[13px] bg-white"
+          style={{ border: "1px solid #ededeb", padding: "20px 22px" }}
+        >
+          <p className="font-mono-label">Top projects (7d)</p>
+          <div className="mt-3 flex flex-col gap-2">
+            {topProjects.length === 0 && (
+              <p className="text-[13px] text-[var(--v2-ink-3)]">
+                No time logged yet this week.
               </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Top projects (7d)</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              {topProjects.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No time logged yet this week.
-                </p>
-              )}
-              {topProjects.map(([projectId, ms]) => (
-                <div key={projectId} className="flex items-center justify-between text-sm">
-                  <span className="truncate">
-                    {projectById.get(projectId)?.name ?? "Unknown"}
-                  </span>
-                  <span className="font-medium tabular-nums">
-                    {formatDuration(ms)}
-                  </span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+            )}
+            {topProjects.map(([projectId, ms]) => (
+              <div key={projectId} className="flex items-center justify-between text-[13px]">
+                <span className="truncate text-[var(--v2-ink-1)]">
+                  {projectById.get(projectId)?.name ?? "Unknown"}
+                </span>
+                <span className="font-mono text-[12px] text-[var(--v2-ink-2)] tabular-nums">
+                  {formatDuration(ms)}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">Daily hours</CardTitle>
-              <CardDescription>
-                Whole team, last 14 days · completed sessions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {teamMs === 0 && chartData.every((d) => d.ms === 0) ? (
-                <p className="text-sm text-muted-foreground">
-                  No time logged in the last two weeks yet.
-                </p>
-              ) : (
-                <DailyHoursChart data={chartData} />
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">By person (7d)</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {perPerson.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No time logged yet this week.
-                </p>
-              )}
-              {perPerson.map(([userId, ms]) => {
-                const profile = profileById.get(userId);
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <div
+          className="rounded-[13px] bg-white lg:col-span-2"
+          style={{ border: "1px solid #ededeb", padding: "20px 22px" }}
+        >
+          <p className="font-mono-label">This week</p>
+          <p className="mt-1 mb-4 text-[13px] text-[var(--v2-ink-2)]">
+            Whole team, daily totals · completed sessions
+          </p>
+          {teamMs === 0 && weekBars.every((d) => d.ms === 0) ? (
+            <p className="text-[13px] text-[var(--v2-ink-3)]">
+              No time logged this week yet.
+            </p>
+          ) : (
+            <div className="flex items-end gap-2" style={{ height: 88 }}>
+              {weekBars.map((d) => {
+                const barHeight = Math.max(
+                  2,
+                  Math.round((d.ms / weekBarsMax) * 66),
+                );
                 return (
-                  <div key={userId} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="truncate">
-                        {profile?.full_name ?? profile?.email ?? "Unknown"}
-                      </span>
-                      <span className="font-medium tabular-nums">
-                        {formatDuration(ms)}
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    key={d.key}
+                    className="flex flex-1 flex-col items-center gap-1.5"
+                    title={`${d.fullLabel}: ${formatDuration(d.ms)}`}
+                  >
+                    <span className="font-mono text-[9px] text-[var(--v2-ink-3)] tabular-nums">
+                      {d.ms > 0 ? formatDuration(d.ms) : ""}
+                    </span>
+                    <div
+                      className="flex w-full flex-1 items-end"
+                      style={{ height: 66 }}
+                    >
                       <div
-                        className="h-full rounded-full bg-primary/70"
-                        style={{ width: `${(ms / maxPersonMs) * 100}%` }}
+                        className="w-full rounded-t-[3px]"
+                        style={{
+                          height: barHeight,
+                          backgroundColor: d.isToday ? "#1c1c1f" : "#e7e5e0",
+                        }}
                       />
                     </div>
+                    <span
+                      className="font-mono text-[9.5px] tabular-nums"
+                      style={{
+                        color: d.isToday
+                          ? "var(--v2-ink-1)"
+                          : "var(--v2-ink-3)",
+                      }}
+                    >
+                      {d.dayLetter}
+                    </span>
                   </div>
                 );
               })}
-            </CardContent>
-          </Card>
+            </div>
+          )}
         </div>
 
-        <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Recent entries</h2>
-          <TimePeopleFilter people={peopleOptions} />
-        </div>
-        {entries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {who
-              ? "No entries for this person yet."
-              : "Nothing logged yet. Start the timer or log time manually."}
-          </p>
-        ) : (
-          <div className="overflow-x-auto rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Who</TableHead>
-                  <TableHead>When</TableHead>
-                  <TableHead className="text-right">Duration</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <SessionTable entries={sessionEntries} />
-            </Table>
+        <div
+          className="rounded-[13px] bg-white"
+          style={{ border: "1px solid #ededeb", padding: "20px 22px" }}
+        >
+          <p className="font-mono-label">By person (7d)</p>
+          <div className="mt-3 flex flex-col gap-3">
+            {perPerson.length === 0 && (
+              <p className="text-[13px] text-[var(--v2-ink-3)]">
+                No time logged yet this week.
+              </p>
+            )}
+            {perPerson.map(([userId, ms]) => {
+              const profile = profileById.get(userId);
+              return (
+                <div key={userId} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between text-[13px]">
+                    <span className="truncate text-[var(--v2-ink-1)]">
+                      {profile?.full_name ?? profile?.email ?? "Unknown"}
+                    </span>
+                    <span className="font-mono text-[12px] text-[var(--v2-ink-2)] tabular-nums">
+                      {formatDuration(ms)}
+                    </span>
+                  </div>
+                  <div
+                    className="h-1.5 w-full overflow-hidden rounded-full"
+                    style={{ backgroundColor: "#f4f2ef" }}
+                  >
+                    <div
+                      className="h-full rounded-full bg-[#1c1c1f]"
+                      style={{ width: `${(ms / maxPersonMs) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
-      </main>
-    </>
+        </div>
+      </div>
+
+      {/* Kept for reference in the "Daily hours" 14-day view — same data,
+          longer window; visually secondary to the week bar chart above. */}
+      <details className="mt-4">
+        <summary className="font-mono-label cursor-pointer select-none">
+          Daily hours · last 14 days
+        </summary>
+        <div
+          className="mt-2 rounded-[13px] bg-white"
+          style={{ border: "1px solid #ededeb", padding: "20px 22px" }}
+        >
+          {teamMs === 0 && chartData.every((d) => d.ms === 0) ? (
+            <p className="text-[13px] text-[var(--v2-ink-3)]">
+              No time logged in the last two weeks yet.
+            </p>
+          ) : (
+            <DailyHoursChart data={chartData} />
+          )}
+        </div>
+      </details>
+
+      <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-display text-[18px] text-[var(--v2-ink-1)]">
+          Recent entries
+        </h2>
+        <TimePeopleFilter people={peopleOptions} />
+      </div>
+      {entries.length === 0 ? (
+        <EmptyState
+          icon={Clock}
+          title="Nothing logged yet"
+          description={
+            who
+              ? "No entries for this person yet."
+              : "Start the timer or log time manually to see entries here."
+          }
+        />
+      ) : (
+        <div
+          className="overflow-x-auto rounded-[13px] bg-white"
+          style={{ border: "1px solid #ededeb" }}
+        >
+          <Table>
+            <TableHeader>
+              <TableRow style={{ borderColor: "#f4f2ef" }}>
+                <TableHead className="font-mono-label h-9">Project</TableHead>
+                <TableHead className="font-mono-label h-9">Who</TableHead>
+                <TableHead className="font-mono-label h-9">When</TableHead>
+                <TableHead className="font-mono-label h-9 text-right">
+                  Duration
+                </TableHead>
+                <TableHead className="font-mono-label h-9">Notes</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <SessionTable entries={sessionEntries} />
+          </Table>
+        </div>
+      )}
+    </main>
   );
 }
