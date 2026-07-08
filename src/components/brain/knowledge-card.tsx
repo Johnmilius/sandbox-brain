@@ -12,14 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -51,10 +44,22 @@ const KIND_ICONS: Record<KnowledgeKind, typeof Code2> = {
   project_archive: Archive,
 };
 
-const OUTCOME_STYLES: Record<string, string> = {
-  worked: "bg-green-500/15 text-green-700 dark:text-green-400",
-  failed: "bg-red-500/15 text-red-700 dark:text-red-400",
-  mixed: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+const OUTCOME_STYLES: Record<string, React.CSSProperties> = {
+  worked: {
+    backgroundColor: "var(--v2-success-bg)",
+    color: "var(--v2-success-text)",
+    border: "1px solid var(--v2-success-border)",
+  },
+  failed: {
+    backgroundColor: "var(--v2-warning-bg)",
+    color: "var(--v2-danger)",
+    border: "1px solid var(--v2-warning-border)",
+  },
+  mixed: {
+    backgroundColor: "var(--v2-warning-bg)",
+    color: "var(--v2-warning-text-deep)",
+    border: "1px solid var(--v2-warning-border)",
+  },
 };
 
 type KnowledgeCardProps = {
@@ -96,11 +101,17 @@ export function KnowledgeCard({
   }
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="flex-1">
+    <div
+      className="flex flex-col gap-3 rounded-[13px] bg-white p-4"
+      style={{ border: "1px solid #ededeb" }}
+    >
+      <div className="flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
+            <span
+              className="flex size-7 shrink-0 items-center justify-center rounded-[7px] text-[var(--v2-ink-2)]"
+              style={{ backgroundColor: "#f4f2ef" }}
+            >
               <Icon className="size-3.5" />
             </span>
             <Dialog>
@@ -108,7 +119,7 @@ export function KnowledgeCard({
                 render={
                   <button
                     type="button"
-                    className="truncate text-left font-medium leading-snug hover:underline"
+                    className="truncate text-left text-[14px] font-semibold leading-snug text-[var(--v2-ink-1)] hover:underline"
                   />
                 }
               >
@@ -135,7 +146,8 @@ export function KnowledgeCard({
                   )}
                   {data.outcome && (
                     <span
-                      className={`w-fit rounded-md px-2 py-0.5 text-xs font-medium capitalize ${OUTCOME_STYLES[data.outcome] ?? ""}`}
+                      className="w-fit rounded-full px-2 py-0.5 text-xs font-medium capitalize"
+                      style={OUTCOME_STYLES[data.outcome]}
                     >
                       {data.outcome}
                     </span>
@@ -203,27 +215,32 @@ export function KnowledgeCard({
           </div>
           {data.outcome && (
             <span
-              className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium capitalize ${OUTCOME_STYLES[data.outcome] ?? ""}`}
+              className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-medium capitalize"
+              style={OUTCOME_STYLES[data.outcome]}
             >
               {data.outcome}
             </span>
           )}
         </div>
         {item.description && (
-          <CardDescription className="line-clamp-2">
+          <p className="mt-2 line-clamp-2 text-[13px] text-[var(--v2-ink-2)]">
             {item.description}
-          </CardDescription>
+          </p>
         )}
-      </CardHeader>
-      <CardContent className="flex items-center justify-between gap-2 pt-0">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <Badge variant="outline">{KIND_LABELS[item.kind]}</Badge>
-          {projectName && <Badge variant="outline">{projectName}</Badge>}
-          {tags.map((tag) => (
-            <Badge key={tag} variant="secondary">
-              {tag}
-            </Badge>
-          ))}
+      </div>
+      <div
+        className="flex items-center justify-between gap-2 pt-2"
+        style={{ borderTop: "1px solid #f4f2ef" }}
+      >
+        <div className="min-w-0">
+          <p className="font-mono truncate text-[10px] text-[var(--v2-ink-3)]">
+            {[KIND_LABELS[item.kind], projectName].filter(Boolean).join(" · ")}
+          </p>
+          {tags.length > 0 && (
+            <p className="font-mono truncate text-[10.5px] text-[var(--v2-ink-label)]">
+              {tags.map((t) => `#${t}`).join(" ")}
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 items-center">
           <KnowledgeFormDialog
@@ -232,7 +249,12 @@ export function KnowledgeCard({
             projects={projects}
             tagSuggestions={tagSuggestions}
             trigger={
-              <Button variant="ghost" size="icon-sm" aria-label="Edit item">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Edit item"
+                className="text-[var(--v2-ink-3)] hover:bg-[#efece7] hover:text-[var(--v2-ink-1)]"
+              >
                 <Pencil className="size-3.5" />
               </Button>
             }
@@ -243,7 +265,7 @@ export function KnowledgeCard({
             onDelete={() => deleteKnowledgeItem(item.id)}
           />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

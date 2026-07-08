@@ -1,14 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Boxes, Plus } from "lucide-react";
+import { Boxes, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { AppHeader } from "@/components/app-header";
+import { EmptyState } from "@/components/empty-state";
 import { KnowledgeCard } from "@/components/brain/knowledge-card";
 import {
   KIND_LABELS,
@@ -26,6 +20,12 @@ const KIND_FILTERS: { value: KnowledgeKind | "all"; label: string }[] = [
   { value: "document", label: "Documents" },
   { value: "contact", label: "Contacts" },
   { value: "project_archive", label: "Archives" },
+];
+
+const EXAMPLE_QUESTIONS = [
+  "How do we run a launch?",
+  "Why did we pick our stack?",
+  "What's our voice?",
 ];
 
 export default async function BrainPage({
@@ -60,39 +60,75 @@ export default async function BrainPage({
   const allTagNames = (tagsRes.data ?? []).map((t) => t.name);
   const projectById = new Map(projects.map((p) => [p.id, p]));
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
-
   return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
-      />
-      <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">The Brain</h1>
-            <p className="text-sm text-muted-foreground">
-              Reusable knowledge from everything we&apos;ve built — searchable
-              forever.
-            </p>
-          </div>
-          <KnowledgeFormDialog
-            projects={projects}
-            tagSuggestions={allTagNames}
-            trigger={
-              <Button>
-                <Plus className="size-4" />
-                Add item
-              </Button>
-            }
-          />
+    <main className="mx-auto w-full max-w-[840px] flex-1 px-[34px] py-[30px]">
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1
+            className="font-display text-[26px] text-[var(--v2-ink-1)]"
+            style={{ letterSpacing: "-0.01em" }}
+          >
+            The brain
+          </h1>
+          <p className="mt-1 text-[13.5px] text-[var(--v2-ink-2)]">
+            The team&apos;s canon — durable knowledge promoted out of the daily
+            churn, kept current.
+          </p>
         </div>
+        <KnowledgeFormDialog
+          projects={projects}
+          tagSuggestions={allTagNames}
+          trigger={
+            <Button className="rounded-full bg-[#1c1c1f] px-4 text-white hover:bg-[#1c1c1f]/85">
+              <Plus className="size-4" />
+              Add item
+            </Button>
+          }
+        />
+      </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-1">
+      {/* "Ask the brain" search card → routes to the existing /search page. */}
+      <div
+        className="mb-6 rounded-[13px] px-5 py-4"
+        style={{
+          background: "linear-gradient(180deg,#faf8ff,#fff)",
+          border: "1px solid #e6ddf5",
+        }}
+      >
+        <form action="/search" method="get" className="flex items-center gap-2">
+          <Sparkles
+            className="size-4 shrink-0"
+            style={{ color: "var(--v2-accent-purple)" }}
+          />
+          <input
+            type="search"
+            name="q"
+            placeholder="Ask the brain anything…"
+            className="h-8 flex-1 bg-transparent text-[13px] text-[var(--v2-ink-1)] outline-none placeholder:text-[var(--v2-ink-3)]"
+          />
+          <span
+            className="shrink-0 rounded border px-[5px] py-[1px] font-mono text-[9.5px] text-[var(--v2-ink-3)]"
+            style={{ borderColor: "#e2ddd6" }}
+          >
+            ⌘K
+          </span>
+        </form>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {EXAMPLE_QUESTIONS.map((question) => (
+            <Link
+              key={question}
+              href={`/search?q=${encodeURIComponent(question)}`}
+              className="rounded-full px-3 py-1 text-[11.5px] text-[var(--v2-ink-2)] transition-colors hover:text-[var(--v2-ink-1)]"
+              style={{ backgroundColor: "#f4f2ef" }}
+            >
+              {question}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-1.5">
           {KIND_FILTERS.map((f) => {
             const active = (kind ?? "all") === f.value;
             return (
@@ -100,8 +136,10 @@ export default async function BrainPage({
                 key={f.value}
                 href={f.value === "all" ? "/brain" : `/brain?kind=${f.value}`}
                 className={cn(
-                  "rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground",
-                  active && "bg-muted font-medium text-foreground",
+                  "rounded-full px-3 py-1 text-[11.5px] transition-colors",
+                  active
+                    ? "bg-[#1c1c1f] font-medium text-white"
+                    : "bg-[#f4f2ef] text-[var(--v2-ink-2)] hover:text-[var(--v2-ink-1)]",
                 )}
               >
                 {f.label}
@@ -109,41 +147,40 @@ export default async function BrainPage({
             );
           })}
         </div>
+        <p className="font-mono text-[10px] text-[var(--v2-ink-3)] tabular-nums">
+          {items.length} {kind && kind !== "all" ? "matching" : "canon"}{" "}
+          {items.length === 1 ? "entry" : "entries"}
+        </p>
+      </div>
 
-        {items.length === 0 ? (
-          <Card className="border-dashed">
-            <CardHeader className="items-center text-center">
-              <Boxes className="mx-auto size-8 text-muted-foreground" />
-              <CardTitle>
-                {kind && kind !== "all"
-                  ? `No ${KIND_LABELS[kind as KnowledgeKind]?.toLowerCase() ?? "matching"} items yet`
-                  : "The brain is empty"}
-              </CardTitle>
-              <CardDescription>
-                Save code snippets, decisions, documents, contacts, and whole
-                project archives so future-you can reuse them.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {items.map((item) => (
-              <KnowledgeCard
-                key={item.id}
-                item={item}
-                tags={itemTags.get(item.id) ?? []}
-                projectName={
-                  item.project_id
-                    ? (projectById.get(item.project_id)?.name ?? null)
-                    : null
-                }
-                projects={projects}
-                tagSuggestions={allTagNames}
-              />
-            ))}
-          </div>
-        )}
-      </main>
-    </>
+      {items.length === 0 ? (
+        <EmptyState
+          icon={Boxes}
+          title={
+            kind && kind !== "all"
+              ? `No ${KIND_LABELS[kind as KnowledgeKind]?.toLowerCase() ?? "matching"} items yet`
+              : "The brain is empty"
+          }
+          description="Save code snippets, decisions, documents, contacts, and whole project archives so future-you can reuse them."
+        />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {items.map((item) => (
+            <KnowledgeCard
+              key={item.id}
+              item={item}
+              tags={itemTags.get(item.id) ?? []}
+              projectName={
+                item.project_id
+                  ? (projectById.get(item.project_id)?.name ?? null)
+                  : null
+              }
+              projects={projects}
+              tagSuggestions={allTagNames}
+            />
+          ))}
+        </div>
+      )}
+    </main>
   );
 }
