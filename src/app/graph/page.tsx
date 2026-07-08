@@ -18,6 +18,7 @@ export default async function GraphPage() {
     knowledge,
     profiles,
     agents,
+    ideas,
     links,
     timeEntries,
     taggables,
@@ -32,6 +33,7 @@ export default async function GraphPage() {
     supabase.from("knowledge_items").select("id, title, project_id, created_by"),
     supabase.from("profiles").select("id, full_name, email"),
     supabase.from("agents").select("id, name, project_id, created_by"),
+    supabase.from("ideas").select("id, title, created_by, promoted_project_id"),
     supabase.from("links").select("source_type, source_id, target_type, target_id"),
     supabase.from("time_entries").select("user_id, project_id"),
     supabase.from("taggables").select("entity_type, entity_id, tag_id"),
@@ -104,6 +106,13 @@ export default async function GraphPage() {
       type: "academy_module" as const,
       url: `/academy/${m.id}`,
     })),
+    ...(ideas.data ?? []).map((i) => ({
+      id: `idea:${i.id}`,
+      label: i.title,
+      type: "idea" as const,
+      url: `/ideas/${i.id}`,
+      authorId: i.created_by,
+    })),
   ];
   const nodeIds = new Set(nodes.map((n) => n.id));
   for (const n of nodes) n.tags = tagsByNode.get(n.id);
@@ -153,6 +162,10 @@ export default async function GraphPage() {
   for (const a of agents.data ?? []) {
     if (a.project_id) addEdge(`agent:${a.id}`, `project:${a.project_id}`);
     if (a.created_by) addEdge(`profile:${a.created_by}`, `agent:${a.id}`);
+  }
+  for (const i of ideas.data ?? []) {
+    if (i.created_by) addEdge(`profile:${i.created_by}`, `idea:${i.id}`);
+    if (i.promoted_project_id) addEdge(`idea:${i.id}`, `project:${i.promoted_project_id}`);
   }
   // People connect to projects they've logged time on.
   const worked = new Set(

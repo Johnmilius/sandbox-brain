@@ -81,3 +81,14 @@ Real ambiguity in *how* to build it — data model decisions, sync/consistency c
 **14.** *(Long-term goal, not now)* Dynamic phone view accessibility — just the essentials like logging time, with in-depth usage reserved for desktop.
 
 **16.** Business management tooling for our marketing friend — code/prompt tracking exists for devs, but he may want to track networking, marketing ideas, etc. *(Needs a requirements conversation before becoming an engineering ticket.)*
+
+
+
+
+7/6:
+
+1. tickiting system to orginize who is assigned to what data. Also to be able ot identify conflicting race conditions easily amosngt different tickets to be worked on for most effecient flow. 
+
+2. whe  reviewing a project metrics pull up like time spent links to other parts of the brain etc. also seeing a the github tree off merges etc. maybe a heaetmap of edits and changes etc. 
+
+3. 

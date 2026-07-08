@@ -30,11 +30,26 @@ export type EntityType =
   | "profile"
   | "agent"
   | "academy_module"
-  | "academy_outcome";
+  | "academy_outcome"
+  | "idea";
 
 export type AgentStatus = "active" | "archived";
 export type ModuleKind = "course" | "workshop" | "custom";
 export type AcademyStepType = "chat" | "coding_agent" | "video";
+export type IdeaVerdict = "strong" | "conditional" | "pass";
+export type IdeaStatus = "draft" | "validating" | "promoted" | "archived";
+export type IdeaScores = Partial<
+  Record<
+    | "problem"
+    | "market"
+    | "revenue"
+    | "moat"
+    | "distribution"
+    | "build"
+    | "team_fit",
+    number
+  >
+>;
 
 export type Database = {
   public: {
@@ -486,6 +501,63 @@ export type Database = {
         };
         Relationships: [];
       };
+      ideas: {
+        Row: {
+          id: string;
+          title: string;
+          tagline: string | null;
+          problem: string | null;
+          customer: string | null;
+          solution: string | null;
+          revenue_model: string | null;
+          stack_notes: string | null;
+          verdict: IdeaVerdict | null;
+          status: IdeaStatus;
+          scores: IdeaScores;
+          source_url: string | null;
+          promoted_project_id: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          tagline?: string | null;
+          problem?: string | null;
+          customer?: string | null;
+          solution?: string | null;
+          revenue_model?: string | null;
+          stack_notes?: string | null;
+          verdict?: IdeaVerdict | null;
+          status?: IdeaStatus;
+          scores?: IdeaScores;
+          source_url?: string | null;
+          promoted_project_id?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          tagline?: string | null;
+          problem?: string | null;
+          customer?: string | null;
+          solution?: string | null;
+          revenue_model?: string | null;
+          stack_notes?: string | null;
+          verdict?: IdeaVerdict | null;
+          status?: IdeaStatus;
+          scores?: IdeaScores;
+          source_url?: string | null;
+          promoted_project_id?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       links: {
         Row: {
           id: string;
@@ -526,6 +598,17 @@ export type Database = {
         Args: Record<string, never>;
         Returns: boolean;
       };
+      find_similar_ideas: {
+        Args: { p_idea_id: string; p_limit?: number };
+        Returns: {
+          id: string;
+          title: string;
+          tagline: string | null;
+          verdict: IdeaVerdict | null;
+          status: IdeaStatus;
+          rank: number;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
@@ -540,6 +623,7 @@ export type Prompt = Database["public"]["Tables"]["prompts"]["Row"];
 export type Note = Database["public"]["Tables"]["notes"]["Row"];
 export type KnowledgeItem = Database["public"]["Tables"]["knowledge_items"]["Row"];
 export type Agent = Database["public"]["Tables"]["agents"]["Row"];
+export type Idea = Database["public"]["Tables"]["ideas"]["Row"];
 export type Tag = Database["public"]["Tables"]["tags"]["Row"];
 export type LinkRow = Database["public"]["Tables"]["links"]["Row"];
 export type AcademyModule = Database["public"]["Tables"]["academy_modules"]["Row"];
