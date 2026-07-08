@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { AppHeader } from "@/components/app-header";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { createClient } from "@/lib/supabase/server";
 import { rewriteWikiLinks } from "@/lib/wiki-links";
@@ -46,52 +45,55 @@ export default async function NotePage({
     .map((l) => ({ id: l.source_id, title: titleById.get(l.source_id) }))
     .filter((l): l is { id: string; title: string } => Boolean(l.title));
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
-
   return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
+    <main
+      className="mx-auto w-full max-w-[680px] flex-1"
+      style={{ padding: "34px 40px" }}
+    >
+      <Link
+        href="/notes"
+        className="mb-5 inline-flex items-center gap-1 text-[12.5px] text-[var(--v2-ink-3)] transition-colors hover:text-[var(--v2-ink-1)]"
+      >
+        <ArrowLeft className="size-3.5" />
+        All notes
+      </Link>
+
+      <NoteEditor
+        note={note}
+        renderedBody={renderedBody}
+        startInEdit={edit === "1"}
       />
-      <main className="mx-auto w-full max-w-3xl flex-1 p-4 sm:p-6">
-        <Link
-          href="/notes"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          All notes
-        </Link>
 
-        <NoteEditor
-          note={note}
-          renderedBody={renderedBody}
-          startInEdit={edit === "1"}
-        />
-
-        {backlinks.length > 0 && (
-          <div className="mt-10 border-t pt-4">
-            <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">
-              Linked from
-            </p>
-            <ul className="flex flex-col gap-1">
-              {backlinks.map((b) => (
-                <li key={b.id}>
-                  <Link
-                    href={`/notes/${b.id}`}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    {b.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+      <div className="mt-10 border-t pt-5" style={{ borderColor: "#ededeb" }}>
+        <p className="font-mono-label mb-3">◍ Linked from</p>
+        {backlinks.length === 0 ? (
+          <p className="text-[12.5px] text-[var(--v2-ink-4)]">
+            No other notes link here yet.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {backlinks.map((b) => (
+              <Link
+                key={b.id}
+                href={`/notes/${b.id}`}
+                className="block rounded-[10px] bg-[var(--v2-rail-bg)] px-3.5 py-2.5 text-[12.5px] font-medium text-[var(--v2-ink-1)] transition-colors hover:bg-[#f6f4f1]"
+                style={{ border: "1px solid #ededeb" }}
+              >
+                {b.title}
+              </Link>
+            ))}
           </div>
         )}
-      </main>
-    </>
+        <p className="mt-5">
+          <Link
+            href="/graph"
+            className="text-[12.5px] transition-colors"
+            style={{ color: "var(--v2-accent-purple)" }}
+          >
+            Open this note in the graph →
+          </Link>
+        </p>
+      </div>
+    </main>
   );
 }

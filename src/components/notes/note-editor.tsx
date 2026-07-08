@@ -47,9 +47,19 @@ export function NoteEditor({ note, renderedBody, startInEdit }: NoteEditorProps)
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">{note.title}</h1>
+          <h1
+            className="font-display text-[30px] leading-tight text-[var(--v2-ink-1)]"
+            style={{ letterSpacing: "-0.01em" }}
+          >
+            {note.title}
+          </h1>
           <div className="flex shrink-0 items-center gap-1">
-            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditing(true)}
+              className="rounded-full border-[#e2ddd6] bg-white text-[var(--v2-ink-1)] hover:bg-[#f6f4f1]"
+            >
               <Pencil className="size-3.5" />
               Edit
             </Button>
@@ -63,11 +73,13 @@ export function NoteEditor({ note, renderedBody, startInEdit }: NoteEditorProps)
           </div>
         </div>
         {note.body.trim() === "" ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[13px] text-[var(--v2-ink-3)]">
             Empty note — hit Edit to start writing. Use [[Another Note]] to link.
           </p>
         ) : (
-          <MarkdownView markdown={renderedBody} />
+          <div className="text-[15px] leading-[1.85] text-[var(--v2-ink-1)]">
+            <MarkdownView markdown={renderedBody} />
+          </div>
         )}
       </div>
     );
@@ -79,10 +91,15 @@ export function NoteEditor({ note, renderedBody, startInEdit }: NoteEditorProps)
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="text-lg font-semibold"
+          className="font-display border-none px-0 !text-[26px] leading-tight shadow-none focus-visible:ring-0"
         />
         <div className="flex shrink-0 items-center gap-1">
-          <Button size="sm" onClick={onSave} disabled={pending}>
+          <Button
+            size="sm"
+            onClick={onSave}
+            disabled={pending}
+            className="rounded-full bg-[#1c1c1f] text-white hover:bg-[#1c1c1f]/85"
+          >
             <Save className="size-3.5" />
             {pending ? "Saving…" : "Save"}
           </Button>
