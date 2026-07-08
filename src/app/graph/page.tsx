@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { AppHeader } from "@/components/app-header";
+import { Waypoints } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { GraphExplorer } from "@/components/graph/graph-explorer";
 import type { GraphEdge, GraphNode } from "@/components/graph/graph-view";
 import { createClient } from "@/lib/supabase/server";
@@ -217,39 +218,34 @@ export default async function GraphPage() {
     label: p.name,
   }));
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
-
   return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
-      />
-      <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
-        <div className="mb-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Graph</h1>
-          <p className="text-sm text-muted-foreground">
-            Everything in the brain and how it connects. Filter by person or
-            project, toggle types, and click a node to open it.
-          </p>
-        </div>
+    <main className="mx-auto w-full max-w-6xl flex-1 px-[34px] py-[30px]">
+      <div className="mb-5">
+        <h1
+          className="font-display text-[24px] text-[var(--v2-ink-1)]"
+          style={{ letterSpacing: "-0.01em" }}
+        >
+          The graph
+        </h1>
+        <p className="mt-1 text-[12.5px] text-[var(--v2-ink-2)]">
+          {edges.length} connections · drag the nodes around
+        </p>
+      </div>
 
-        {nodes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Nothing to show yet — add projects, notes, or prompts first.
-          </p>
-        ) : (
-          <GraphExplorer
-            nodes={nodes}
-            edges={edges}
-            people={people}
-            projects={projectOptions}
-          />
-        )}
-      </main>
-    </>
+      {nodes.length === 0 ? (
+        <EmptyState
+          icon={Waypoints}
+          title="Nothing to map yet"
+          description="Add projects, notes, or prompts first — the graph draws itself from what the team saves."
+        />
+      ) : (
+        <GraphExplorer
+          nodes={nodes}
+          edges={edges}
+          people={people}
+          projects={projectOptions}
+        />
+      )}
+    </main>
   );
 }

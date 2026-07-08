@@ -150,7 +150,10 @@ export function GraphExplorer({
           </SelectContent>
         </Select>
 
-        <label className="flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm text-muted-foreground select-none">
+        <label
+          className="flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] text-[var(--v2-ink-2)] select-none"
+          style={{ backgroundColor: "#f4f2ef" }}
+        >
           <input
             type="checkbox"
             checked={showSuggested}
@@ -161,7 +164,7 @@ export function GraphExplorer({
       </div>
 
       {/* Legend doubles as type toggles. */}
-      <div className="flex flex-wrap items-center gap-3 text-xs">
+      <div className="flex flex-wrap items-center gap-3">
         {NODE_TYPES.map((type) => {
           const active = activeTypes.has(type);
           return (
@@ -171,9 +174,10 @@ export function GraphExplorer({
               onClick={() => toggleType(type)}
               aria-pressed={active}
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-opacity",
+                "font-mono flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[10px] tracking-[0.1em] uppercase transition-opacity",
                 active ? "opacity-100" : "opacity-40",
               )}
+              style={{ color: "var(--v2-ink-2)" }}
             >
               <span
                 className="size-2.5 rounded-full"
@@ -186,7 +190,7 @@ export function GraphExplorer({
       </div>
 
       {visibleNodes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-[13px] text-[var(--v2-ink-3)]">
           Nothing matches these filters. Try clearing person/project or enabling
           more types.
         </p>

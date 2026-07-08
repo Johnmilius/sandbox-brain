@@ -40,15 +40,19 @@ export type GraphEdge = {
   kind?: GraphEdgeKind;
 };
 
+// V2 palette per spec §1.1 graph legend. NOTE: globals.css chart-1..5 order
+// does not match the legend order — these are mapped deliberately by type.
+// knowledge_item / academy_module / idea have no design color; they extend
+// the palette with V2 vocabulary (accent purple, locked tan, amber).
 export const TYPE_COLORS: Record<GraphNodeType, string> = {
-  project: "#3b82f6",
-  note: "#22c55e",
-  prompt: "#f59e0b",
-  knowledge_item: "#a855f7",
-  profile: "#94a3b8",
-  agent: "#ec4899",
-  academy_module: "#14b8a6",
-  idea: "#eab308",
+  project: "#1c1c1f",
+  note: "#4a5b8a",
+  prompt: "#8a6a2a",
+  knowledge_item: "#5b3fd6",
+  profile: "#3f7a56",
+  agent: "#6a5f8a",
+  academy_module: "#8a6a4a",
+  idea: "#e0a53f",
 };
 
 export const TYPE_LABELS: Record<GraphNodeType, string> = {
@@ -88,18 +92,24 @@ export function GraphView({
   return (
     <div
       ref={containerRef}
-      className="h-[calc(100vh-16rem)] min-h-96 w-full overflow-hidden rounded-lg border"
+      className="h-[calc(100vh-16rem)] min-h-96 w-full overflow-hidden rounded-[13px]"
+      style={{
+        border: "1px solid #ededeb",
+        background:
+          "radial-gradient(circle at 50% 44%, #ffffff 0%, #faf9f7 62%, #f4f2ee 100%)",
+      }}
     >
       {size.width > 0 && (
         <ForceGraph2D
           width={size.width}
           height={size.height}
           graphData={{ nodes, links: edges }}
+          backgroundColor="rgba(0,0,0,0)"
           nodeLabel={(node) => (node as PositionedNode).label}
           linkColor={(link) =>
             (link as GraphEdge).kind && (link as GraphEdge).kind !== "explicit"
-              ? "#a855f733" // soft / suggested edges: fainter, purple-ish
-              : "#9ca3af55"
+              ? "#5b3fd633" // soft / suggested edges: fainter, accent purple
+              : "#cfc9c052"
           }
           linkLineDash={(link) =>
             (link as GraphEdge).kind && (link as GraphEdge).kind !== "explicit"
@@ -109,14 +119,14 @@ export function GraphView({
           nodeCanvasObject={(node, ctx, globalScale) => {
             const n = node as PositionedNode;
             if (n.x == null || n.y == null) return;
-            ctx.fillStyle = TYPE_COLORS[n.type] ?? "#94a3b8";
+            ctx.fillStyle = TYPE_COLORS[n.type] ?? "#a8a29e";
             ctx.beginPath();
             ctx.arc(n.x, n.y, 4, 0, 2 * Math.PI);
             ctx.fill();
             if (globalScale > 0.8) {
               const fontSize = 11 / globalScale;
               ctx.font = `${fontSize}px sans-serif`;
-              ctx.fillStyle = "#6b7280";
+              ctx.fillStyle = "#78716c";
               ctx.textAlign = "center";
               ctx.fillText(n.label, n.x, n.y + 4 + fontSize);
             }
