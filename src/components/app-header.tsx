@@ -23,6 +23,7 @@ type AppHeaderProps = {
 };
 
 const NAV_LINKS = [
+  { href: "/ideas", label: "Ideas" },
   { href: "/projects", label: "Projects" },
   { href: "/time", label: "Time" },
   { href: "/prompts", label: "Prompts" },
