@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { AppShell } from "@/components/shell/app-shell";
+import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,11 +30,16 @@ export const metadata: Metadata = {
     "Team hub for time tracking, prompts, linked notes, and reusable knowledge.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <html
       lang="en"
@@ -40,7 +47,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className={`${geistSans.className} min-h-full flex flex-col`}>
-        {children}
+        {user ? <AppShell>{children}</AppShell> : children}
         <Toaster />
       </body>
     </html>
