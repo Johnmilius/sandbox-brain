@@ -26,6 +26,12 @@ Full V2 frontend rebuild of sandbox-brain to the teammate's "editorial workspace
 9. Tasks UI: board/list/drawer, claim/lock/conflict, per-ticket viewer presence, `?demo=1` mode, pre-migration notice card (Task 9). ALSO FIX HERE: zero-count tasks badge in app-shell.tsx renders "0", should render "" (one-token fix, deferred finding).
 10. Verification packet → **Luke reviews → HARD STOP → PR to John only on Luke's explicit go-ahead** (Task 10)
 
+## Open items needing a decision, not just styling
+
+See `docs/v2/OPEN-ITEMS.md` — conceptual/data gaps found during Task 4
+(automations has no creation flow or backend concept yet; agent star ratings
+have no data column; "used on N tickets" stat needs Tasks to exist).
+
 ## Deferred review findings (fold into final whole-branch review)
 
 - timer-chip.tsx: `[runningEntry]` effect dep recreates interval more than needed (cosmetic)
