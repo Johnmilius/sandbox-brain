@@ -1,13 +1,7 @@
 import { redirect } from "next/navigation";
 import { MessageSquareText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { AppHeader } from "@/components/app-header";
+import { EmptyState } from "@/components/empty-state";
 import { PromptCard } from "@/components/prompts/prompt-card";
 import { PromptFilters } from "@/components/prompts/prompt-filters";
 import { PromptFormDialog } from "@/components/prompts/prompt-form-dialog";
@@ -72,83 +66,71 @@ export default async function PromptsPage({
   const distinctTools = [...byTool.keys()].sort();
   const favoriteCount = prompts.filter((p) => p.is_favorite).length;
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
-
   return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
-      />
-      <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Prompts</h1>
-            <p className="text-sm text-muted-foreground">
-              {prompts.length} saved
-              {favoriteCount > 0 && ` · ★ ${favoriteCount} favorite${favoriteCount === 1 ? "" : "s"}`}
-              {avgRating && ` · ${avgRating} avg rating`}
-              {distinctTools.length > 0 && ` · ${distinctTools.join(", ")}`}
-            </p>
-          </div>
-          <PromptFormDialog
-            projects={projects}
-            tagSuggestions={allTagNames}
-            trigger={
-              <Button>
-                <Plus className="size-4" />
-                Save prompt
-              </Button>
-            }
-          />
+    <main className="mx-auto w-full max-w-[840px] flex-1 px-[34px] py-[30px]">
+      <div className="mb-7 flex items-start justify-between gap-4">
+        <div>
+          <h1
+            className="font-display text-[26px] text-[var(--v2-ink-1)]"
+            style={{ letterSpacing: "-0.01em" }}
+          >
+            Prompt library
+          </h1>
+          <p className="mt-1 text-[13.5px] text-[var(--v2-ink-2)]">
+            {prompts.length} saved
+            {favoriteCount > 0 && ` · ★ ${favoriteCount} favorite${favoriteCount === 1 ? "" : "s"}`}
+            {avgRating && ` · ${avgRating} avg rating`}
+            {distinctTools.length > 0 && ` · ${distinctTools.join(", ")}`}
+          </p>
         </div>
+        <PromptFormDialog
+          projects={projects}
+          tagSuggestions={allTagNames}
+          trigger={
+            <Button className="rounded-full bg-[#1c1c1f] px-4 text-white hover:bg-[#1c1c1f]/85">
+              <Plus className="size-4" />
+              Save prompt
+            </Button>
+          }
+        />
+      </div>
 
-        <div className="mb-4">
-          <PromptFilters tools={distinctTools} tags={allTagNames} />
+      <div className="mb-5">
+        <PromptFilters tools={distinctTools} tags={allTagNames} />
+      </div>
+
+      {prompts.length === 0 ? (
+        <EmptyState
+          icon={MessageSquareText}
+          title={q || tool || tag || favoriteOnly ? "No prompts match" : "No prompts yet"}
+          description={
+            q || tool || tag || favoriteOnly
+              ? "Try clearing the search or filters."
+              : "Save the prompts you send to AI tools so the team can reuse what works."
+          }
+        />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {prompts.map((prompt) => {
+            const author = profileById.get(prompt.user_id);
+            return (
+              <PromptCard
+                key={prompt.id}
+                prompt={prompt}
+                tags={promptTags.get(prompt.id) ?? []}
+                projectName={
+                  prompt.project_id
+                    ? (projectById.get(prompt.project_id)?.name ?? null)
+                    : null
+                }
+                authorName={author?.full_name ?? author?.email ?? null}
+                projects={projects}
+                tagSuggestions={allTagNames}
+              />
+            );
+          })}
         </div>
-
-        {prompts.length === 0 ? (
-          <Card className="border-dashed">
-            <CardHeader className="items-center text-center">
-              <MessageSquareText className="mx-auto size-8 text-muted-foreground" />
-              <CardTitle>
-                {q || tool || tag || favoriteOnly
-                  ? "No prompts match"
-                  : "No prompts yet"}
-              </CardTitle>
-              <CardDescription>
-                {q || tool || tag || favoriteOnly
-                  ? "Try clearing the search or filters."
-                  : "Save the prompts you send to AI tools so the team can reuse what works."}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {prompts.map((prompt) => {
-              const author = profileById.get(prompt.user_id);
-              return (
-                <PromptCard
-                  key={prompt.id}
-                  prompt={prompt}
-                  tags={promptTags.get(prompt.id) ?? []}
-                  projectName={
-                    prompt.project_id
-                      ? (projectById.get(prompt.project_id)?.name ?? null)
-                      : null
-                  }
-                  authorName={author?.full_name ?? author?.email ?? null}
-                  projects={projects}
-                  tagSuggestions={allTagNames}
-                />
-              );
-            })}
-          </div>
-        )}
-      </main>
-    </>
+      )}
+    </main>
   );
 }
