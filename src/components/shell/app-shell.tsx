@@ -47,6 +47,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     supabase
       .from("time_entries")
       .select("started_at, ended_at")
+      .not("ended_at", "is", null)
       .gte("started_at", weekAgo),
   ]);
 
@@ -63,15 +64,13 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   // Tasks table doesn't exist yet (lands in a later task) — degrade to no badge.
   let tasksBadge = "";
-  try {
-    const { count } = await supabase
-      .from("tasks" as never)
-      .select("id", { count: "exact", head: true })
-      .eq("assignee_id", user.id)
-      .neq("status", "done");
-    tasksBadge = count ? String(count) : "";
-  } catch {
-    tasksBadge = "";
+  const tasksRes = await supabase
+    .from("tasks" as never)
+    .select("id", { count: "exact", head: true })
+    .eq("assignee_id", user.id)
+    .neq("status", "done");
+  if (!tasksRes.error && tasksRes.count != null) {
+    tasksBadge = String(tasksRes.count);
   }
 
   const projectsCount = projectsActiveRes.count ?? 0;
