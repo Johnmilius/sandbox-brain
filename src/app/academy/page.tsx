@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AppHeader } from "@/components/app-header";
 import {
   ModuleProgressBars,
   type MemberProgress,
@@ -131,29 +130,24 @@ export default async function AcademyPage() {
     };
   });
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
-
   return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
-      />
-      <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">Academy</h1>
-          <p className="text-sm text-muted-foreground">
-            Work through the Sandbox curriculum and track your founder
-            competencies. Ask Claude Code for your next step with{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">
-              brain_academy_next
-            </code>
-            .
-          </p>
-        </div>
+    <main className="mx-auto w-full max-w-6xl flex-1 px-[34px] py-[30px]">
+      <div className="mb-7">
+        <h1
+          className="font-display text-[26px] text-[var(--v2-ink-1)]"
+          style={{ letterSpacing: "-0.01em" }}
+        >
+          Academy
+        </h1>
+        <p className="mt-1 text-[13.5px] text-[var(--v2-ink-2)]">
+          Work through the Sandbox curriculum and track your founder
+          competencies. Ask Claude Code for your next step with{" "}
+          <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+            brain_academy_next
+          </code>
+          .
+        </p>
+      </div>
 
         {modules.length === 0 ? (
           <Card>
@@ -236,7 +230,9 @@ export default async function AcademyPage() {
               </Card>
             </div>
 
-            <h2 className="mt-8 mb-3 text-lg font-semibold">Modules</h2>
+            <h2 className="font-display mt-8 mb-3 text-[18px] text-[var(--v2-ink-1)]">
+              Modules
+            </h2>
             <div className="grid gap-4 sm:grid-cols-2">
               {modules.map((mod) => {
                 const stepIds = stepIdsByModule.get(mod.id) ?? [];
@@ -282,7 +278,9 @@ export default async function AcademyPage() {
               })}
             </div>
 
-            <h2 className="mt-8 mb-3 text-lg font-semibold">Learning outcomes</h2>
+            <h2 className="font-display mt-8 mb-3 text-[18px] text-[var(--v2-ink-1)]">
+              Learning outcomes
+            </h2>
             <p className="mb-3 text-sm text-muted-foreground">
               Skills top-tier founders possess. The bar shows how much of the
               related curriculum you have completed; the chips show each
@@ -291,7 +289,6 @@ export default async function AcademyPage() {
             <OutcomesDashboard outcomes={outcomeRows} />
           </>
         )}
-      </main>
-    </>
+    </main>
   );
 }

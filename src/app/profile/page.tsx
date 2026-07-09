@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AppHeader } from "@/components/app-header";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { McpAccess } from "@/components/profile/mcp-access";
 import { createClient } from "@/lib/supabase/server";
@@ -32,24 +31,23 @@ export default async function ProfilePage() {
     (user.user_metadata.name as string | undefined);
 
   return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
-      />
-      <main className="mx-auto w-full max-w-2xl flex-1 p-4 sm:p-6">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-[34px] py-[30px]">
         <Link
           href="/"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-5 inline-flex items-center gap-1 text-[12.5px] text-[var(--v2-ink-3)] transition-colors hover:text-[var(--v2-ink-1)]"
         >
           <ArrowLeft className="size-3.5" />
           Back
         </Link>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1
+            className="font-display text-[26px] text-[var(--v2-ink-1)]"
+            style={{ letterSpacing: "-0.01em" }}
+          >
+            Profile
+          </h1>
+          <p className="mt-1 text-[13.5px] text-[var(--v2-ink-2)]">
             Set how your name appears to the rest of the team.
           </p>
         </div>
@@ -80,7 +78,6 @@ export default async function ProfilePage() {
             <McpAccess />
           </CardContent>
         </Card>
-      </main>
-    </>
+    </main>
   );
 }

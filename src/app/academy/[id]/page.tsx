@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { AppHeader } from "@/components/app-header";
 import {
   ModuleProgressBars,
   type MemberProgress,
@@ -98,23 +97,13 @@ export default async function AcademyModulePage({
     othersByStep.set(row.step_id, list);
   }
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
-
   return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
-      />
-      <main className="mx-auto w-full max-w-4xl flex-1 p-4 sm:p-6">
+    <main className="mx-auto w-full max-w-4xl flex-1 px-[34px] py-[30px]">
         <Link
           href="/academy"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="mb-5 inline-flex items-center gap-1 text-[12.5px] text-[var(--v2-ink-3)] transition-colors hover:text-[var(--v2-ink-1)]"
         >
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-3.5" />
           Academy
         </Link>
 
@@ -122,7 +111,10 @@ export default async function AcademyModulePage({
           <CardHeader>
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h1 className="text-xl font-semibold tracking-tight">
+                <h1
+                  className="font-display text-[22px] text-[var(--v2-ink-1)]"
+                  style={{ letterSpacing: "-0.01em" }}
+                >
                   {mod.title}
                 </h1>
                 {mod.description && (
@@ -171,7 +163,6 @@ export default async function AcademyModulePage({
             ))}
           </div>
         )}
-      </main>
-    </>
+    </main>
   );
 }
