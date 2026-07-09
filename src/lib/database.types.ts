@@ -31,7 +31,13 @@ export type EntityType =
   | "agent"
   | "academy_module"
   | "academy_outcome"
-  | "idea";
+  | "idea"
+  | "task";
+
+export type TaskPriority = "high" | "med" | "low";
+export type TaskArea = "frontend" | "backend" | "design" | "copy";
+export type TaskStatus = "backlog" | "todo" | "inprogress" | "review" | "done";
+export type TaskChecklistItem = { text: string; done: boolean };
 
 export type AgentStatus = "active" | "archived";
 export type ModuleKind = "course" | "workshop" | "custom";
@@ -92,6 +98,7 @@ export type Database = {
           status: ProjectStatus;
           started_on: string | null;
           ended_on: string | null;
+          ticket_prefix: string | null;
           created_by: string;
           created_at: string;
           updated_at: string;
@@ -103,6 +110,7 @@ export type Database = {
           status?: ProjectStatus;
           started_on?: string | null;
           ended_on?: string | null;
+          ticket_prefix?: string | null;
           created_by?: string;
           created_at?: string;
           updated_at?: string;
@@ -114,6 +122,58 @@ export type Database = {
           status?: ProjectStatus;
           started_on?: string | null;
           ended_on?: string | null;
+          ticket_prefix?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      tasks: {
+        Row: {
+          id: string;
+          project_id: string;
+          ticket_num: number;
+          title: string;
+          description: string | null;
+          priority: TaskPriority;
+          area: TaskArea;
+          status: TaskStatus;
+          assignee: string | null;
+          claimed_by: string | null;
+          checklist: TaskChecklistItem[];
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          ticket_num: number;
+          title: string;
+          description?: string | null;
+          priority?: TaskPriority;
+          area?: TaskArea;
+          status?: TaskStatus;
+          assignee?: string | null;
+          claimed_by?: string | null;
+          checklist?: TaskChecklistItem[];
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          ticket_num?: number;
+          title?: string;
+          description?: string | null;
+          priority?: TaskPriority;
+          area?: TaskArea;
+          status?: TaskStatus;
+          assignee?: string | null;
+          claimed_by?: string | null;
+          checklist?: TaskChecklistItem[];
           created_by?: string;
           created_at?: string;
           updated_at?: string;
@@ -618,6 +678,7 @@ export type Database = {
 // Convenience row aliases used across the app.
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Project = Database["public"]["Tables"]["projects"]["Row"];
+export type Task = Database["public"]["Tables"]["tasks"]["Row"];
 export type TimeEntry = Database["public"]["Tables"]["time_entries"]["Row"];
 export type Prompt = Database["public"]["Tables"]["prompts"]["Row"];
 export type Note = Database["public"]["Tables"]["notes"]["Row"];
