@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Sparkles } from "lucide-react";
-import { AppHeader } from "@/components/app-header";
-import { Badge } from "@/components/ui/badge";
+import { ArrowLeft } from "lucide-react";
 import { IdeaEditor } from "@/components/ideas/idea-editor";
 import { RelatedIdeas } from "@/components/ideas/related-ideas";
 import { PromoteIdeaButton } from "@/components/ideas/promote-idea-button";
@@ -46,67 +44,55 @@ export default async function IdeaPage({
 
   const similar = (similarRes.data ?? []).filter((s) => !linkedIds.has(s.id));
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
-
   return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
-      />
-      <main className="mx-auto w-full max-w-3xl flex-1 p-4 sm:p-6">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <Link
-            href="/ideas"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" />
-            All ideas
-          </Link>
-          {idea.status !== "promoted" && (
-            <PromoteIdeaButton ideaId={idea.id} title={idea.title} />
-          )}
-        </div>
-
-        <IdeaEditor idea={idea} />
-
-        {similar.length > 0 && (
-          <div className="mt-10 border-t pt-4">
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase">
-              <Sparkles className="size-3.5" />
-              Similar ideas
-            </p>
-            <ul className="flex flex-col gap-2">
-              {similar.map((s) => (
-                <li key={s.id} className="flex items-center gap-2">
-                  <Link
-                    href={`/ideas/${s.id}`}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    {s.title}
-                  </Link>
-                  {s.verdict && (
-                    <Badge variant="outline" className="text-xs">
-                      {s.verdict}
-                    </Badge>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
+    <main className="mx-auto w-full max-w-3xl flex-1 px-[34px] py-[30px]">
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <Link
+          href="/ideas"
+          className="inline-flex items-center gap-1 text-[12.5px] text-[var(--v2-ink-3)] transition-colors hover:text-[var(--v2-ink-1)]"
+        >
+          <ArrowLeft className="size-3.5" />
+          All ideas
+        </Link>
+        {idea.status !== "promoted" && (
+          <PromoteIdeaButton ideaId={idea.id} title={idea.title} />
         )}
+      </div>
 
-        <div className="mt-10 border-t pt-4">
-          <RelatedIdeas
-            ideaId={idea.id}
-            linked={linked}
-            options={allIdeasRes.data ?? []}
-          />
+      <IdeaEditor idea={idea} />
+
+      {similar.length > 0 && (
+        <div className="mt-10 border-t pt-5" style={{ borderColor: "#ededeb" }}>
+          <p className="font-mono-label mb-3">◇ Similar ideas</p>
+          <div className="flex flex-col gap-2">
+            {similar.map((s) => (
+              <Link
+                key={s.id}
+                href={`/ideas/${s.id}`}
+                className="flex items-center justify-between gap-2 rounded-[10px] bg-[var(--v2-rail-bg)] px-3.5 py-2.5 transition-colors hover:bg-[#f6f4f1]"
+                style={{ border: "1px solid #ededeb" }}
+              >
+                <span className="truncate text-[12.5px] font-medium text-[var(--v2-ink-1)]">
+                  {s.title}
+                </span>
+                {s.verdict && (
+                  <span className="font-mono shrink-0 text-[10px] capitalize text-[var(--v2-ink-3)]">
+                    {s.verdict}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
         </div>
-      </main>
-    </>
+      )}
+
+      <div className="mt-10 border-t pt-5" style={{ borderColor: "#ededeb" }}>
+        <RelatedIdeas
+          ideaId={idea.id}
+          linked={linked}
+          options={allIdeasRes.data ?? []}
+        />
+      </div>
+    </main>
   );
 }

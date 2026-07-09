@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Save, X } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,17 +91,54 @@ export function IdeaEditor({ idea }: { idea: Idea }) {
   }
 
   if (!editing) {
+    const verdictStyle: Record<
+      IdeaVerdict,
+      { dot: string; fg: string; bg: string; border: string }
+    > = {
+      strong: {
+        dot: "#3f9b6c",
+        fg: "var(--v2-success-text)",
+        bg: "var(--v2-success-bg)",
+        border: "var(--v2-success-border)",
+      },
+      conditional: {
+        dot: "var(--v2-amber)",
+        fg: "var(--v2-warning-text-deep)",
+        bg: "var(--v2-warning-bg)",
+        border: "var(--v2-warning-border)",
+      },
+      pass: {
+        dot: "var(--v2-danger)",
+        fg: "var(--v2-danger)",
+        bg: "var(--v2-warning-bg)",
+        border: "var(--v2-warning-border)",
+      },
+    };
+    const verdict = idea.verdict ? verdictStyle[idea.verdict] : null;
+
     return (
       <div className="flex flex-col gap-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{idea.title}</h1>
+            <h1
+              className="font-display text-[31px] leading-tight text-[var(--v2-ink-1)]"
+              style={{ letterSpacing: "-0.01em" }}
+            >
+              {idea.title}
+            </h1>
             {idea.tagline && (
-              <p className="mt-1 text-sm text-muted-foreground">{idea.tagline}</p>
+              <p className="mt-1 text-[13.5px] text-[var(--v2-ink-2)]">
+                {idea.tagline}
+              </p>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditing(true)}
+              className="rounded-full border-[#e2ddd6] bg-white text-[var(--v2-ink-1)] hover:bg-[#f6f4f1]"
+            >
               <Pencil className="size-3.5" />
               Edit
             </Button>
@@ -117,50 +153,107 @@ export function IdeaEditor({ idea }: { idea: Idea }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="capitalize">
+          <span
+            className="rounded-full px-2.5 py-0.5 text-[10.5px] font-medium capitalize"
+            style={
+              idea.status === "promoted"
+                ? { backgroundColor: "#1c1c1f", color: "#ffffff" }
+                : { backgroundColor: "#f4f2ef", color: "var(--v2-ink-2)" }
+            }
+          >
             {idea.status}
-          </Badge>
-          {idea.verdict && <Badge variant="secondary">{idea.verdict}</Badge>}
+          </span>
+          {idea.verdict && verdict && (
+            <span
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10.5px] font-medium capitalize"
+              style={{
+                backgroundColor: verdict.bg,
+                color: verdict.fg,
+                border: `1px solid ${verdict.border}`,
+              }}
+            >
+              <span
+                className="size-1.5 rounded-full"
+                style={{ backgroundColor: verdict.dot }}
+              />
+              {idea.verdict}
+            </span>
+          )}
           {idea.source_url && (
             <a
               href={idea.source_url}
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-primary hover:underline"
+              className="text-[11.5px] hover:underline"
+              style={{ color: "var(--v2-accent-purple)" }}
             >
-              Source
+              ⎘ {(() => {
+                try {
+                  return new URL(idea.source_url).hostname;
+                } catch {
+                  return "Source";
+                }
+              })()}
             </a>
           )}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {CANVAS_FIELDS.map(({ key, label }) => {
-            const value = idea[key as keyof Idea] as string | null;
-            return (
-              <div key={key}>
-                <p className="text-xs font-medium text-muted-foreground uppercase">
-                  {label}
-                </p>
-                <p className="mt-1 text-sm whitespace-pre-wrap">
-                  {value || <span className="text-muted-foreground">Not set</span>}
-                </p>
-              </div>
-            );
-          })}
+        <div>
+          <p className="font-mono-label mb-3">The canvas</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {CANVAS_FIELDS.map(({ key, label, placeholder }) => {
+              const value = idea[key as keyof Idea] as string | null;
+              return (
+                <div
+                  key={key}
+                  className={key === "solution" ? "sm:col-span-2" : undefined}
+                >
+                  <p className="font-mono-label">{label}</p>
+                  <p className="mt-1 text-[13.5px] whitespace-pre-wrap text-[var(--v2-ink-1)]">
+                    {value || (
+                      <span className="text-[var(--v2-ink-4)] italic">
+                        {placeholder}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {Object.keys(idea.scores).length > 0 && (
           <div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">
-              Scores
-            </p>
-            <div className="flex flex-wrap gap-2">
+            <p className="font-mono-label mb-3">Scoring · 7 dimensions</p>
+            <div className="flex flex-col gap-2">
               {SCORE_FIELDS.filter(({ key }) => idea.scores[key] != null).map(
-                ({ key, label }) => (
-                  <Badge key={key} variant="outline">
-                    {label} {idea.scores[key]}
-                  </Badge>
-                ),
+                ({ key, label }) => {
+                  const score = idea.scores[key]!;
+                  return (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="w-24 shrink-0 text-[12px] text-[var(--v2-ink-2)]">
+                        {label}
+                      </span>
+                      <div className="flex flex-1 gap-1">
+                        {[1, 2, 3, 4, 5].map((cell) => (
+                          <span
+                            key={cell}
+                            className="h-2 flex-1 rounded-[3px]"
+                            style={{
+                              backgroundColor:
+                                cell <= score
+                                  ? "var(--v2-accent-purple)"
+                                  : "#f4f2ef",
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <span className="font-mono w-6 shrink-0 text-right text-[11px] text-[var(--v2-ink-2)] tabular-nums">
+                        {score}
+                      </span>
+                    </div>
+                  );
+                },
               )}
             </div>
           </div>
@@ -175,10 +268,15 @@ export function IdeaEditor({ idea }: { idea: Idea }) {
         <Input
           value={form.title}
           onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-          className="text-lg font-semibold"
+          className="font-display border-none px-0 !text-[26px] leading-tight shadow-none focus-visible:ring-0"
         />
         <div className="flex shrink-0 items-center gap-1">
-          <Button size="sm" onClick={onSave} disabled={pending}>
+          <Button
+            size="sm"
+            onClick={onSave}
+            disabled={pending}
+            className="rounded-full bg-[#1c1c1f] text-white hover:bg-[#1c1c1f]/85"
+          >
             <Save className="size-3.5" />
             {pending ? "Saving…" : "Save"}
           </Button>
