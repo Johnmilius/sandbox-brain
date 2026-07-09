@@ -62,14 +62,15 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     "Team member";
   const initials = initialsFor(name, user.email ?? "");
 
-  // Tasks table doesn't exist yet (lands in a later task) — degrade to no badge.
+  // Tasks table may not exist until migration 0007 — degrade to no badge.
+  // Zero-count also renders nothing (spec: empty string, not "0").
   let tasksBadge = "";
   const tasksRes = await supabase
-    .from("tasks" as never)
+    .from("tasks")
     .select("id", { count: "exact", head: true })
-    .eq("assignee_id", user.id)
+    .eq("assignee", user.id)
     .neq("status", "done");
-  if (!tasksRes.error && tasksRes.count != null) {
+  if (!tasksRes.error && tasksRes.count) {
     tasksBadge = String(tasksRes.count);
   }
 
