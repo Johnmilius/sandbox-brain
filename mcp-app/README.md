@@ -18,6 +18,16 @@ npm run dev          # http://localhost:3000/ = DevTools, /mcp = server
 npm run dev:tunnel   # public URL to test inside real Claude/ChatGPT
 ```
 
+## Demo mode (no database)
+
+Try the widget with realistic sample data — no Supabase credentials needed:
+
+```bash
+BRAIN_DASHBOARD_DEMO=1 npm run dev
+```
+
+Synthetic time entries (timestamps derived from "now", so they never go stale) run through the same aggregation pipeline as real data.
+
 ## Test
 
 ```bash
