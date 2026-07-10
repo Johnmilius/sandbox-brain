@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:#e7e5e0;font-family:'Geist',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#1c1c1f}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#d6d3cd;border-radius:6px;border:3px solid transparent;background-clip:content-box}
+  a{color:#5b3fd6;text-decoration:none}
+  a:hover{color:#4a2fc0}
+  .mono{font-family:'Geist Mono',monospace}
+  input{font-family:inherit}
+  [contenteditable]:focus{outline:none}
+  @keyframes ring{0%{transform:scale(.8);opacity:.55}100%{transform:scale(2.4);opacity:0}}
+  @keyframes fadeup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .view{animation:fadeup .28s ease both}
+</style>
+</helmet>
+
+<div style="display:flex;height:100vh;width:100%;background:#fff;overflow:hidden">
+
+  <!-- ============ SIDEBAR ============ -->
+  <div style="width:224px;flex:none;background:#fafaf9;border-right:1px solid #ededeb;padding:18px 13px;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:9px;font-weight:600;font-size:14.5px;padding:2px 8px 18px">
+      <span style="width:26px;height:26px;border-radius:7px;background:#1c1c1f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">◨</span>Sandbox Brain
+    </div>
+    <div class="mono" style="font-size:9.5px;letter-spacing:.14em;color:#b5b3ad;padding:0 8px 8px">WORKSPACE</div>
+    <div style="display:flex;flex-direction:column;gap:1px;font-size:13.5px">
+      <sc-for list="{{ nav }}" as="item" hint-placeholder-count="11">
+        <div onClick="{{ item.onClick }}" style="padding:7px 9px;border-radius:8px;display:flex;align-items:center;gap:10px;cursor:pointer;background:{{ item.bg }};color:{{ item.fg }};font-weight:{{ item.weight }}" style-hover="background:#efece7">
+          <span style="width:16px;text-align:center;color:{{ item.iconColor }}">{{ item.icon }}</span>{{ item.label }}
+          <sc-if value="{{ item.badge }}" hint-placeholder-val=""><span class="mono" style="margin-left:auto;font-size:10px;color:#b5b3ad">{{ item.badge }}</span></sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:2px">
+      <div style="padding:9px 10px;border:1px solid #ededeb;border-radius:9px;display:flex;align-items:center;gap:10px;background:#fff">
+        <span style="position:relative;width:9px;height:9px;flex:none">
+          <span style="position:absolute;inset:0;border-radius:50%;background:#22c55e"></span>
+          <span style="position:absolute;inset:0;border-radius:50%;background:#22c55e;animation:ring 1.8s ease-out infinite"></span>
+        </span>
+        <div style="flex:1;min-width:0">
+          <div class="mono" style="font-size:14px;font-weight:500;letter-spacing:.01em">{{ timerText }}</div>
+          <div style="font-size:10.5px;color:#a8a29e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ramp landing page</div>
+        </div>
+        <span style="width:28px;height:28px;flex:none;border-radius:7px;background:#1c1c1f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">❚❚</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;padding:9px 8px 2px;font-size:12.5px;color:#57534e"><span style="width:24px;height:24px;border-radius:50%;background:#e7e5e0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">JM</span>John Milius</div>
+    </div>
+  </div>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- topbar -->
+    <div style="height:52px;flex:none;border-bottom:1px solid #f0eeeb;display:flex;align-items:center;gap:14px;padding:0 26px">
+      <sc-if value="{{ isDetail }}" hint-placeholder-val="">
+        <span onClick="{{ backToList }}" style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#78716c;cursor:pointer" style-hover="color:#1c1c1f"><span style="font-size:14px">‹</span>Ideas</span>
+        <span style="color:#d6d1c9">/</span>
+      </sc-if>
+      <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px">{{ viewTitle }}</div>
+      <div style="flex:1;max-width:320px;height:32px;border-radius:9px;background:#f6f4f1;display:flex;align-items:center;gap:8px;padding:0 11px;color:#a8a29e;font-size:12.5px;margin-left:8px"><span>⌕</span>Search the brain…<span class="mono" style="margin-left:auto;font-size:9.5px;border:1px solid #e2ddd6;padding:1px 5px;border-radius:4px">⌘K</span></div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:7px">
+        <span class="mono" style="font-size:11px;color:#a8a29e">3 online</span>
+        <span style="width:24px;height:24px;border-radius:50%;background:#cdd4ea;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#4a5b8a">AL</span>
+        <span style="width:24px;height:24px;border-radius:50%;background:#c3ddca;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#3f7a56;margin-left:-8px">SM</span>
+        <span style="width:24px;height:24px;border-radius:50%;background:#e7e5e0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#57534e;margin-left:-8px">JM</span>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;position:relative">
+
+    <!-- ===================== LIST ===================== -->
+    <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+    <div class="view" style="padding:28px 34px 40px;min-height:100%">
+
+      <!-- header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <div style="display:flex;align-items:center;gap:11px"><div style="font-family:'Newsreader',serif;font-size:29px;letter-spacing:-.01em">Ideas</div><span style="width:26px;height:26px;border-radius:8px;background:#f2ecfd;color:#5b3fd6;display:flex;align-items:center;justify-content:center;font-size:14px">◇</span></div>
+          <div style="color:#78716c;font-size:13.5px;margin-top:2px">Raw concepts, fleshed out over time. Capture first — decide later.</div>
+        </div>
+        <span onClick="{{ toggleDemoEmpty }}" class="mono" style="font-size:10px;letter-spacing:.04em;color:#c4c1ba;cursor:pointer;padding:5px 9px;border:1px solid #efece7;border-radius:7px" style-hover="color:#78716c">{{ demoLabel }}</span>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="">
+      <div style="max-width:560px;margin:46px auto 0;text-align:center">
+        <div style="width:64px;height:64px;border-radius:18px;background:#f2ecfd;color:#5b3fd6;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 22px">◇</div>
+        <div style="font-family:'Newsreader',serif;font-size:26px;margin-bottom:8px">No ideas captured yet</div>
+        <div style="color:#78716c;font-size:14px;line-height:1.6;margin-bottom:28px">This is where early startup concepts live — lighter than a project. Jot a title and a one-line pitch; you can flesh out the problem, customer, and scores whenever you come back to it.</div>
+        <div style="background:#fdfcfb;border:1px solid #ededeb;border-radius:14px;padding:18px 18px 16px;text-align:left;box-shadow:0 6px 20px -14px rgba(0,0,0,.25)">
+          <div class="mono" style="font-size:9.5px;letter-spacing:.12em;color:#b5b3ad;margin-bottom:11px">CAPTURE AN IDEA</div>
+          <input value="{{ quickTitle }}" onChange="{{ onQuickTitle }}" onKeyDown="{{ onQuickKey }}" placeholder="Title — what's the idea?" style="width:100%;border:none;border-bottom:1px solid #ededeb;background:transparent;font-size:18px;font-weight:500;padding:2px 0 10px;margin-bottom:11px;color:#1c1c1f">
+          <input value="{{ quickTagline }}" onChange="{{ onQuickTagline }}" onKeyDown="{{ onQuickKey }}" placeholder="One-line pitch (optional)" style="width:100%;border:none;background:transparent;font-size:13.5px;padding:0 0 14px;color:#57534e">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span onClick="{{ createIdea }}" style="font-size:13px;font-weight:500;padding:9px 16px;border-radius:9px;background:{{ createBg }};color:{{ createFg }};cursor:{{ createCursor }}">Capture idea →</span>
+            <span style="font-size:11.5px;color:#b5b3ad">Enter to save · opens straight into the canvas</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+          <sc-for list="{{ seedPrompts }}" as="p" hint-placeholder-count="3">
+            <span onClick="{{ p.onClick }}" style="font-size:11.5px;color:#78716c;background:#f6f4f1;padding:6px 12px;border-radius:14px;cursor:pointer" style-hover="background:#efece7">{{ p.label }}</span>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- POPULATED -->
+      <sc-if value="{{ notEmpty }}" hint-placeholder-val="{{ true }}">
+
+      <!-- quick capture bar -->
+      <div style="display:flex;align-items:center;gap:12px;background:#fdfcfb;border:1px solid #ededeb;border-radius:12px;padding:11px 13px;margin-bottom:20px">
+        <span style="width:30px;height:30px;flex:none;border-radius:8px;background:#f2ecfd;color:#5b3fd6;display:flex;align-items:center;justify-content:center;font-size:15px">◇</span>
+        <input value="{{ quickTitle }}" onChange="{{ onQuickTitle }}" onKeyDown="{{ onQuickKey }}" placeholder="Capture a new idea — just a title to start…" style="flex:1;min-width:0;border:none;background:transparent;font-size:14px;color:#1c1c1f">
+        <input value="{{ quickTagline }}" onChange="{{ onQuickTagline }}" onKeyDown="{{ onQuickKey }}" placeholder="one-line pitch" style="width:220px;flex:none;border:none;border-left:1px solid #ededeb;background:transparent;font-size:13px;color:#57534e;padding-left:13px">
+        <span onClick="{{ createIdea }}" style="flex:none;font-size:12.5px;font-weight:500;padding:8px 15px;border-radius:9px;background:{{ createBg }};color:{{ createFg }};cursor:{{ createCursor }}">Add</span>
+      </div>
+
+      <!-- filters -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:18px;flex-wrap:wrap">
+        <sc-for list="{{ stageChips }}" as="c" hint-placeholder-count="5">
+          <span onClick="{{ c.onClick }}" style="cursor:pointer;font-size:12px;padding:5px 12px;border-radius:14px;display:flex;align-items:center;gap:7px;background:{{ c.bg }};color:{{ c.fg }};font-weight:{{ c.weight }}">{{ c.label }}<span class="mono" style="font-size:10px;opacity:.7">{{ c.count }}</span></span>
+        </sc-for>
+        <div style="margin-left:auto;height:30px;width:180px;border-radius:8px;background:#f6f4f1;display:flex;align-items:center;gap:7px;padding:0 10px">
+          <span style="color:#b5b3ad;font-size:12px">⌕</span><input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Filter ideas" style="flex:1;min-width:0;border:none;background:transparent;font-size:12px;color:#57534e">
+        </div>
+      </div>
+
+      <!-- GRID -->
+      <sc-if value="{{ isGrid }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(292px,1fr));gap:15px">
+        <sc-for list="{{ cards }}" as="it" hint-placeholder-count="4">
+          <div onClick="{{ it.onClick }}" style="border:1px solid #ededeb;border-radius:13px;padding:16px 17px 15px;cursor:pointer;display:flex;flex-direction:column;background:#fff" style-hover="box-shadow:0 6px 18px -10px rgba(0,0,0,.18);transform:translateY(-1px);border-color:#e2ddd4">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;padding:3px 9px 3px 8px;border-radius:20px;background:{{ it.vBg }};color:{{ it.vColor }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ it.vDot }}"></span>{{ it.vLabel }}</span>
+              <span class="mono" style="font-size:10px;color:#b5b3ad">{{ it.updated }}</span>
+            </div>
+            <div style="font-weight:600;font-size:15.5px;line-height:1.25;margin-bottom:3px">{{ it.title }}</div>
+            <div style="font-size:12.5px;color:#78716c;line-height:1.45;margin-bottom:14px;min-height:18px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">{{ it.tagline }}</div>
+
+            <!-- lifecycle track -->
+            <div style="display:flex;align-items:center;margin-bottom:15px">
+              <sc-for list="{{ it.track }}" as="s" hint-placeholder-count="3">
+                <sc-if value="{{ s.showLine }}" hint-placeholder-val=""><span style="flex:1;height:2px;background:{{ s.lineBg }}"></span></sc-if>
+                <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:{{ s.dotBg }};border:1.5px solid {{ s.dotBorder }}"></span><span class="mono" style="font-size:9px;letter-spacing:.02em;color:{{ s.labelColor }};font-weight:{{ s.labelWeight }}">{{ s.label }}</span></sc-if></span>
+              </sc-for>
+            </div>
+
+            <!-- score sparkline -->
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:auto;padding-top:13px;border-top:1px solid #f4f2ef">
+              <div style="display:flex;align-items:flex-end;gap:3px;height:26px">
+                <sc-for list="{{ it.bars }}" as="b" hint-placeholder-count="7">
+                  <span title="{{ b.title }}" style="width:6px;border-radius:2px;background:{{ b.bg }};height:{{ b.h }}"></span>
+                </sc-for>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:15px;font-weight:600;line-height:1"><span style="color:{{ it.avgColor }}">{{ it.avg }}</span><span class="mono" style="font-size:10px;color:#c4c1ba;font-weight:400">/5</span></div>
+                <div class="mono" style="font-size:9px;color:#b5b3ad;margin-top:3px">{{ it.rated }}</div>
+              </div>
+            </div>
+            <sc-if value="{{ it.hasMeta }}" hint-placeholder-val=""><div style="display:flex;align-items:center;gap:12px;margin-top:11px;font-size:10.5px;color:#a8a29e" class="mono"><sc-if value="{{ it.promoted }}" hint-placeholder-val=""><span style="color:#3f7a56">→ {{ it.promotedName }}</span></sc-if><sc-if value="{{ it.relatedCount }}" hint-placeholder-val=""><span>◍ {{ it.relatedCount }} related</span></sc-if><sc-if value="{{ it.hasSource }}" hint-placeholder-val=""><span>⎘ {{ it.sourceDomain }}</span></sc-if></div></sc-if>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <!-- ROWS -->
+      <sc-if value="{{ isRows }}" hint-placeholder-val="">
+      <div style="border:1px solid #ededeb;border-radius:12px;overflow:hidden">
+        <div class="mono" style="display:flex;align-items:center;gap:14px;padding:10px 18px;background:#faf9f7;border-bottom:1px solid #f0eeeb;font-size:9.5px;letter-spacing:.1em;color:#b5b3ad">
+          <span style="flex:1">IDEA</span><span style="width:100px;flex:none">VERDICT</span><span style="width:150px;flex:none">LIFECYCLE</span><span style="width:120px;flex:none">SCORE</span><span style="width:44px;flex:none;text-align:right">UPD</span>
+        </div>
+        <sc-for list="{{ cards }}" as="it" hint-placeholder-count="5">
+          <div onClick="{{ it.onClick }}" style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid #f4f2ef;cursor:pointer" style-hover="background:#faf9f7">
+            <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.title }}</div><div style="font-size:11.5px;color:#a8a29e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.tagline }}</div></div>
+            <span style="width:100px;flex:none"><span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:{{ it.vColor }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ it.vDot }}"></span>{{ it.vLabel }}</span></span>
+            <span style="width:150px;flex:none;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:{{ it.stageColor }}"></span><span style="font-size:12px;color:#57534e">{{ it.stageLabel }}</span></span>
+            <span style="width:120px;flex:none;display:flex;align-items:center;gap:9px"><span style="display:flex;align-items:flex-end;gap:2px;height:16px"><sc-for list="{{ it.bars }}" as="b" hint-placeholder-count="7"><span style="width:4px;border-radius:1px;background:{{ b.bg }};height:{{ b.hSmall }}"></span></sc-for></span><span class="mono" style="font-size:11px;color:#78716c">{{ it.avg }}</span></span>
+            <span class="mono" style="width:44px;flex:none;text-align:right;font-size:10px;color:#b5b3ad">{{ it.updated }}</span>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ filteredEmpty }}" hint-placeholder-val="">
+        <div style="text-align:center;padding:54px 0;color:#c4c1ba"><div style="font-size:28px;margin-bottom:10px">◇</div><div style="font-size:13.5px;color:#a8a29e">{{ filteredEmptyMsg }}</div></div>
+      </sc-if>
+
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ===================== DETAIL ===================== -->
+    <sc-if value="{{ isDetail }}" hint-placeholder-val="">
+    <div class="view" style="display:flex;min-height:100%">
+
+      <!-- main canvas -->
+      <div style="flex:1;min-width:0;padding:26px 32px 44px">
+
+        <!-- header -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:6px">
+          <div style="flex:1;min-width:0">
+            <div contenteditable="{{ dTitleCe }}" onBlur="{{ onTitle }}" style="font-family:'Newsreader',serif;font-size:31px;letter-spacing:-.01em;line-height:1.15;color:#1c1c1f">{{ dTitle }}</div>
+            <div contenteditable="{{ dTitleCe }}" onBlur="{{ onTagline }}" style="font-size:14.5px;color:#78716c;margin-top:5px;min-height:20px">{{ dTagline }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex:none">
+            <span onClick="{{ toggleMode }}" style="font-size:12.5px;font-weight:500;padding:8px 15px;border-radius:9px;background:{{ modeBg }};color:{{ modeFg }};border:1px solid {{ modeBorder }};cursor:pointer">{{ modeLabel }}</span>
+          </div>
+        </div>
+
+        <!-- meta strip: verdict + lifecycle + source -->
+        <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;padding:16px 0 20px;border-bottom:1px solid #f0eeeb;margin-bottom:24px">
+          <!-- verdict -->
+          <div>
+            <div class="mono" style="font-size:9px;letter-spacing:.12em;color:#b5b3ad;margin-bottom:7px">VERDICT</div>
+            <div style="display:flex;gap:5px">
+              <sc-for list="{{ verdicts }}" as="v" hint-placeholder-count="3">
+                <span onClick="{{ v.onClick }}" style="cursor:pointer;font-size:11.5px;font-weight:{{ v.weight }};padding:5px 11px;border-radius:8px;display:flex;align-items:center;gap:6px;background:{{ v.bg }};color:{{ v.fg }};border:1px solid {{ v.border }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ v.dot }}"></span>{{ v.label }}</span>
+              </sc-for>
+            </div>
+          </div>
+          <!-- lifecycle stepper -->
+          <div>
+            <div class="mono" style="font-size:9px;letter-spacing:.12em;color:#b5b3ad;margin-bottom:7px">LIFECYCLE</div>
+            <div style="display:flex;align-items:center">
+              <sc-for list="{{ stepper }}" as="s" hint-placeholder-count="3">
+                <sc-if value="{{ s.showLine }}" hint-placeholder-val=""><span style="width:26px;height:2px;background:{{ s.lineBg }}"></span></sc-if>
+                <span onClick="{{ s.onClick }}" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:2px 4px"><span style="width:16px;height:16px;border-radius:50%;background:{{ s.dotBg }};border:1.5px solid {{ s.dotBorder }};display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px">{{ s.mark }}</span><span style="font-size:11.5px;color:{{ s.labelColor }};font-weight:{{ s.labelWeight }}">{{ s.label }}</span></span>
+              </sc-for>
+              <sc-if value="{{ isArchived }}" hint-placeholder-val=""><span style="margin-left:12px;font-size:10.5px;padding:3px 9px;border-radius:6px;background:#f4f2ef;color:#a8a29e" class="mono">ARCHIVED</span></sc-if>
+            </div>
+          </div>
+          <!-- source + archive -->
+          <div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+            <div>
+              <div class="mono" style="font-size:9px;letter-spacing:.12em;color:#b5b3ad;margin-bottom:7px">SOURCE</div>
+              <sc-if value="{{ dSourceEdit }}" hint-placeholder-val=""><input value="{{ dSource }}" onChange="{{ onSource }}" placeholder="paste a link…" style="width:170px;border:1px solid #e8e4dc;border-radius:7px;background:#fdfcfb;font-size:11.5px;padding:5px 8px;color:#57534e"></sc-if>
+              <sc-if value="{{ dSourceView }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px;color:{{ dSourceColor }}">{{ dSourceLabel }}</div></sc-if>
+            </div>
+            <span onClick="{{ toggleArchive }}" class="mono" style="font-size:10px;color:#c4c1ba;cursor:pointer;align-self:flex-end;padding-bottom:2px" style-hover="color:#b0442e">{{ archiveLabel }}</span>
+          </div>
+        </div>
+
+        <!-- promote banner / action -->
+        <sc-if value="{{ isPromoted }}" hint-placeholder-val="">
+          <div style="display:flex;align-items:center;gap:12px;background:#eef6f0;border:1px solid #cfe6d8;border-radius:12px;padding:13px 16px;margin-bottom:24px">
+            <span style="width:34px;height:34px;flex:none;border-radius:9px;background:#dcefe3;color:#3f7a56;display:flex;align-items:center;justify-content:center;font-size:16px">▦</span>
+            <div style="flex:1"><div style="font-size:13.5px;font-weight:600;color:#2f6446">Promoted to a Project</div><div style="font-size:12px;color:#5f8a72">This idea became <b>{{ dPromotedName }}</b> — kept here as its origin record.</div></div>
+            <span style="font-size:12.5px;font-weight:500;color:#3f7a56;cursor:pointer">View project →</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ canPromote }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:12px;background:#faf8ff;border:1px solid #e6ddf5;border-radius:12px;padding:13px 16px;margin-bottom:24px">
+            <span style="width:34px;height:34px;flex:none;border-radius:9px;background:#f2ecfd;color:#5b3fd6;display:flex;align-items:center;justify-content:center;font-size:16px">↗</span>
+            <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600">Ready to build this for real?</div><div style="font-size:12px;color:#78716c;line-height:1.45">Creates the Project and keeps this idea as its origin.</div></div>
+            <sc-if value="{{ promoteIdle }}" hint-placeholder-val="{{ true }}"><span onClick="{{ startPromote }}" style="flex:none;white-space:nowrap;font-size:12.5px;font-weight:500;padding:9px 16px;border-radius:9px;background:#1c1c1f;color:#fff;cursor:pointer">Promote to Project</span></sc-if>
+            <sc-if value="{{ promoteConfirm }}" hint-placeholder-val=""><div style="display:flex;align-items:center;gap:7px;flex:none;white-space:nowrap"><span onClick="{{ confirmPromote }}" style="font-size:12px;font-weight:500;padding:8px 13px;border-radius:8px;background:#3f7a56;color:#fff;cursor:pointer">Create Project</span><span onClick="{{ cancelPromote }}" style="font-size:12px;padding:8px 11px;border-radius:8px;color:#78716c;cursor:pointer">Cancel</span></div></sc-if>
+          </div>
+        </sc-if>
+
+        <!-- lean canvas -->
+        <div class="mono" style="font-size:9.5px;letter-spacing:.12em;color:#b5b3ad;margin-bottom:12px">THE CANVAS</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:30px">
+          <sc-for list="{{ fields }}" as="f" hint-placeholder-count="5">
+            <div style="grid-column:{{ f.col }};background:{{ f.bg }};border:1px solid {{ f.border }};border-radius:11px;padding:13px 15px">
+              <div class="mono" style="font-size:9.5px;letter-spacing:.1em;color:#b5b3ad;margin-bottom:7px">{{ f.label }}</div>
+              <sc-if value="{{ f.showText }}" hint-placeholder-val="{{ true }}"><div contenteditable="{{ f.ce }}" onBlur="{{ f.onBlur }}" style="font-size:13px;line-height:1.55;color:#33312e;min-height:{{ f.minH }}">{{ f.value }}</div></sc-if>
+              <sc-if value="{{ f.showEmpty }}" hint-placeholder-val=""><div style="font-size:12.5px;color:#c9c4bc;font-style:italic;min-height:{{ f.minH }}">{{ f.emptyText }}</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- scoring: radar + bars -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="mono" style="font-size:9.5px;letter-spacing:.12em;color:#b5b3ad">SCORING · 7 DIMENSIONS</div>
+          <div style="font-size:11.5px;color:#a8a29e">Tap the bars to rate 1–5 · <span style="color:#78716c">overall <b style="color:{{ scoreAvgColor }}">{{ scoreAvg }}</b>/5</span></div>
+        </div>
+        <div style="display:flex;gap:30px;align-items:center;border:1px solid #ededeb;border-radius:13px;padding:20px 24px;background:#fdfcfb">
+          <svg viewBox="0 0 240 240" style="width:196px;height:196px;flex:none">
+            <sc-for list="{{ radar.rings }}" as="r" hint-placeholder-count="5"><polygon points="{{ r.points }}" fill="none" stroke="#e4e0d9" stroke-width="1" opacity="{{ r.op }}"></polygon></sc-for>
+            <sc-for list="{{ radar.spokes }}" as="s" hint-placeholder-count="7"><line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}" stroke="#e4e0d9" stroke-width="1"></line></sc-for>
+            <polygon points="{{ radar.valuePoly }}" fill="{{ radarFill }}" stroke="{{ accent }}" stroke-width="1.8" stroke-linejoin="round"></polygon>
+            <sc-for list="{{ radar.dots }}" as="d" hint-placeholder-count="7"><circle cx="{{ d.x }}" cy="{{ d.y }}" r="2.8" fill="{{ accent }}"></circle></sc-for>
+            <sc-for list="{{ radar.labels }}" as="l" hint-placeholder-count="7"><text x="{{ l.x }}" y="{{ l.y }}" text-anchor="{{ l.anchor }}" font-size="8.4" fill="#8b857c" font-family="Geist Mono, monospace">{{ l.label }}</text></sc-for>
+          </svg>
+          <div style="flex:1;display:flex;flex-direction:column;gap:11px">
+            <sc-for list="{{ dims }}" as="d" hint-placeholder-count="7">
+              <div style="display:flex;align-items:center;gap:13px">
+                <div style="width:92px;flex:none;font-size:12px;color:#57534e">{{ d.label }}</div>
+                <div style="flex:1;display:flex;gap:4px">
+                  <sc-for list="{{ d.cells }}" as="c" hint-placeholder-count="5">
+                    <div onClick="{{ c.onClick }}" style="flex:1;height:9px;border-radius:3px;background:{{ c.bg }};cursor:pointer" style-hover="filter:brightness(.94)"></div>
+                  </sc-for>
+                </div>
+                <div class="mono" style="width:18px;flex:none;text-align:right;font-size:11.5px;color:{{ d.valColor }};font-weight:500">{{ d.valText }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- right rail: similar + related -->
+      <div style="width:300px;flex:none;border-left:1px solid #f0eeeb;padding:26px 22px;background:#fdfcfb">
+
+        <div class="mono" style="font-size:10px;letter-spacing:.13em;color:#5b3fd6;margin-bottom:4px">◇ SIMILAR IDEAS</div>
+        <div style="font-size:11px;color:#a8a29e;margin-bottom:14px">Auto-ranked by text overlap</div>
+        <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:28px">
+          <sc-for list="{{ similar }}" as="s" hint-placeholder-count="3">
+            <div onClick="{{ s.onClick }}" style="border:1px solid #ededeb;border-radius:10px;padding:11px 12px;cursor:pointer;background:#fff" style-hover="border-color:#d9d4f0;background:#faf8ff">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="width:7px;height:7px;border-radius:50%;background:{{ s.dot }};flex:none"></span><span style="font-size:12.5px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.title }}</span><span class="mono" style="font-size:10.5px;color:#5b3fd6;flex:none">{{ s.pct }}</span></div>
+              <div style="font-size:11px;color:#a8a29e;line-height:1.4;margin-bottom:8px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical">{{ s.tagline }}</div>
+              <div style="height:3px;border-radius:2px;background:#efece7"><div style="width:{{ s.barW }};height:100%;border-radius:2px;background:#5b3fd6;opacity:.55"></div></div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ similarEmpty }}" hint-placeholder-val=""><div style="font-size:12px;color:#c4c1ba;line-height:1.5">Add more detail to the problem, customer, and solution to surface similar ideas.</div></sc-if>
+        </div>
+
+        <div class="mono" style="font-size:10px;letter-spacing:.13em;color:#a8a29e;margin-bottom:4px">◍ RELATED IDEAS</div>
+        <div style="font-size:11px;color:#a8a29e;margin-bottom:12px">Linked by hand · bidirectional</div>
+        <div style="position:relative;margin-bottom:12px">
+          <div style="height:32px;border:1px solid #e8e4dc;border-radius:8px;background:#fff;display:flex;align-items:center;gap:7px;padding:0 10px"><span style="color:#b5b3ad;font-size:12px">+</span><input value="{{ relatedQuery }}" onChange="{{ onRelatedQuery }}" placeholder="Search ideas to link…" style="flex:1;min-width:0;border:none;background:transparent;font-size:12px;color:#57534e"></div>
+          <sc-if value="{{ hasRelatedResults }}" hint-placeholder-val="">
+            <div style="position:absolute;left:0;right:0;top:36px;z-index:5;background:#fff;border:1px solid #e8e4dc;border-radius:9px;box-shadow:0 8px 22px -10px rgba(0,0,0,.25);overflow:hidden">
+              <sc-for list="{{ relatedResults }}" as="r" hint-placeholder-count="2">
+                <div onClick="{{ r.onClick }}" style="padding:9px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f4f2ef" style-hover="background:#faf8ff"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.dot }}"></span><span style="font-size:12.5px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span><span style="font-size:11px;color:#5b3fd6">link</span></div>
+              </sc-for>
+              <sc-if value="{{ noRelatedResults }}" hint-placeholder-val=""><div style="padding:10px 12px;font-size:12px;color:#c4c1ba">No matches</div></sc-if>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <sc-for list="{{ related }}" as="r" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:9px;border:1px solid #ededeb;border-radius:10px;padding:9px 11px;background:#fff">
+              <span style="width:7px;height:7px;border-radius:50%;background:{{ r.dot }};flex:none"></span>
+              <span onClick="{{ r.onOpen }}" style="font-size:12.5px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer">{{ r.title }}</span>
+              <span onClick="{{ r.onUnlink }}" style="font-size:13px;color:#c4c1ba;cursor:pointer;flex:none" style-hover="color:#b0442e">✕</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ relatedEmpty }}" hint-placeholder-val=""><div style="font-size:12px;color:#c4c1ba;line-height:1.5">No linked ideas yet. Search above to connect one.</div></sc-if>
+        </div>
+
+        <div style="margin-top:26px;padding-top:18px;border-top:1px solid #f0eeeb">
+          <div class="mono" style="font-size:10px;letter-spacing:.13em;color:#b5b3ad;margin-bottom:10px">◷ IN THE GRAPH</div>
+          <div style="font-size:12.5px;color:#5b3fd6;cursor:pointer">Open this idea in the graph →</div>
+        </div>
+      </div>
+
+    </div>
+    </sc-if>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:760},&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#5b3fd6&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#5b3fd6&quot;,&quot;#3f7a56&quot;,&quot;#0e7490&quot;,&quot;#b0442e&quot;],&quot;section&quot;:&quot;Ideas&quot;},&quot;listLayout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;grid&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;grid&quot;,&quot;rows&quot;],&quot;section&quot;:&quot;Ideas&quot;},&quot;verdictStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;bold&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;bold&quot;,&quot;subtle&quot;],&quot;section&quot;:&quot;Ideas&quot;}}">
+class Component extends DCLogic {
+  state = {
+    view: 'list',
+    openId: 'warehouse',
+    mode: 'view',
+    stage: 'all',
+    query: '',
+    quickTitle: '',
+    quickTagline: '',
+    relatedQuery: '',
+    demoEmpty: false,
+    promoteConfirm: false,
+    seconds: 5047,
+    ideas: [
+      {
+        id: 'coldset', title: 'Coldset', tagline: 'Cold outreach that sounds like you.',
+        problem: 'Cold email tools spray generic templates, so reply rates crater and senders quietly burn their domain reputation.',
+        customer: 'Early founders and small sales teams doing manual outbound.',
+        solution: 'Coldset learns your voice from past threads and drafts a per-recipient cold email a real person would actually send — never a template.',
+        revenue_model: 'Per-seat SaaS at $29 per user per month, with usage add-ons for high-volume senders.',
+        stack_notes: 'Next.js + Supabase, thread import, Claude for drafting and voice-matching.',
+        verdict: 'strong', status: 'promoted', promoted_project: 'Coldset',
+        scores: { problem: 5, market: 4, revenue: 4, moat: 3, distribution: 4, build: 5, team_fit: 5 },
+        source_url: 'https://x.com/afounder/status/1789', related: ['merge'], updated: '2d',
+      },
+      {
+        id: 'warehouse', title: 'Warehouse Copilot', tagline: 'Onboard warehouse crews in a sim before day one.',
+        problem: 'New warehouse hires learn on the floor, which is slow, unsafe, and error-prone during peak season when teams scale fastest.',
+        customer: 'Ops managers at mid-size fulfillment and logistics companies.',
+        solution: 'A browser sim that runs new hires through picking, packing, and safety scenarios before they ever touch real inventory.',
+        revenue_model: 'Per-site annual license, with pilot pricing for the first three sites.',
+        stack_notes: 'Reuses the Warehouse sim engine; adds a scenario editor and a scoring layer on top.',
+        verdict: 'conditional', status: 'validating', promoted_project: '',
+        scores: { problem: 4, market: 3, revenue: 2, moat: 4, distribution: 2, build: 5, team_fit: 4 },
+        source_url: '', related: [], updated: '5h',
+      },
+      {
+        id: 'streaklet', title: 'Streaklet', tagline: 'Habit streaks that survive a bad day.',
+        problem: 'Streak apps punish a single miss and users quit, so the streak becomes a source of guilt instead of momentum.',
+        customer: 'Consumer — people building daily habits like fitness, journaling, or practice.',
+        solution: '', revenue_model: '', stack_notes: '',
+        verdict: 'unset', status: 'draft', promoted_project: '',
+        scores: { problem: 4, market: 3, revenue: null, moat: null, distribution: null, build: null, team_fit: null },
+        source_url: '', related: [], updated: '1d',
+      },
+      {
+        id: 'merge', title: 'Merge Warden', tagline: 'Stop merge conflicts before they happen.',
+        problem: 'Small teams working the same files hit merge conflicts constantly; overlapping edits waste hours and quietly introduce bugs.',
+        customer: 'Fast-moving engineering teams of two to ten sharing a repo.',
+        solution: 'Flags overlapping edits in real time and suggests who should claim which file before work starts.',
+        revenue_model: 'Per-seat SaaS with a free solo tier.',
+        stack_notes: 'A GitHub app plus a claim-lock layer — grew directly out of our own task-ownership work.',
+        verdict: 'conditional', status: 'validating', promoted_project: '',
+        scores: { problem: 4, market: 3, revenue: 3, moat: 2, distribution: 3, build: 4, team_fit: 4 },
+        source_url: 'https://github.com/sandbox/notes', related: ['coldset'], updated: '3d',
+      },
+      {
+        id: 'campus', title: 'Campus', tagline: 'Turn student builders into a growth channel.',
+        problem: 'Early consumer apps struggle to reach engaged young users, and paid channels are expensive and low-trust.',
+        customer: 'Consumer app teams before product-market fit.',
+        solution: 'A managed campus-ambassador program with playbooks and tracking.',
+        revenue_model: 'A take rate on ambassador payouts.',
+        stack_notes: 'Mostly operations plus a light dashboard.',
+        verdict: 'pass', status: 'archived', promoted_project: '',
+        scores: { problem: 3, market: 2, revenue: 2, moat: 1, distribution: 2, build: 3, team_fit: 2 },
+        source_url: '', related: [], updated: '1w',
+      },
+    ],
+  };
+
+  componentDidMount() { this._t = setInterval(() => this.setState(s => ({ seconds: s.seconds + 1 })), 1000); }
+  componentWillUnmount() { clearInterval(this._t); }
+
+  get DIMS() { return [['problem', 'Problem'], ['market', 'Market'], ['revenue', 'Revenue'], ['moat', 'Moat'], ['distribution', 'Distribution'], ['build', 'Build'], ['team_fit', 'Team fit']]; }
+  get FIELDS() {
+    return [
+      ['problem', 'PROBLEM', 'What is broken today?', false],
+      ['customer', 'CUSTOMER', 'Who feels it most?', false],
+      ['solution', 'SOLUTION', 'Your approach — how it works', true],
+      ['revenue_model', 'REVENUE MODEL', 'How it makes money', false],
+      ['stack_notes', 'STACK NOTES', 'How you would build it', false],
+    ];
+  }
+  get STAGES() { return [['draft', 'Draft'], ['validating', 'Validating'], ['promoted', 'Promoted']]; }
+  verdictMeta(v) {
+    const m = {
+      strong: { label: 'Strong', color: '#3f7a56', bg: '#eef6f0', dot: '#3f9b6c', border: '#cfe6d8' },
+      conditional: { label: 'Conditional', color: '#a9761f', bg: '#f8f1e6', dot: '#e0a53f', border: '#ecdcc0' },
+      pass: { label: 'Pass', color: '#b0442e', bg: '#f7ece8', dot: '#c2410c', border: '#ecd4cb' },
+      unset: { label: 'No verdict', color: '#a8a29e', bg: '#f4f2ef', dot: '#cfcac2', border: '#e8e4dc' },
+    };
+    return m[v] || m.unset;
+  }
+  stageColor(s) { return ({ draft: '#a8a29e', validating: '#c68a1e', promoted: '#3f7a56', archived: '#a8a29e' })[s] || '#a8a29e'; }
+  stageLabel(s) { return ({ draft: 'Draft', validating: 'Validating', promoted: 'Promoted', archived: 'Archived' })[s] || s; }
+
+  fmt(sec) {
+    const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+    const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+  domain(u) { try { return new URL(u).hostname.replace('www.', ''); } catch (e) { return u; } }
+
+  tokenize(idea) {
+    const txt = [idea.title, idea.tagline, idea.problem, idea.customer, idea.solution].join(' ').toLowerCase();
+    const stop = new Set('a an the and or of to in on for with is are be that this these those your you it as by from at into who which they we our own not but so more most can will would should over under across before during after each per via them their its whats what how when where why'.split(' '));
+    const words = txt.split(/[^a-z]+/).filter(w => w.length > 2 && !stop.has(w));
+    return new Set(words);
+  }
+  cosine(a, b) { let inter = 0; a.forEach(w => { if (b.has(w)) inter++; }); if (!a.size || !b.size) return 0; return inter / Math.sqrt(a.size * b.size); }
+
+  avgScore(idea) {
+    const vals = Object.values(idea.scores).filter(v => v != null);
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }
+  ratedCount(idea) { return Object.values(idea.scores).filter(v => v != null).length; }
+
+  mutate(id, fn) { this.setState(s => ({ ideas: s.ideas.map(x => x.id === id ? fn({ ...x }) : x) })); }
+  setField(id, key, val) { this.mutate(id, x => ({ ...x, [key]: val, updated: 'now' })); }
+  setScore(id, key, val) { this.mutate(id, x => ({ ...x, scores: { ...x.scores, [key]: x.scores[key] === val ? null : val }, updated: 'now' })); }
+  setVerdict(id, v) { this.mutate(id, x => ({ ...x, verdict: v, updated: 'now' })); }
+  setStatus(id, st) { if (st === 'promoted') { this.startPromote(); return; } this.mutate(id, x => ({ ...x, status: st, updated: 'now' })); }
+  toggleArchive(id) { this.mutate(id, x => ({ ...x, status: x.status === 'archived' ? 'draft' : 'archived', updated: 'now' })); }
+  startPromote() { this.setState({ promoteConfirm: true }); }
+  cancelPromote() { this.setState({ promoteConfirm: false }); }
+  confirmPromote(id) { this.setState(s => ({ promoteConfirm: false, ideas: s.ideas.map(x => x.id === id ? { ...x, status: 'promoted', promoted_project: x.promoted_project || x.title, updated: 'now' } : x) })); }
+  toggleRelated(aId, bId) {
+    this.setState(s => ({
+      relatedQuery: '',
+      ideas: s.ideas.map(x => {
+        if (x.id === aId) { const h = x.related.includes(bId); return { ...x, related: h ? x.related.filter(r => r !== bId) : [...x.related, bId] }; }
+        if (x.id === bId) { const h = x.related.includes(aId); return { ...x, related: h ? x.related.filter(r => r !== aId) : [...x.related, aId] }; }
+        return x;
+      }),
+    }));
+  }
+  createIdea() {
+    const t = this.state.quickTitle.trim();
+    if (!t) return;
+    const id = 'idea' + Date.now();
+    const idea = {
+      id, title: t, tagline: this.state.quickTagline.trim(),
+      problem: '', customer: '', solution: '', revenue_model: '', stack_notes: '',
+      verdict: 'unset', status: 'draft', promoted_project: '',
+      scores: { problem: null, market: null, revenue: null, moat: null, distribution: null, build: null, team_fit: null },
+      source_url: '', related: [], updated: 'now',
+    };
+    this.setState(s => ({ ideas: [idea, ...s.ideas], quickTitle: '', quickTagline: '', view: 'detail', openId: id, mode: 'edit', demoEmpty: false }));
+  }
+  openIdea(id) { this.setState({ view: 'detail', openId: id, mode: 'view', promoteConfirm: false, relatedQuery: '' }); }
+
+  radarFor(idea) {
+    const dims = this.DIMS, n = dims.length, cx = 120, cy = 120, R = 84;
+    const ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
+    const pt = (i, f) => [+(cx + Math.cos(ang(i)) * R * f).toFixed(1), +(cy + Math.sin(ang(i)) * R * f).toFixed(1)];
+    const rings = [1, 2, 3, 4, 5].map(l => ({ points: dims.map((d, i) => pt(i, l / 5).join(',')).join(' '), op: l === 5 ? 0.6 : 0.3 }));
+    const spokes = dims.map((d, i) => { const p = pt(i, 1); return { x1: cx, y1: cy, x2: p[0], y2: p[1] }; });
+    const valuePts = dims.map((d, i) => pt(i, (idea.scores[d[0]] || 0) / 5));
+    const valuePoly = valuePts.map(p => p.join(',')).join(' ');
+    const dots = dims.map((d, i) => { const v = idea.scores[d[0]]; if (!v) return null; const p = pt(i, v / 5); return { x: p[0], y: p[1] }; }).filter(Boolean);
+    const labels = dims.map((d, i) => {
+      const p = pt(i, 1.19);
+      const anchor = p[0] < cx - 4 ? 'end' : p[0] > cx + 4 ? 'start' : 'middle';
+      return { x: p[0], y: +(p[1] + (p[1] < cy ? -1 : 5)).toFixed(1), anchor, label: d[1] };
+    });
+    return { rings, spokes, valuePoly, dots, labels };
+  }
+
+  scoreColor(avg, accent) {
+    if (avg == null) return '#c4c1ba';
+    if (avg >= 4) return '#3f7a56';
+    if (avg >= 3) return accent;
+    if (avg >= 2) return '#a9761f';
+    return '#b0442e';
+  }
+
+  enrichCard(idea, accent) {
+    const vm = this.verdictMeta(idea.verdict);
+    const avg = this.avgScore(idea);
+    const rated = this.ratedCount(idea);
+    const idx = this.STAGES.findIndex(s => s[0] === idea.status);
+    const archived = idea.status === 'archived';
+    const track = this.STAGES.map((s, i) => {
+      const done = !archived && i < idx, current = !archived && i === idx;
+      const col = this.stageColor(s[0]);
+      return {
+        label: s[1].toUpperCase(), showLine: i > 0,
+        lineBg: (!archived && i <= idx) ? col : '#e7e5e0',
+        dotBg: (done || current) ? col : '#fff',
+        dotBorder: (done || current) ? col : '#d6d1c9',
+        labelColor: current ? col : (done ? '#78716c' : '#c4c1ba'),
+        labelWeight: current ? 600 : 400,
+      };
+    });
+    const bars = this.DIMS.map(d => {
+      const v = idea.scores[d[0]];
+      return {
+        title: d[1], bg: v ? accent : '#e7e5e0',
+        h: (v ? Math.max(5, v / 5 * 26) : 4).toFixed(0) + 'px',
+        hSmall: (v ? Math.max(3, v / 5 * 16) : 3).toFixed(0) + 'px',
+      };
+    });
+    return {
+      id: idea.id, title: idea.title, tagline: idea.tagline || 'No pitch yet', updated: idea.updated,
+      onClick: () => this.openIdea(idea.id),
+      vLabel: vm.label, vColor: vm.color, vBg: vm.bg, vDot: vm.dot,
+      track, stageColor: this.stageColor(idea.status), stageLabel: this.stageLabel(idea.status),
+      bars, avg: avg == null ? '–' : avg.toFixed(1), avgColor: this.scoreColor(avg, accent),
+      rated: rated + ' of 7 rated',
+      promoted: idea.status === 'promoted', promotedName: idea.promoted_project,
+      relatedCount: idea.related.length, hasSource: !!idea.source_url, sourceDomain: this.domain(idea.source_url),
+      hasMeta: idea.status === 'promoted' || idea.related.length > 0 || !!idea.source_url,
+    };
+  }
+
+  renderVals() {
+    const accent = this.props.accentColor || '#5b3fd6';
+    const listLayout = this.props.listLayout || 'grid';
+    const verdictStyle = this.props.verdictStyle || 'bold';
+    const v = this.state.view;
+    const ideas = this.state.ideas;
+
+    const activeCount = ideas.filter(i => i.status === 'draft' || i.status === 'validating').length;
+    const NAV = [['home', 'Home', '◈'], ['projects', 'Projects', '▦'], ['ideas', 'Ideas', '◇'], ['tasks', 'Tasks', '⊞'], ['time', 'Time', '◷'], ['prompts', 'Prompts', '❝'], ['agents', 'Agents', '✦'], ['notes', 'Notes', '✎'], ['brain', 'Brain', '◍'], ['graph', 'Graph', '⬡'], ['marketing', 'Growth', '↗']];
+    const nav = NAV.map(([id, label, icon]) => {
+      const active = id === 'ideas';
+      const badge = id === 'ideas' ? String(activeCount) : id === 'projects' ? '3' : id === 'time' ? '18.5h' : '';
+      return {
+        id, label, icon, onClick: id === 'ideas' ? () => this.setState({ view: 'list' }) : () => {},
+        bg: active ? '#efece7' : 'transparent', fg: active ? '#1c1c1f' : '#57534e',
+        iconColor: active ? '#78716c' : '#c4c1ba', weight: active ? 600 : 400, badge,
+      };
+    });
+
+    const base = {
+      accent, radarFill: accent + '22',
+      nav, timerText: this.fmt(this.state.seconds),
+      isList: v === 'list', isDetail: v === 'detail',
+      backToList: () => this.setState({ view: 'list' }),
+    };
+
+    if (v === 'list') {
+      const isEmpty = this.state.demoEmpty || ideas.length === 0;
+      const q = this.state.query.trim().toLowerCase();
+      const byStage = this.state.stage === 'all' ? ideas : ideas.filter(i => i.status === this.state.stage);
+      const filtered = byStage.filter(i => !q || (i.title + ' ' + i.tagline + ' ' + i.problem + ' ' + i.customer).toLowerCase().includes(q));
+      const cards = filtered.map(i => this.enrichCard(i, accent));
+      const count = st => st === 'all' ? ideas.length : ideas.filter(i => i.status === st).length;
+      const stageChips = [['all', 'All'], ['draft', 'Draft'], ['validating', 'Validating'], ['promoted', 'Promoted'], ['archived', 'Archived']].map(([id, label]) => ({
+        label, count: count(id), onClick: () => this.setState({ stage: id }),
+        bg: this.state.stage === id ? '#1c1c1f' : '#f4f2ef', fg: this.state.stage === id ? '#fff' : '#78716c', weight: this.state.stage === id ? 500 : 400,
+      }));
+      const canCreate = this.state.quickTitle.trim().length > 0;
+      const seeds = ['What problem keeps coming up?', 'A tool you wish existed', 'Something the team keeps rebuilding'];
+      return {
+        ...base,
+        viewTitle: 'Ideas',
+        isEmpty, notEmpty: !isEmpty,
+        demoLabel: this.state.demoEmpty ? '↩ show ideas' : '⎋ view empty state',
+        toggleDemoEmpty: () => this.setState({ demoEmpty: !this.state.demoEmpty }),
+        quickTitle: this.state.quickTitle, quickTagline: this.state.quickTagline,
+        onQuickTitle: (e) => this.setState({ quickTitle: e.target.value }),
+        onQuickTagline: (e) => this.setState({ quickTagline: e.target.value }),
+        onQuickKey: (e) => { if (e.key === 'Enter') this.createIdea(); },
+        createIdea: () => this.createIdea(),
+        createBg: canCreate ? '#1c1c1f' : '#efece7', createFg: canCreate ? '#fff' : '#c4c1ba', createCursor: canCreate ? 'pointer' : 'default',
+        seedPrompts: seeds.map(s => ({ label: s, onClick: () => this.setState({ quickTitle: s }) })),
+        stageChips,
+        query: this.state.query, onQuery: (e) => this.setState({ query: e.target.value }),
+        isGrid: listLayout === 'grid', isRows: listLayout === 'rows',
+        cards,
+        filteredEmpty: !isEmpty && cards.length === 0,
+        filteredEmptyMsg: q ? 'No ideas match “' + this.state.query + '”.' : 'Nothing in ' + this.state.stage + ' yet.',
+      };
+    }
+
+    // DETAIL
+    const idea = ideas.find(i => i.id === this.state.openId) || ideas[0];
+    const isEdit = this.state.mode === 'edit';
+    const vm = this.verdictMeta(idea.verdict);
+    const idx = this.STAGES.findIndex(s => s[0] === idea.status);
+    const archived = idea.status === 'archived';
+
+    const verdicts = ['strong', 'conditional', 'pass'].map(k => {
+      const m = this.verdictMeta(k); const on = idea.verdict === k;
+      if (verdictStyle === 'subtle') {
+        return { label: m.label, dot: m.dot, onClick: () => this.setVerdict(idea.id, k), weight: on ? 600 : 400, bg: on ? m.bg : 'transparent', fg: on ? m.color : '#a8a29e', border: on ? m.border : '#ededeb' };
+      }
+      return { label: m.label, dot: m.dot, onClick: () => this.setVerdict(idea.id, k), weight: on ? 600 : 500, bg: on ? m.bg : '#fff', fg: on ? m.color : '#a8a29e', border: on ? m.border : '#ededeb' };
+    });
+
+    const stepper = this.STAGES.map((s, i) => {
+      const done = !archived && i < idx, current = !archived && i === idx;
+      const col = this.stageColor(s[0]);
+      return {
+        label: s[1], showLine: i > 0, mark: done ? '✓' : '',
+        lineBg: (!archived && i <= idx) ? col : '#e7e5e0',
+        dotBg: (done || current) ? col : '#fff', dotBorder: (done || current) ? col : '#d6d1c9',
+        labelColor: current ? col : (done ? '#78716c' : '#c4c1ba'), labelWeight: current ? 600 : 400,
+        onClick: () => this.setStatus(idea.id, s[0]),
+      };
+    });
+
+    const fields = this.FIELDS.map(([key, label, hint, wide]) => {
+      const val = idea[key];
+      const empty = !val;
+      return {
+        label, col: wide ? '1 / -1' : 'auto', minH: wide ? '46px' : '32px',
+        bg: isEdit ? '#fff' : '#faf9f7', border: isEdit ? '#e2ddd4' : '#f0eeeb',
+        ce: isEdit ? 'true' : 'false',
+        showText: isEdit || !empty, showEmpty: !isEdit && empty,
+        value: val, emptyText: hint,
+        onBlur: (e) => this.setField(idea.id, key, e.target.innerText.trim()),
+      };
+    });
+
+    const dims = this.DIMS.map(([key, label]) => {
+      const val = idea.scores[key];
+      const cells = [1, 2, 3, 4, 5].map(n => ({ bg: val && n <= val ? accent : '#eeece7', onClick: () => this.setScore(idea.id, key, n) }));
+      return { label, cells, valText: val || '–', valColor: val ? '#57534e' : '#c4c1ba' };
+    });
+    const avg = this.avgScore(idea);
+
+    // similar (auto)
+    const myTok = this.tokenize(idea);
+    const sims = ideas.filter(i => i.id !== idea.id).map(i => ({ idea: i, sim: this.cosine(myTok, this.tokenize(i)) })).filter(x => x.sim > 0.02).sort((a, b) => b.sim - a.sim).slice(0, 3);
+    const maxSim = sims.length ? sims[0].sim : 1;
+    const similar = sims.map(({ idea: i, sim }) => ({
+      title: i.title, tagline: i.tagline || 'No pitch yet', pct: Math.round(sim * 100) + '%',
+      barW: Math.round(sim / maxSim * 100) + '%', dot: this.verdictMeta(i.verdict).dot, onClick: () => this.openIdea(i.id),
+    }));
+
+    // related (manual)
+    const related = idea.related.map(rid => ideas.find(i => i.id === rid)).filter(Boolean).map(i => ({
+      title: i.title, dot: this.verdictMeta(i.verdict).dot,
+      onOpen: () => this.openIdea(i.id), onUnlink: () => this.toggleRelated(idea.id, i.id),
+    }));
+    const rq = this.state.relatedQuery.trim().toLowerCase();
+    const relatedResults = rq ? ideas.filter(i => i.id !== idea.id && !idea.related.includes(i.id) && (i.title + ' ' + i.tagline).toLowerCase().includes(rq)).slice(0, 5).map(i => ({
+      title: i.title, dot: this.verdictMeta(i.verdict).dot, onClick: () => this.toggleRelated(idea.id, i.id),
+    })) : [];
+
+    return {
+      ...base,
+      viewTitle: idea.title,
+      dTitle: idea.title, dTagline: idea.tagline || 'Add a one-line pitch', dTitleCe: isEdit ? 'true' : 'false',
+      onTitle: (e) => this.setField(idea.id, 'title', e.target.innerText.trim() || idea.title),
+      onTagline: (e) => this.setField(idea.id, 'tagline', e.target.innerText.trim()),
+      isEdit, modeLabel: isEdit ? '✓ Done' : '✎ Edit',
+      modeBg: isEdit ? accent : '#fff', modeFg: isEdit ? '#fff' : '#57534e', modeBorder: isEdit ? accent : '#e2ddd4',
+      toggleMode: () => this.setState({ mode: isEdit ? 'view' : 'edit' }),
+      verdicts,
+      stepper, isArchived: archived,
+      archiveLabel: archived ? '↩ restore' : 'archive',
+      toggleArchive: () => this.toggleArchive(idea.id),
+      dSource: idea.source_url, dSourceEdit: isEdit, dSourceView: !isEdit,
+      dSourceLabel: idea.source_url ? this.domain(idea.source_url) : 'None',
+      dSourceColor: idea.source_url ? '#5b3fd6' : '#c4c1ba',
+      onSource: (e) => this.setField(idea.id, 'source_url', e.target.value),
+      isPromoted: idea.status === 'promoted', dPromotedName: idea.promoted_project,
+      canPromote: idea.status !== 'promoted', promoteIdle: !this.state.promoteConfirm, promoteConfirm: this.state.promoteConfirm,
+      startPromote: () => this.startPromote(), cancelPromote: () => this.cancelPromote(), confirmPromote: () => this.confirmPromote(idea.id),
+      fields,
+      radar: this.radarFor(idea),
+      dims, scoreAvg: avg == null ? '–' : avg.toFixed(1), scoreAvgColor: this.scoreColor(avg, accent),
+      similar, similarEmpty: similar.length === 0,
+      related, relatedEmpty: related.length === 0,
+      relatedQuery: this.state.relatedQuery, onRelatedQuery: (e) => this.setState({ relatedQuery: e.target.value }),
+      hasRelatedResults: rq.length > 0, relatedResults, noRelatedResults: rq.length > 0 && relatedResults.length === 0,
+    };
+  }
+}
+</script>
+</body>
+</html>

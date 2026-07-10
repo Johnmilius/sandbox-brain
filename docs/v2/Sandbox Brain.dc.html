@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:#e7e5e0;font-family:'Geist',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#1c1c1f}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#d6d3cd;border-radius:6px;border:3px solid transparent;background-clip:content-box}
+  a{color:#5b3fd6;text-decoration:none}
+  a:hover{color:#4a2fc0}
+  .mono{font-family:'Geist Mono',monospace}
+  @keyframes flowSlow{to{background-position-y:-320px}}
+  @keyframes ring{0%{transform:scale(.8);opacity:.55}100%{transform:scale(2.4);opacity:0}}
+  @keyframes fadeup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .view{animation:fadeup .28s ease both}
+  .navitem{transition:background .12s,color .12s}
+  .navitem:hover{background:#efece7 !important}
+  .rowhover{transition:background .12s}
+  .rowhover:hover{background:#faf9f7}
+  .gnode{transition:opacity .25s}
+  .gcircle{transition:transform .16s,box-shadow .16s}
+  .gnode:hover .gcircle{transform:scale(1.18)}
+  .gnode:hover{z-index:5 !important}
+  .tcard{transition:box-shadow .13s,transform .13s}
+  .tcard:hover{box-shadow:0 4px 14px -4px rgba(0,0,0,.16) !important;transform:translateY(-1px)}
+  @keyframes slideover{from{transform:translateX(30px);opacity:.4}to{transform:none;opacity:1}}
+  .wlink{border-bottom:1.5px solid #cdc6f0;cursor:pointer;transition:background .12s}
+  .wlink:hover{background:#efe9ff}
+  .tbar .tbarval{transition:opacity .14s}
+  .tbar:hover .tbarval{opacity:1 !important}
+  .tbar:hover>div:last-child{filter:brightness(1.06) saturate(1.05)}
+</style>
+</helmet>
+
+<div style="display:flex;height:100vh;width:100%;background:#fff;overflow:hidden">
+
+  <!-- ============ SIDEBAR ============ -->
+  <div style="width:224px;flex:none;background:#fafaf9;border-right:1px solid #ededeb;padding:18px 13px;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:9px;font-weight:600;font-size:14.5px;padding:2px 8px 18px">
+      <span style="width:26px;height:26px;border-radius:7px;background:#1c1c1f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">◨</span>Sandbox Brain
+    </div>
+    <div class="mono" style="font-size:9.5px;letter-spacing:.14em;color:#b5b3ad;padding:0 8px 8px">WORKSPACE</div>
+    <div style="display:flex;flex-direction:column;gap:1px;font-size:13.5px">
+      <sc-for list="{{ nav }}" as="item" hint-placeholder-count="9">
+        <div class="navitem" onClick="{{ item.onClick }}" style="padding:7px 9px;border-radius:8px;display:flex;align-items:center;gap:10px;cursor:pointer;background:{{ item.bg }};color:{{ item.fg }};font-weight:{{ item.weight }}">
+          <span style="width:16px;text-align:center;color:{{ item.iconColor }}">{{ item.icon }}</span>{{ item.label }}
+          <sc-if value="{{ item.badge }}" hint-placeholder-val=""><span class="mono" style="margin-left:auto;font-size:10px;color:#b5b3ad">{{ item.badge }}</span></sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:2px">
+      <div style="padding:9px 10px;border:1px solid #ededeb;border-radius:9px;display:flex;align-items:center;gap:10px;background:#fff">
+        <span style="position:relative;width:9px;height:9px;flex:none">
+          <span style="position:absolute;inset:0;border-radius:50%;background:{{ timerColor }}"></span>
+          <sc-if value="{{ timerRunning }}" hint-placeholder-val=""><span style="position:absolute;inset:0;border-radius:50%;background:#22c55e;animation:ring 1.8s ease-out infinite"></span></sc-if>
+        </span>
+        <div style="flex:1;min-width:0">
+          <div class="mono" style="font-size:14px;font-weight:500;letter-spacing:.01em">{{ timerText }}</div>
+          <div style="font-size:10.5px;color:#a8a29e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ramp landing page</div>
+        </div>
+        <sc-if value="{{ timerRunning }}" hint-placeholder-val="{{ true }}">
+          <span onClick="{{ pauseTimer }}" title="Pause" style="width:28px;height:28px;flex:none;border-radius:7px;background:#1c1c1f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">❚❚</span>
+        </sc-if>
+        <sc-if value="{{ timerPaused }}" hint-placeholder-val="">
+          <div style="display:flex;gap:5px;flex:none">
+            <span onClick="{{ endTimer }}" title="End &amp; save to time log" style="width:28px;height:28px;border-radius:7px;background:#fff;border:1px solid #e2ddd6;color:#b0442e;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">■</span>
+            <span onClick="{{ resumeTimer }}" title="Resume" style="width:28px;height:28px;border-radius:7px;background:#22c55e;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">▶</span>
+          </div>
+        </sc-if>
+      </div>
+      <sc-if value="{{ savedToast }}" hint-placeholder-val="">
+        <div style="margin-top:6px;padding:8px 11px;border-radius:9px;background:#eef6f0;border:1px solid #cfe6d8;display:flex;align-items:center;gap:8px;font-size:11.5px;color:#3f7a56"><span>✓</span>{{ savedToast }}</div>
+      </sc-if>
+      <div style="display:flex;align-items:center;gap:9px;padding:9px 8px 2px;font-size:12.5px;color:#57534e"><span style="width:24px;height:24px;border-radius:50%;background:#e7e5e0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">JM</span>John Milius</div>
+    </div>
+  </div>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- topbar -->
+    <div style="height:52px;flex:none;border-bottom:1px solid #f0eeeb;display:flex;align-items:center;gap:14px;padding:0 26px">
+      <div style="font-weight:600;font-size:14px">{{ viewTitle }}</div>
+      <div style="flex:1;max-width:340px;height:32px;border-radius:9px;background:#f6f4f1;display:flex;align-items:center;gap:8px;padding:0 11px;color:#a8a29e;font-size:12.5px;margin-left:8px"><span>⌕</span>Search the brain…<span class="mono" style="margin-left:auto;font-size:9.5px;border:1px solid #e2ddd6;padding:1px 5px;border-radius:4px">⌘K</span></div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:7px">
+        <span class="mono" style="font-size:11px;color:#a8a29e">3 online</span>
+        <span style="width:24px;height:24px;border-radius:50%;background:#cdd4ea;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#4a5b8a">AL</span>
+        <span style="width:24px;height:24px;border-radius:50%;background:#c3ddca;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#3f7a56;margin-left:-8px">SM</span>
+        <span style="width:24px;height:24px;border-radius:50%;background:#e7e5e0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#57534e;margin-left:-8px">JM</span>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;position:relative">
+
+    <!-- ===================== HOME ===================== -->
+    <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+    <div class="view" style="display:flex;min-height:100%">
+      <div style="flex:1;padding:30px 34px;min-width:0">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px">
+          <div style="font-family:'Newsreader',serif;font-size:29px;letter-spacing:-.01em">{{ greeting }}, John</div>
+          <div class="mono" style="font-size:11px;color:#a8a29e">MON · JUL 6</div>
+        </div>
+        <div style="color:#78716c;font-size:13.5px;margin-bottom:24px">{{ feedSummary }}</div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="mono" style="font-size:10px;letter-spacing:.14em;color:#b5b3ad">FLOWING NOW</div>
+          <div style="display:flex;gap:4px">
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+              <span onClick="{{ f.onClick }}" style="cursor:pointer;font-size:11.5px;padding:4px 10px;border-radius:14px;background:{{ f.bg }};color:{{ f.fg }};font-weight:{{ f.weight }}">{{ f.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="position:relative">
+          <div style="position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:#e7e5e0"></div>
+          <div style="position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:repeating-linear-gradient(#a8a29e 0 5px,transparent 5px 12px);background-size:2px 320px;opacity:.5;animation:{{ flowAnim }}"></div>
+          <sc-for list="{{ feed }}" as="f" hint-placeholder-count="5">
+            <div style="display:flex;gap:16px;padding:10px 0;position:relative">
+              <span style="width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid {{ f.dot }};margin-top:2px;flex:none;z-index:1"></span>
+              <div style="font-size:13.5px;line-height:1.55;padding-top:0">
+                <b style="font-weight:600;color:{{ f.actorColor }}">{{ f.actor }}</b> {{ f.verb }}
+                <span style="background:{{ f.chipAbg }};color:{{ f.chipAfg }};padding:1px 7px;border-radius:6px;white-space:nowrap">{{ f.chipA }}</span><sc-if value="{{ f.chipB }}" hint-placeholder-val=""> <span style="color:#c4c1ba">→</span> <span style="background:{{ f.chipBbg }};color:{{ f.chipBfg }};padding:1px 7px;border-radius:6px;white-space:nowrap">{{ f.chipB }}</span></sc-if>
+                <div class="mono" style="color:#a8a29e;font-size:11px;margin-top:2px">{{ f.meta }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- right rail -->
+      <div style="width:262px;flex:none;border-left:1px solid #f0eeeb;padding:30px 22px;background:#fdfcfb">
+        <div class="mono" style="font-size:10px;letter-spacing:.14em;color:#b5b3ad;margin-bottom:14px">ACTIVE PROJECTS</div>
+        <div style="display:flex;flex-direction:column;gap:15px;margin-bottom:28px">
+          <sc-for list="{{ projects }}" as="p" hint-placeholder-count="3">
+            <div style="cursor:pointer" onClick="{{ goProjects }}">
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span style="font-weight:500">{{ p.name }}</span><span class="mono" style="color:#a8a29e;font-size:11px">{{ p.pctText }}</span></div>
+              <div style="height:5px;border-radius:3px;background:#efece7"><div style="width:{{ p.pctText }};height:100%;border-radius:3px;background:#1c1c1f"></div></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px">
+          <div class="mono" style="font-size:10px;letter-spacing:.14em;color:#b5b3ad">TIME LOGGED</div>
+          <div class="mono" style="font-size:10px;color:#78716c">18.5h total</div>
+        </div>
+        <div style="font-size:11px;color:#a8a29e;margin-bottom:14px">Hours the team tracked each day this week.</div>
+        <div style="display:flex;align-items:flex-end;gap:5px;height:66px">
+          <sc-for list="{{ weekBars }}" as="b" hint-placeholder-count="7">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px">
+              <span class="mono" style="font-size:9px;color:{{ b.dayColor }};font-weight:{{ b.dayWeight }}">{{ b.total }}</span>
+              <div style="width:100%;background:{{ b.miniBg }};border-radius:3px;height:{{ b.h }}"></div>
+            </div>
+          </sc-for>
+        </div>
+        <div class="mono" style="display:flex;gap:5px;margin-top:6px">
+          <sc-for list="{{ weekBars }}" as="b" hint-placeholder-count="7">
+            <span style="flex:1;text-align:center;font-size:9.5px;color:{{ b.dayColor }};font-weight:{{ b.dayWeight }}">{{ b.day }}</span>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:12px;font-size:11px;color:#78716c">
+          <span style="width:8px;height:8px;border-radius:2px;background:#1c1c1f"></span>Thu is today — your busiest day at 4.0h
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== NOTES ===================== -->
+    <sc-if value="{{ isNotes }}" hint-placeholder-val="">
+    <div class="view" style="display:flex;min-height:100%">
+      <!-- note list -->
+      <div style="width:270px;flex:none;border-right:1px solid #f0eeeb;padding:20px 14px;background:#fdfcfb">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 6px 12px"><div class="mono" style="font-size:10px;letter-spacing:.14em;color:#b5b3ad">ALL NOTES · {{ noteCount }}</div><span style="font-size:15px;color:#a8a29e;cursor:pointer">+</span></div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <sc-for list="{{ notes }}" as="n" hint-placeholder-count="4">
+            <div class="rowhover" onClick="{{ n.onClick }}" style="padding:10px 11px;border-radius:9px;cursor:pointer;background:{{ n.bg }}">
+              <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-weight:{{ n.weight }};font-size:13px">{{ n.title }}</div><span class="mono" style="font-size:10px;color:#b5b3ad">{{ n.edited }}</span></div>
+              <div style="font-size:11.5px;color:#a8a29e;line-height:1.4;margin-top:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">{{ n.snippet }}</div>
+              <div class="mono" style="font-size:10px;color:{{ n.tagColor }};margin-top:5px">{{ n.tag }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <!-- editor -->
+      <div style="flex:1;display:flex;min-width:0">
+        <div style="flex:1;padding:34px 40px;min-width:0;max-width:680px">
+          <div class="mono" style="font-size:10px;letter-spacing:.14em;color:{{ noteTagColor }};margin-bottom:10px">{{ noteTag }}</div>
+          <div contenteditable="true" style="font-family:'Newsreader',serif;font-size:30px;letter-spacing:-.01em;outline:none;margin-bottom:6px">{{ noteTitle }}</div>
+          <div class="mono" style="font-size:11px;color:#a8a29e;margin-bottom:22px">edited {{ noteEdited }} · {{ noteLinkCount }} links</div>
+          <div style="font-size:15px;line-height:1.85;color:#33312e">
+            <sc-for list="{{ noteSegments }}" as="s" hint-placeholder-count="6">
+              <sc-if value="{{ s.isLink }}" hint-placeholder-val="">
+                <span class="wlink" onClick="{{ s.onClick }}" style="color:#5b3fd6">{{ s.value }}</span>
+              </sc-if>
+              <sc-if value="{{ s.isText }}" hint-placeholder-val="{{ true }}"><span>{{ s.value }}</span></sc-if>
+            </sc-for>
+          </div>
+        </div>
+        <!-- backlinks -->
+        <div style="width:250px;flex:none;border-left:1px solid #f0eeeb;padding:34px 22px;background:#fdfcfb">
+          <div class="mono" style="font-size:10px;letter-spacing:.14em;color:#b5b3ad;margin-bottom:14px">◍ LINKED FROM</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ backlinks }}" as="b" hint-placeholder-count="2">
+              <div class="rowhover" onClick="{{ b.onClick }}" style="padding:11px 13px;border:1px solid #ededeb;border-radius:10px;cursor:pointer;background:#fff">
+                <div style="font-weight:500;font-size:12.5px">{{ b.title }}</div>
+                <div style="font-size:11px;color:#a8a29e;line-height:1.4;margin-top:3px">{{ b.context }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noBacklinks }}" hint-placeholder-val=""><div style="font-size:12px;color:#c4c1ba;line-height:1.5">No other notes link here yet.</div></sc-if>
+          </div>
+          <div class="mono" style="font-size:10px;letter-spacing:.14em;color:#b5b3ad;margin:24px 0 12px">◷ IN THE GRAPH</div>
+          <div onClick="{{ goGraph }}" style="cursor:pointer;font-size:12.5px;color:#5b3fd6">Open this note in the graph →</div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== GRAPH ===================== -->
+    <sc-if value="{{ isGraph }}" hint-placeholder-val="">
+    <div class="view" style="display:flex;min-height:100%;height:100%">
+      <div ref="{{ canvasRef }}" style="flex:1;position:relative;overflow:hidden;min-width:0;background:radial-gradient(circle at 50% 44%,#ffffff 0%,#faf9f7 62%,#f4f2ee 100%)">
+        <div style="position:absolute;top:22px;left:26px;z-index:5;pointer-events:none">
+          <div style="font-family:'Newsreader',serif;font-size:24px">The graph</div>
+          <div style="color:#78716c;font-size:12.5px">142 connections · drag the nodes around</div>
+        </div>
+        <svg viewBox="0 0 760 480" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%">
+          <sc-for list="{{ graphEdges }}" as="e" hint-placeholder-count="9">
+            <path d="{{ e.d }}" fill="none" stroke="{{ e.stroke }}" stroke-width="{{ e.w }}" stroke-linecap="round" opacity="{{ e.opacity }}" vector-effect="non-scaling-stroke"></path>
+          </sc-for>
+        </svg>
+        <div style="position:absolute;left:{{ focusX }};top:{{ focusY }};transform:translate(-50%,-50%);z-index:1;pointer-events:none">
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:190px;height:190px;border-radius:50%;border:1px solid #eae5dd"></div>
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:290px;height:290px;border-radius:50%;border:1px solid #f1ede6"></div>
+        </div>
+        <sc-for list="{{ graphNodes }}" as="n" hint-placeholder-count="7">
+          <div class="gnode" onMouseDown="{{ n.onDown }}" onTouchStart="{{ n.onDown }}" style="position:absolute;left:{{ n.left }};top:{{ n.top }};transform:translate(-50%,-50%);cursor:grab;opacity:{{ n.opacity }};z-index:{{ n.z }};touch-action:none;user-select:none">
+            <div class="gcircle" style="width:{{ n.d }};height:{{ n.d }};border-radius:50%;background:{{ n.bg }};border:{{ n.border }};box-shadow:{{ n.shadow }};display:flex;align-items:center;justify-content:center;color:{{ n.iconColor }};font-size:{{ n.iconSize }}">{{ n.icon }}</div>
+            <div style="position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:{{ n.size }};color:{{ n.fg }};font-weight:{{ n.weight }};text-shadow:0 1px 2px #fff,0 0 3px #fff;pointer-events:none">{{ n.label }}</div>
+          </div>
+        </sc-for>
+        <div style="position:absolute;left:20px;bottom:16px;display:flex;gap:14px;font-size:10.5px;color:#a8a29e;z-index:3" class="mono">
+          <span style="display:flex;gap:5px;align-items:center"><span style="width:7px;height:7px;border-radius:50%;background:#4a5b8a"></span>NOTES</span>
+          <span style="display:flex;gap:5px;align-items:center"><span style="width:7px;height:7px;border-radius:50%;background:#8a6a2a"></span>PROMPTS</span>
+          <span style="display:flex;gap:5px;align-items:center"><span style="width:7px;height:7px;border-radius:50%;background:#1c1c1f"></span>PROJECTS</span>
+          <span style="display:flex;gap:5px;align-items:center"><span style="width:7px;height:7px;border-radius:50%;background:#3f7a56"></span>PEOPLE</span>
+          <span style="display:flex;gap:5px;align-items:center"><span style="width:7px;height:7px;border-radius:50%;background:#6a5f8a"></span>AGENTS</span>
+        </div>
+      </div>
+      <!-- detail panel -->
+      <div style="width:270px;flex:none;border-left:1px solid #f0eeeb;padding:26px 22px;background:#fdfcfb">
+        <div class="mono" style="font-size:10px;letter-spacing:.14em;color:{{ nodeTypeColor }};margin-bottom:8px">{{ nodeType }}</div>
+        <div style="font-family:'Newsreader',serif;font-size:23px;margin-bottom:3px">{{ nodeLabel }}</div>
+        <div class="mono" style="font-size:11px;color:#a8a29e;margin-bottom:20px">{{ nodeConnCount }} connections</div>
+        <div class="mono" style="font-size:10px;letter-spacing:.14em;color:#b5b3ad;margin-bottom:11px">CONNECTED TO</div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <sc-for list="{{ nodeConnections }}" as="c" hint-placeholder-count="4">
+            <div class="rowhover" onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:8px;cursor:pointer;font-size:12.5px"><span style="width:7px;height:7px;border-radius:50%;background:{{ c.color }};flex:none"></span>{{ c.label }}</div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ nodeIsNote }}" hint-placeholder-val=""><div onClick="{{ goNotes }}" style="margin-top:18px;font-size:12.5px;color:#5b3fd6;cursor:pointer">Open note →</div></sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== PROJECTS ===================== -->
+    <sc-if value="{{ isProjects }}" hint-placeholder-val="">
+    <div class="view" style="padding:30px 34px">
+      <div style="font-family:'Newsreader',serif;font-size:26px;margin-bottom:2px">Projects</div>
+      <div style="color:#78716c;font-size:13px;margin-bottom:24px">3 active · click a project to open its tasks.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:840px">
+        <sc-for list="{{ projects }}" as="p" hint-placeholder-count="3">
+          <div class="rowhover" onClick="{{ p.onClick }}" style="border:1px solid #ededeb;border-radius:13px;padding:20px 22px;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="width:36px;height:36px;border-radius:9px;background:#f4f2ef;display:flex;align-items:center;justify-content:center">▦</span><span class="mono" style="font-size:11px;color:#a8a29e">{{ p.hours }}</span></div>
+            <div style="font-weight:600;font-size:15px">{{ p.name }}</div>
+            <div style="font-size:12.5px;color:#78716c;margin:3px 0 14px">{{ p.desc }}</div>
+            <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:6px"><span class="mono" style="color:#a8a29e">{{ p.pctText }} · {{ p.taskText }}</span><span style="color:#a8a29e">{{ p.people }}</span></div>
+            <div style="height:6px;border-radius:3px;background:#efece7"><div style="width:{{ p.pctText }};height:100%;border-radius:3px;background:#1c1c1f"></div></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== TASKS (BOARD / LIST) ===================== -->
+    <sc-if value="{{ isTasks }}" hint-placeholder-val="">
+    <div class="view" style="display:flex;flex-direction:column;height:100%;min-height:100%">
+      <!-- toolbar -->
+      <div style="flex:none;padding:22px 30px 16px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+          <div><div style="font-family:'Newsreader',serif;font-size:26px">Tasks</div><div style="color:#78716c;font-size:12.5px;margin-top:1px">Claim a ticket to lock it to you · overlaps are flagged to avoid merge conflicts.</div></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;background:#f4f2ef;border-radius:8px;padding:3px">
+              <span onClick="{{ setBoard }}" style="cursor:pointer;font-size:12px;padding:5px 12px;border-radius:6px;background:{{ boardTabBg }};color:{{ boardTabFg }};font-weight:500">Board</span>
+              <span onClick="{{ setList }}" style="cursor:pointer;font-size:12px;padding:5px 12px;border-radius:6px;background:{{ listTabBg }};color:{{ listTabFg }};font-weight:500">List</span>
+            </div>
+            <span style="font-size:12.5px;padding:7px 13px;border-radius:8px;background:#1c1c1f;color:#fff;font-weight:500;cursor:pointer">+ New ticket</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <sc-for list="{{ taskTabs }}" as="t" hint-placeholder-count="4">
+            <span onClick="{{ t.onClick }}" style="cursor:pointer;font-size:12px;padding:5px 12px;border-radius:14px;background:{{ t.bg }};color:{{ t.fg }};font-weight:{{ t.weight }}">{{ t.label }}</span>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- BOARD -->
+      <sc-if value="{{ isBoard }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;overflow-x:auto;overflow-y:hidden;padding:4px 30px 26px">
+        <div style="display:flex;gap:14px;height:100%;min-height:420px">
+          <sc-for list="{{ boardColumns }}" as="col" hint-placeholder-count="5">
+            <div style="width:236px;flex:none;display:flex;flex-direction:column;background:#faf9f7;border:1px solid #f0eeeb;border-radius:12px;padding:12px 11px">
+              <div style="display:flex;align-items:center;gap:7px;padding:2px 4px 12px"><span class="mono" style="font-size:11px;letter-spacing:.06em;color:#57534e;font-weight:500;text-transform:uppercase">{{ col.name }}</span><span class="mono" style="font-size:10px;color:#b5b3ad;background:#efece7;border-radius:10px;padding:1px 7px">{{ col.count }}</span></div>
+              <div style="display:flex;flex-direction:column;gap:9px;overflow-y:auto">
+                <sc-for list="{{ col.tickets }}" as="t" hint-placeholder-count="2">
+                  <div class="tcard" onClick="{{ t.onClick }}" style="background:#fff;border:1px solid {{ t.cardBorder }};border-radius:10px;padding:11px 12px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)">
+                    <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:9px">
+                      <span style="width:7px;height:7px;border-radius:50%;background:{{ t.priColor }};margin-top:4px;flex:none"></span>
+                      <div style="font-size:12.5px;font-weight:500;line-height:1.35">{{ t.title }}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+                      <span style="font-size:10px;padding:2px 7px;border-radius:5px;background:{{ t.areaBg }};color:{{ t.areaFg }}">{{ t.areaLabel }}</span>
+                      <span class="mono" style="font-size:10px;color:#b5b3ad">{{ t.id }}</span>
+                      <sc-if value="{{ t.conflict }}" hint-placeholder-val=""><span title="{{ t.conflictText }}" style="font-size:11px;color:#c2410c">⚠</span></sc-if>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <sc-if value="{{ t.hasAssignee }}" hint-placeholder-val="{{ true }}"><span style="width:22px;height:22px;border-radius:50%;background:{{ t.avBg }};color:{{ t.avFg }};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600">{{ t.avInit }}</span></sc-if>
+                      <sc-if value="{{ t.claimedByOther }}" hint-placeholder-val=""><span class="mono" style="font-size:10px;color:#a8a29e">🔒 {{ t.claimedByName }}</span></sc-if>
+                      <div style="margin-left:auto;display:flex;align-items:center;gap:9px">
+                        <sc-if value="{{ t.hasChecklist }}" hint-placeholder-val=""><span class="mono" style="font-size:10px;color:#a8a29e">☑ {{ t.checkText }}</span></sc-if>
+                        <sc-if value="{{ t.hasLinks }}" hint-placeholder-val=""><span class="mono" style="font-size:10px;color:#5b3fd6">◍ {{ t.linkCount }}</span></sc-if>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ col.empty }}" hint-placeholder-val=""><div style="font-size:11.5px;color:#c4c1ba;padding:8px 4px">No tickets</div></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- LIST -->
+      <sc-if value="{{ isList }}" hint-placeholder-val="">
+      <div style="flex:1;overflow-y:auto;padding:4px 30px 26px">
+        <div style="border:1px solid #ededeb;border-radius:12px;overflow:hidden;max-width:900px">
+          <div class="mono" style="display:flex;align-items:center;gap:12px;padding:10px 18px;background:#faf9f7;border-bottom:1px solid #f0eeeb;font-size:9.5px;letter-spacing:.1em;color:#b5b3ad">
+            <span style="width:58px;flex:none">ID</span><span style="flex:1">TICKET</span><span style="width:80px;flex:none">STATUS</span><span style="width:70px;flex:none">AREA</span><span style="width:56px;flex:none;text-align:center">OWNER</span>
+          </div>
+          <sc-for list="{{ listRows }}" as="t" hint-placeholder-count="6">
+            <div class="rowhover" onClick="{{ t.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #f4f2ef;cursor:pointer">
+              <span class="mono" style="width:58px;flex:none;font-size:10.5px;color:#a8a29e">{{ t.id }}</span>
+              <div style="flex:1;display:flex;align-items:center;gap:8px;min-width:0"><span style="width:7px;height:7px;border-radius:50%;background:{{ t.priColor }};flex:none"></span><span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</span><sc-if value="{{ t.conflict }}" hint-placeholder-val=""><span title="{{ t.conflictText }}" style="font-size:11px;color:#c2410c;flex:none">⚠</span></sc-if></div>
+              <span style="width:80px;flex:none;font-size:11px;color:#78716c">{{ t.statusName }}</span>
+              <span style="width:70px;flex:none"><span style="font-size:10px;padding:2px 7px;border-radius:5px;background:{{ t.areaBg }};color:{{ t.areaFg }}">{{ t.areaLabel }}</span></span>
+              <span style="width:56px;flex:none;display:flex;justify-content:center">
+                <sc-if value="{{ t.hasAssignee }}" hint-placeholder-val="{{ true }}"><span style="width:22px;height:22px;border-radius:50%;background:{{ t.avBg }};color:{{ t.avFg }};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600">{{ t.avInit }}</span></sc-if>
+                <sc-if value="{{ t.claimedByOther }}" hint-placeholder-val=""><span style="font-size:11px">🔒</span></sc-if>
+              </span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- TICKET DETAIL SLIDE-OVER -->
+    <sc-if value="{{ hasOpenTicket }}" hint-placeholder-val="">
+    <div style="position:fixed;inset:0;z-index:40">
+      <div onClick="{{ closeTicket }}" style="position:absolute;inset:0;background:rgba(28,28,31,.28)"></div>
+      <div class="view" style="position:absolute;top:0;right:0;bottom:0;width:396px;background:#fff;box-shadow:-12px 0 40px -18px rgba(0,0,0,.4);display:flex;flex-direction:column;animation:slideover .28s cubic-bezier(.22,1,.36,1) both">
+        <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid #f0eeeb">
+          <div style="display:flex;align-items:center;gap:9px"><span class="mono" style="font-size:11px;color:#a8a29e">{{ dId }}</span><span style="font-size:11px;color:#78716c">· {{ dProject }}</span></div>
+          <span onClick="{{ closeTicket }}" style="width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#a8a29e;cursor:pointer;font-size:15px">✕</span>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:20px 22px 30px">
+          <div style="font-family:'Newsreader',serif;font-size:23px;line-height:1.25;margin-bottom:14px">{{ dTitle }}</div>
+
+          <sc-if value="{{ dConflict }}" hint-placeholder-val="">
+            <div style="display:flex;gap:9px;background:#fdf3ec;border:1px solid #f0d6c0;border-radius:10px;padding:11px 13px;margin-bottom:18px"><span style="color:#c2410c">⚠</span><div style="font-size:12px;color:#9a4a1e;line-height:1.5">{{ dConflictText }}</div></div>
+          </sc-if>
+
+          <!-- ownership / lock -->
+          <sc-if value="{{ dUnclaimed }}" hint-placeholder-val="">
+            <div onClick="{{ claimTicket }}" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#1c1c1f;color:#fff;border-radius:10px;padding:11px;font-size:13px;font-weight:500;cursor:pointer;margin-bottom:18px">🔓 Claim this ticket</div>
+          </sc-if>
+          <sc-if value="{{ dMineClaim }}" hint-placeholder-val="">
+            <div style="display:flex;align-items:center;gap:9px;background:#eef6f0;border:1px solid #cfe6d8;border-radius:10px;padding:10px 13px;margin-bottom:18px;font-size:12.5px;color:#3f7a56"><span>✓ Claimed by you</span><span onClick="{{ releaseTicket }}" style="margin-left:auto;color:#78716c;cursor:pointer;text-decoration:underline">Release</span></div>
+          </sc-if>
+          <sc-if value="{{ dLockedByOther }}" hint-placeholder-val="">
+            <div style="display:flex;align-items:center;gap:9px;background:#f7f4f1;border:1px solid #e6ddd4;border-radius:10px;padding:10px 13px;margin-bottom:18px;font-size:12.5px;color:#8a6a4a">🔒 Locked by {{ dClaimedName }} — can't edit until released</div>
+          </sc-if>
+
+          <!-- meta -->
+          <div style="display:flex;gap:20px;margin-bottom:20px">
+            <div><div class="mono" style="font-size:9.5px;letter-spacing:.1em;color:#b5b3ad;margin-bottom:6px">PRIORITY</div><div style="display:flex;align-items:center;gap:6px;font-size:13px"><span style="width:8px;height:8px;border-radius:50%;background:{{ dPriColor }}"></span>{{ dPriLabel }}</div></div>
+            <div><div class="mono" style="font-size:9.5px;letter-spacing:.1em;color:#b5b3ad;margin-bottom:6px">AREA</div><span style="font-size:11px;padding:3px 8px;border-radius:6px;background:{{ dAreaBg }};color:{{ dAreaFg }}">{{ dAreaLabel }}</span></div>
+            <div><div class="mono" style="font-size:9.5px;letter-spacing:.1em;color:#b5b3ad;margin-bottom:6px">OWNER</div><div style="display:flex;align-items:center;gap:7px;font-size:13px"><span style="width:22px;height:22px;border-radius:50%;background:{{ dAvBg }};color:{{ dAvFg }};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600">{{ dAvInit }}</span>{{ dAssigneeName }}</div></div>
+          </div>
+
+          <!-- status -->
+          <div class="mono" style="font-size:9.5px;letter-spacing:.1em;color:#b5b3ad;margin-bottom:9px">STATUS</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:22px">
+            <sc-for list="{{ dStatusBtns }}" as="s" hint-placeholder-count="5">
+              <span onClick="{{ s.onClick }}" style="font-size:11.5px;padding:5px 11px;border-radius:7px;background:{{ s.bg }};color:{{ s.fg }};cursor:{{ s.cursor }}">{{ s.name }}</span>
+            </sc-for>
+          </div>
+
+          <!-- checklist -->
+          <div class="mono" style="font-size:9.5px;letter-spacing:.1em;color:#b5b3ad;margin-bottom:10px">CHECKLIST</div>
+          <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:22px">
+            <sc-for list="{{ dChecklist }}" as="c" hint-placeholder-count="3">
+              <div onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+                <span style="width:18px;height:18px;border-radius:5px;border:1.5px solid {{ c.boxBorder }};background:{{ c.box }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex:none">{{ c.mark }}</span>
+                <span style="color:{{ c.textColor }};text-decoration:{{ c.strike }}">{{ c.t }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ dChecklistEmpty }}" hint-placeholder-val=""><div style="font-size:12px;color:#c4c1ba">No checklist items yet.</div></sc-if>
+          </div>
+
+          <!-- linked brain -->
+          <div class="mono" style="font-size:9.5px;letter-spacing:.1em;color:#b5b3ad;margin-bottom:10px">◍ LINKED IN THE BRAIN</div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <sc-for list="{{ dLinks }}" as="l" hint-placeholder-count="1">
+              <div class="rowhover" onClick="{{ l.onClick }}" style="display:flex;align-items:center;gap:9px;border:1px solid #ededeb;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:12.5px"><span style="color:#5b3fd6">{{ l.type }}</span><span style="font-weight:500">{{ l.label }}</span><span style="margin-left:auto;color:#5b3fd6">→</span></div>
+            </sc-for>
+            <sc-if value="{{ dLinksEmpty }}" hint-placeholder-val=""><div style="font-size:12px;color:#c4c1ba">Not linked to anything yet.</div></sc-if>
+          </div>
+
+          <sc-if value="{{ dHasViewers }}" hint-placeholder-val="">
+            <div style="margin-top:22px;display:flex;align-items:center;gap:7px;font-size:11.5px;color:#a8a29e"><span>👁</span>{{ dViewerName }} is viewing this now</div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+    </sc-if>
+
+    <!-- ===================== TIME ===================== -->
+    <sc-if value="{{ isTime }}" hint-placeholder-val="">
+    <div class="view" style="padding:30px 34px;max-width:860px">
+      <div style="font-family:'Newsreader',serif;font-size:26px;margin-bottom:2px">Time</div>
+      <div style="color:#78716c;font-size:13px;margin-bottom:24px">Team logged 18.5h this week · you 6.2h.</div>
+      <div style="border:1px solid #ededeb;border-radius:13px;padding:20px 24px 18px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div class="mono" style="font-size:10px;letter-spacing:.14em;color:#b5b3ad">HOURS THIS WEEK</div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <sc-for list="{{ timeLegend }}" as="l" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#78716c"><span style="width:9px;height:9px;border-radius:3px;background:{{ l.color }}"></span>{{ l.name }}</div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <!-- y axis -->
+          <div class="mono" style="width:24px;flex:none;height:150px;position:relative;font-size:9px;color:#c4c1ba">
+            <sc-for list="{{ timeYAxis }}" as="y" hint-placeholder-count="4">
+              <span style="position:absolute;right:0;top:{{ y.top }};transform:translateY(-50%)">{{ y.label }}</span>
+            </sc-for>
+          </div>
+          <!-- plot -->
+          <div style="flex:1;position:relative;height:150px">
+            <!-- gridlines -->
+            <sc-for list="{{ timeYAxis }}" as="y" hint-placeholder-count="4">
+              <div style="position:absolute;left:0;right:0;top:{{ y.top }};height:1px;background:#f1efec"></div>
+            </sc-for>
+            <!-- average line -->
+            <div style="position:absolute;left:0;right:0;bottom:{{ timeAvgBottom }};height:0;border-top:1px dashed {{ accent }};opacity:.55;z-index:3">
+              <span class="mono" style="position:absolute;right:0;top:-14px;font-size:9px;color:{{ accent }}">avg {{ timeAvg }}</span>
+            </div>
+            <!-- bars -->
+            <div style="position:absolute;inset:0;display:flex;align-items:flex-end;gap:10px;z-index:2">
+              <sc-for list="{{ weekBars }}" as="b" hint-placeholder-count="7">
+                <div class="tbar" style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;cursor:default">
+                  <div class="tbarval mono" style="font-size:10px;font-weight:500;color:{{ b.valColor }};margin-bottom:5px;opacity:{{ b.valOpacity }}">{{ b.total }}</div>
+                  <div style="width:100%;max-width:34px;height:{{ b.h }};display:flex;flex-direction:column;border-radius:5px;overflow:hidden;box-shadow:{{ b.shadow }}">
+                    <sc-for list="{{ b.segments }}" as="s" hint-placeholder-count="2">
+                      <div style="height:{{ s.h }};background:{{ s.color }}"></div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <!-- day labels -->
+        <div style="display:flex;gap:12px;margin-top:8px;padding-left:36px">
+          <sc-for list="{{ weekBars }}" as="b" hint-placeholder-count="7">
+            <span class="mono" style="flex:1;text-align:center;font-size:9.5px;color:{{ b.dayColor }};font-weight:{{ b.dayWeight }}">{{ b.day }}</span>
+          </sc-for>
+        </div>
+      </div>
+      <div style="border:1px solid #ededeb;border-radius:13px;overflow:hidden">
+        <sc-for list="{{ timeEntries }}" as="t" hint-placeholder-count="4">
+          <div class="rowhover" style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid #f4f2ef">
+            <span style="width:26px;height:26px;border-radius:50%;background:{{ t.avBg }};color:{{ t.avFg }};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex:none">{{ t.who }}</span>
+            <div style="flex:1"><div style="font-size:13px;font-weight:500">{{ t.task }}</div><div class="mono" style="font-size:11px;color:#a8a29e">{{ t.project }}</div></div>
+            <span class="mono" style="font-size:13px">{{ t.hours }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== PROMPTS ===================== -->
+    <sc-if value="{{ isPrompts }}" hint-placeholder-val="">
+    <div class="view" style="padding:30px 34px;max-width:840px">
+      <div style="font-family:'Newsreader',serif;font-size:26px;margin-bottom:2px">Prompt library</div>
+      <div style="color:#78716c;font-size:13px;margin-bottom:24px">Reusable prompts, rated by the team.</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ prompts }}" as="p" hint-placeholder-count="4">
+          <div class="rowhover" style="border:1px solid #ededeb;border-radius:12px;padding:16px 20px;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-weight:600;font-size:14px">{{ p.title }}</div><span style="font-size:12px;color:#e0a53f">{{ p.stars }}</span></div>
+            <div style="font-size:12.5px;color:#78716c;line-height:1.5;margin:5px 0 10px">{{ p.body }}</div>
+            <div class="mono" style="font-size:11px;color:#a8a29e">{{ p.tag }} · saved by {{ p.author }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== AGENTS ===================== -->
+    <sc-if value="{{ isAgents }}" hint-placeholder-val="">
+    <div class="view" style="padding:30px 34px;max-width:900px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div style="font-family:'Newsreader',serif;font-size:26px;margin-bottom:2px">Agents</div>
+          <div style="color:#78716c;font-size:13px">{{ agentSubtitle }}</div>
+        </div>
+        <div style="display:flex;background:#f4f2ef;border-radius:8px;padding:3px">
+          <span onClick="{{ setAgentsTab }}" style="cursor:pointer;font-size:12.5px;padding:6px 14px;border-radius:6px;background:{{ agTabBg }};color:{{ agTabFg }};font-weight:500">Dev agents</span>
+          <span onClick="{{ setAutoTab }}" style="cursor:pointer;font-size:12.5px;padding:6px 14px;border-radius:6px;background:{{ autoTabBg }};color:{{ autoTabFg }};font-weight:500">Automations</span>
+        </div>
+      </div>
+
+      <!-- DEV AGENTS REGISTRY -->
+      <sc-if value="{{ isAgentsTab }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <sc-for list="{{ devAgents }}" as="a" hint-placeholder-count="4">
+          <div style="border:1px solid #ededeb;border-radius:13px;padding:18px 20px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:11px">
+              <span style="width:38px;height:38px;border-radius:10px;background:{{ a.iconBg }};color:{{ a.iconFg }};display:flex;align-items:center;justify-content:center;font-size:17px;flex:none">{{ a.icon }}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</div>
+                <div class="mono" style="font-size:10.5px;color:#a8a29e;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.model }}</div>
+              </div>
+              <span style="font-size:11.5px;color:#e0a53f;white-space:nowrap;flex:none">{{ a.stars }}</span>
+            </div>
+            <div style="font-size:12.5px;color:#57534e;line-height:1.5;margin-bottom:12px">{{ a.desc }}</div>
+            <div class="mono" style="font-size:10px;letter-spacing:.1em;color:#b5b3ad;margin-bottom:7px">TOOLS &amp; ACCESS</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px">
+              <sc-for list="{{ a.tools }}" as="t" hint-placeholder-count="3">
+                <span class="mono" style="font-size:10.5px;padding:3px 8px;border-radius:6px;background:#f4f2ef;color:#57534e">{{ t }}</span>
+              </sc-for>
+            </div>
+            <div style="background:#faf9f7;border:1px solid #f0eeeb;border-radius:9px;padding:9px 11px;margin-bottom:13px">
+              <div class="mono" style="font-size:9.5px;letter-spacing:.08em;color:#b5b3ad;margin-bottom:4px">SYSTEM PROMPT</div>
+              <div style="font-size:11.5px;color:#78716c;line-height:1.45;font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">{{ a.prompt }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:9px;margin-top:auto;padding-top:2px">
+              <span style="width:22px;height:22px;border-radius:50%;background:{{ a.ownerBg }};color:{{ a.ownerFg }};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600">{{ a.ownerInit }}</span>
+              <span style="font-size:11.5px;color:#78716c">{{ a.owner }}</span>
+              <span style="margin-left:auto;font-size:11px;color:#5b3fd6" class="mono">◍ used on {{ a.usedOn }} tickets</span>
+            </div>
+          </div>
+        </sc-for>
+        <div style="border:1.5px dashed #ddd8d0;border-radius:13px;padding:18px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#a8a29e;cursor:pointer;min-height:150px">
+          <span style="font-size:22px">+</span><span style="font-size:12.5px">Register a new agent</span>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- AUTOMATIONS -->
+      <sc-if value="{{ isAutoTab }}" hint-placeholder-val="">
+      <div style="border:1px solid #ededeb;border-radius:13px;overflow:hidden">
+        <sc-for list="{{ automations }}" as="a" hint-placeholder-count="4">
+          <div class="rowhover" style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid #f4f2ef">
+            <span style="width:36px;height:36px;border-radius:9px;background:#f1eefc;color:#6a5f8a;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none">⚙</span>
+            <div style="flex:1"><div style="font-weight:600;font-size:14px">{{ a.name }}</div><div style="font-size:12.5px;color:#78716c;margin-top:1px">{{ a.desc }}</div></div>
+            <div style="text-align:right"><div class="mono" style="font-size:11px;color:#a8a29e">{{ a.schedule }}</div><div class="mono" style="font-size:10.5px;color:#c4c1ba;margin-top:2px">{{ a.lastRun }}</div></div>
+            <div style="display:flex;align-items:center;gap:7px;width:78px;justify-content:flex-end"><span style="width:8px;height:8px;border-radius:50%;background:{{ a.statusColor }}"></span><span style="font-size:11.5px;color:#78716c">{{ a.statusLabel }}</span></div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ===================== BRAIN (KB) ===================== -->
+    <sc-if value="{{ isBrain }}" hint-placeholder-val="">
+    <div class="view" style="padding:30px 34px;max-width:840px">
+      <div style="font-family:'Newsreader',serif;font-size:26px;margin-bottom:2px">The brain</div>
+      <div style="color:#78716c;font-size:13px;margin-bottom:20px">The team's canon — durable knowledge promoted out of the daily churn, kept current.</div>
+
+      <!-- ask the brain -->
+      <div style="border:1px solid #e6ddf5;border-radius:12px;padding:15px 18px;margin-bottom:12px;background:linear-gradient(180deg,#faf8ff,#fff)">
+        <div style="display:flex;align-items:center;gap:10px;height:38px;border:1px solid #e2d9f2;border-radius:9px;background:#fff;padding:0 13px">
+          <span style="color:#5b3fd6">✦</span>
+          <span style="color:#a8a29e;font-size:13px">Ask the brain anything…</span>
+          <span class="mono" style="margin-left:auto;font-size:9.5px;border:1px solid #eae4f5;color:#b5a8d6;padding:1px 6px;border-radius:4px">⌘K</span>
+        </div>
+        <div style="display:flex;gap:7px;margin-top:11px;flex-wrap:wrap">
+          <sc-for list="{{ brainAsks }}" as="q" hint-placeholder-count="3">
+            <span class="rowhover" style="font-size:11.5px;color:#5b3fd6;background:#f2ecfd;padding:5px 11px;border-radius:14px;cursor:pointer">{{ q }}</span>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:0 2px">
+        <span class="mono" style="font-size:11px;color:#a8a29e">18 canon entries</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#a8a29e"><span style="width:7px;height:7px;border-radius:50%;background:#3f9b6c"></span>15 current</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#a8a29e"><span style="width:7px;height:7px;border-radius:50%;background:#e0a53f"></span>3 need review</span>
+      </div>
+
+      <!-- categorized canon -->
+      <sc-for list="{{ brainCats }}" as="cat" hint-placeholder-count="4">
+        <div style="margin-bottom:26px">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+            <span style="font-size:13px;color:{{ cat.color }}">{{ cat.icon }}</span>
+            <span style="font-weight:600;font-size:13.5px">{{ cat.name }}</span>
+            <span class="mono" style="font-size:10px;color:#b5b3ad;background:#f4f2ef;border-radius:10px;padding:1px 7px">{{ cat.count }}</span>
+            <span style="font-size:12px;color:#a8a29e;margin-left:2px">{{ cat.blurb }}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <sc-for list="{{ cat.entries }}" as="e" hint-placeholder-count="2">
+              <div class="rowhover" style="border:1px solid #ededeb;border-radius:12px;padding:15px 17px;cursor:pointer;display:flex;flex-direction:column">
+                <div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:7px">
+                  <div style="flex:1;font-weight:600;font-size:13.5px;line-height:1.35">{{ e.title }}</div>
+                  <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:{{ e.freshColor }};white-space:nowrap;flex:none"><span style="width:6px;height:6px;border-radius:50%;background:{{ e.freshColor }}"></span>{{ e.freshLabel }}</span>
+                </div>
+                <div style="font-size:12px;color:#78716c;line-height:1.5;margin-bottom:12px">{{ e.summary }}</div>
+                <div style="display:flex;align-items:center;gap:9px;margin-top:auto">
+                  <span class="mono" style="font-size:10.5px;color:#5b3fd6">◍ {{ e.provenance }}</span>
+                  <span style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:#a8a29e"><span style="width:20px;height:20px;border-radius:50%;background:{{ e.ownerBg }};color:{{ e.ownerFg }};display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:600">{{ e.ownerInit }}</span>{{ e.reviewed }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+
+    <!-- ===================== MARKETING (STUB) ===================== -->
+    <sc-if value="{{ isMarketing }}" hint-placeholder-val="">
+    <div class="view" style="padding:30px 34px;max-width:900px">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:2px"><div style="font-family:'Newsreader',serif;font-size:26px">Growth</div><span class="mono" style="font-size:10px;letter-spacing:.1em;background:#efe9ff;color:#5b3fd6;padding:3px 8px;border-radius:6px">DRAFT</span></div>
+      <div style="color:#78716c;font-size:13px;margin-bottom:24px">Marketing surface — placeholder. Metrics to be defined with the growth lead.</div>
+      <div style="border:1px dashed #d9d4cd;border-radius:14px;padding:26px 28px;background:#fbfaf8">
+        <div class="mono" style="font-size:10px;letter-spacing:.14em;color:#b5b3ad;margin-bottom:18px">EXAMPLE FUNNEL · REPLACE WITH REAL METRICS</div>
+        <div style="display:flex;align-items:stretch;gap:10px;opacity:.55">
+          <div style="flex:1.4;background:#efe9ff;border-radius:10px;padding:15px 16px"><div class="mono" style="font-size:10px;color:#7c5fe0">AWARENESS</div><div style="font-size:24px;font-weight:600;margin-top:4px">—</div></div>
+          <div style="display:flex;align-items:center;color:#c9b8ff">▸</div>
+          <div style="flex:1.1;background:#f0ebff;border-radius:10px;padding:15px 16px"><div class="mono" style="font-size:10px;color:#7c5fe0">INTEREST</div><div style="font-size:24px;font-weight:600;margin-top:4px">—</div></div>
+          <div style="display:flex;align-items:center;color:#c9b8ff">▸</div>
+          <div style="flex:1;background:#f4f0ff;border-radius:10px;padding:15px 16px"><div class="mono" style="font-size:10px;color:#7c5fe0">SIGN-UPS</div><div style="font-size:24px;font-weight:600;margin-top:4px">—</div></div>
+          <div style="display:flex;align-items:center;color:#c9b8ff">▸</div>
+          <div style="flex:.9;background:#1c1c1f;color:#fff;border-radius:10px;padding:15px 16px"><div class="mono" style="font-size:10px;color:#b9a8ff">ACTIVATED</div><div style="font-size:24px;font-weight:600;margin-top:4px">—</div></div>
+        </div>
+        <div style="margin-top:22px;font-size:13px;color:#78716c;line-height:1.6;max-width:560px">This tab is a shell for the growth workstream. Once the lead picks the metrics that matter — channels, campaign ROI, activation — every stage here can link straight back into the brain's notes and assets, same as the rest of the app.</div>
+      </div>
+    </div>
+    </sc-if>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:720},&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#5b3fd6&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#5b3fd6&quot;,&quot;#3f7a56&quot;,&quot;#c2410c&quot;,&quot;#0e7490&quot;]},&quot;animateFlow&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = {
+    view: 'home',
+    filter: 'all',
+    timerRunning: true,
+    seconds: 5047,
+    noteId: 'positioning',
+    nodeId: 'ramp',
+    graphT: 0,
+    logs: [],
+    savedToast: '',
+    taskProject: 'all',
+    taskLayout: 'board',
+    openTicket: null,
+    agentTab: 'agents',
+    tickets: [
+      { id: 'RMP-14', project: 'Ramp landing', title: 'Hero section responsive layout', status: 'inprogress', priority: 'high', area: 'frontend', assignee: 'JM', claimedBy: 'JM', viewers: [], links: [{ type: 'note', label: 'Positioning v3', to: 'positioning' }], checklist: [{ t: 'Desktop breakpoint', done: true }, { t: 'Tablet breakpoint', done: true }, { t: 'Mobile breakpoint', done: false }] },
+      { id: 'RMP-15', project: 'Ramp landing', title: 'Waitlist form + validation', status: 'inprogress', priority: 'med', area: 'frontend', assignee: 'SM', claimedBy: 'SM', viewers: ['SM'], links: [], checklist: [{ t: 'Field states', done: true }, { t: 'Error handling', done: false }] },
+      { id: 'RMP-16', project: 'Ramp landing', title: 'Email capture backend', status: 'todo', priority: 'high', area: 'backend', assignee: null, claimedBy: null, viewers: [], links: [], checklist: [{ t: 'Schema', done: false }, { t: 'Endpoint', done: false }] },
+      { id: 'RMP-17', project: 'Ramp landing', title: 'Landing copy pass', status: 'review', priority: 'med', area: 'copy', assignee: 'AL', claimedBy: 'AL', viewers: [], links: [{ type: 'prompt', label: 'Cold email rewrite', to: 'prompts' }], checklist: [{ t: 'Hero headline', done: true }, { t: 'CTA copy', done: true }] },
+      { id: 'RMP-18', project: 'Ramp landing', title: 'OG images + meta tags', status: 'backlog', priority: 'low', area: 'design', assignee: null, claimedBy: null, viewers: [], links: [], checklist: [] },
+      { id: 'RMP-09', project: 'Ramp landing', title: 'Analytics events', status: 'done', priority: 'low', area: 'frontend', assignee: 'JM', claimedBy: null, viewers: [], links: [], checklist: [{ t: 'Pageview', done: true }, { t: 'Signup event', done: true }] },
+      { id: 'RMP-07', project: 'Ramp landing', title: 'Positioning banner', status: 'done', priority: 'med', area: 'copy', assignee: 'AL', claimedBy: null, viewers: [], links: [], checklist: [] },
+      { id: 'RMP-05', project: 'Ramp landing', title: 'Nav + footer', status: 'done', priority: 'low', area: 'frontend', assignee: 'JM', claimedBy: null, viewers: [], links: [], checklist: [] },
+      { id: 'SQ-31', project: 'Sidequest v2', title: 'Streak animation', status: 'inprogress', priority: 'med', area: 'frontend', assignee: 'JM', claimedBy: 'JM', viewers: [], links: [], checklist: [{ t: 'Flame keyframes', done: true }, { t: 'Milestone burst', done: false }] },
+      { id: 'SQ-32', project: 'Sidequest v2', title: 'Onboarding empty state', status: 'todo', priority: 'high', area: 'design', assignee: null, claimedBy: null, viewers: [], links: [{ type: 'note', label: 'Onboarding idea', to: 'onboarding' }], checklist: [] },
+      { id: 'SQ-33', project: 'Sidequest v2', title: 'Streak copy tuning', status: 'backlog', priority: 'low', area: 'copy', assignee: null, claimedBy: null, viewers: [], links: [{ type: 'prompt', label: 'Streak copy', to: 'prompts' }], checklist: [] },
+      { id: 'SQ-28', project: 'Sidequest v2', title: 'Session persistence', status: 'done', priority: 'med', area: 'backend', assignee: 'JM', claimedBy: null, viewers: [], links: [], checklist: [] },
+      { id: 'WH-11', project: 'Warehouse sim', title: 'Physics tuning', status: 'inprogress', priority: 'high', area: 'backend', assignee: 'SM', claimedBy: 'SM', viewers: ['SM'], links: [], checklist: [{ t: 'Collision response', done: true }, { t: 'Friction model', done: false }] },
+      { id: 'WH-12', project: 'Warehouse sim', title: 'Training scenario 1', status: 'todo', priority: 'med', area: 'backend', assignee: null, claimedBy: null, viewers: [], links: [], checklist: [] },
+      { id: 'WH-13', project: 'Warehouse sim', title: 'Asset import pipeline', status: 'backlog', priority: 'low', area: 'backend', assignee: null, claimedBy: null, viewers: [], links: [], checklist: [] },
+      { id: 'WH-06', project: 'Warehouse sim', title: 'Environment blockout', status: 'done', priority: 'med', area: 'design', assignee: 'SM', claimedBy: null, viewers: [], links: [], checklist: [] },
+    ],
+  };
+
+  componentDidMount() {
+    this._t = setInterval(() => {
+      if (this.state.timerRunning) this.setState(s => ({ seconds: s.seconds + 1 }));
+    }, 1000);
+    this._g = setInterval(() => {
+      if (this.state.view === 'graph') { this.stepPhysics(); this.forceUpdate(); }
+    }, 33);
+  }
+  componentWillUnmount() { clearInterval(this._t); clearInterval(this._g); }
+
+  // ---------- force-directed graph (obsidian-style) ----------
+  initGraph() {
+    const N = this.GNODES;
+    this.G = { nodes: {} };
+    Object.keys(N).forEach((id, i) => {
+      this.G.nodes[id] = { x: N[id].x + (Math.random() - 0.5) * 40, y: N[id].y + (Math.random() - 0.5) * 40, vx: 0, vy: 0, fixed: false };
+    });
+  }
+  stepPhysics() {
+    if (!this.G) this.initGraph();
+    const G = this.G, ids = Object.keys(G.nodes);
+    const CX = 380, CY = 240;
+    ids.forEach(i => { G.nodes[i].fx = 0; G.nodes[i].fy = 0; });
+    // mutual repulsion
+    for (let a = 0; a < ids.length; a++) {
+      for (let b = a + 1; b < ids.length; b++) {
+        const na = G.nodes[ids[a]], nb = G.nodes[ids[b]];
+        let dx = na.x - nb.x, dy = na.y - nb.y, d2 = dx * dx + dy * dy;
+        if (d2 < 60) d2 = 60;
+        const d = Math.sqrt(d2), f = 5200 / d2, ux = dx / d, uy = dy / d;
+        na.fx += ux * f; na.fy += uy * f; nb.fx -= ux * f; nb.fy -= uy * f;
+      }
+    }
+    // springs (the ropes)
+    this.GEDGES.forEach(([a, b]) => {
+      const na = G.nodes[a], nb = G.nodes[b];
+      let dx = nb.x - na.x, dy = nb.y - na.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1, L = 135, f = (d - L) * 0.014, ux = dx / d, uy = dy / d;
+      na.fx += ux * f; na.fy += uy * f; nb.fx -= ux * f; nb.fy -= uy * f;
+    });
+    // centering + integrate
+    ids.forEach(i => {
+      const n = G.nodes[i];
+      if (n.fixed) { n.vx = 0; n.vy = 0; return; }
+      n.fx += (CX - n.x) * 0.006; n.fy += (CY - n.y) * 0.006;
+      n.vx = (n.vx + n.fx) * 0.84; n.vy = (n.vy + n.fy) * 0.84;
+      const sp = Math.hypot(n.vx, n.vy), max = 9;
+      if (sp > max) { n.vx = n.vx / sp * max; n.vy = n.vy / sp * max; }
+      n.x += n.vx; n.y += n.vy;
+      n.x = Math.max(34, Math.min(726, n.x)); n.y = Math.max(30, Math.min(452, n.y));
+    });
+  }
+  startDrag(id, e) {
+    if (e && e.preventDefault) e.preventDefault();
+    this.setState({ nodeId: id });
+    if (!this.G) this.initGraph();
+    const node = this.G.nodes[id];
+    node.fixed = true;
+    const move = (ev) => {
+      const el = this._canvas; if (!el) return;
+      const r = el.getBoundingClientRect();
+      const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
+      node.x = Math.max(34, Math.min(726, (cx - r.left) / r.width * 760));
+      node.y = Math.max(30, Math.min(452, (cy - r.top) / r.height * 480));
+      this.forceUpdate();
+    };
+    const up = () => {
+      node.fixed = false;
+      document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up);
+      document.removeEventListener('touchmove', move); document.removeEventListener('touchend', up);
+    };
+    document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
+    document.addEventListener('touchmove', move, { passive: false }); document.addEventListener('touchend', up);
+  }
+
+  // ---------- static data ----------
+  get NAV() {
+    return [
+      { id: 'home', label: 'Home', icon: '◈' },
+      { id: 'projects', label: 'Projects', icon: '▦', badge: '3' },
+      { id: 'tasks', label: 'Tasks', icon: '⊞', badge: this.myOpenCount() },
+      { id: 'time', label: 'Time', icon: '◷', badge: '18.5h' },
+      { id: 'prompts', label: 'Prompts', icon: '❝' },
+      { id: 'agents', label: 'Agents', icon: '✦' },
+      { id: 'notes', label: 'Notes', icon: '✎' },
+      { id: 'brain', label: 'Brain', icon: '◍' },
+      { id: 'graph', label: 'Graph', icon: '⬡' },
+      { id: 'marketing', label: 'Growth', icon: '↗' },
+    ];
+  }
+  get PROJECTS() {
+    return [
+      { name: 'Ramp landing', pct: 72, hours: '9.4h', desc: 'Marketing site + waitlist', people: 'John, Sam' },
+      { name: 'Sidequest v2', pct: 40, hours: '5.8h', desc: 'Streak & onboarding revamp', people: 'John' },
+      { name: 'Warehouse sim', pct: 18, hours: '3.3h', desc: 'Ops training prototype', people: 'Sam' },
+    ];
+  }
+  get NOTES() {
+    return {
+      positioning: { title: 'Positioning v3', tag: '#marketing', edited: '14m', body: "Sandbox Brain keeps a team's product and [[Growth]] work in one place, connected. This positioning feeds the [[Ramp plan]] and reuses tone from our best prompts. Still need to reconcile it with the [[Onboarding idea]]." },
+      growth: { title: 'Growth', tag: '#strategy', edited: '1h', body: "Q3 is about activating whole teams, not single users. It depends on nailing [[Positioning v3]] first. Channels: X, email, campus. See the [[Ramp plan]] for launch timing." },
+      onboarding: { title: 'Onboarding idea', tag: '#product', edited: 'yesterday', body: "First run should drop you into a seeded brain so the graph is never empty. Connects to [[Positioning v3]] (show value fast) and the [[Ramp plan]]." },
+      rampplan: { title: 'Ramp plan', tag: '#project', edited: '2d', body: "Launch the Ramp landing page tied to [[Growth]] goals. Assets live in the brain; copy comes from [[Positioning v3]]. Sam owns build, John owns the [[Onboarding idea]]." },
+    };
+  }
+  get TITLE_TO_ID() { return { 'Positioning v3': 'positioning', 'Growth': 'growth', 'Onboarding idea': 'onboarding', 'Ramp plan': 'rampplan' }; }
+
+  get GNODES() {
+    return {
+      ramp:        { label: 'Ramp', type: 'project', x: 365, y: 245, amp: 0.35 },
+      positioning: { label: 'Positioning v3', type: 'note', x: 180, y: 140 },
+      coldemail:   { label: 'Cold email', type: 'prompt', x: 565, y: 135 },
+      growth:      { label: 'Growth', type: 'note', x: 200, y: 365 },
+      sam:         { label: 'Sam · 2.5h', type: 'person', x: 560, y: 375 },
+      digest:      { label: 'Digest agent', type: 'agent', x: 375, y: 415 },
+      john:        { label: 'John', type: 'person', x: 625, y: 270 },
+    };
+  }
+  get GEDGES() {
+    return [['ramp','positioning'],['ramp','coldemail'],['ramp','growth'],['ramp','sam'],['ramp','digest'],['ramp','john'],['positioning','growth'],['coldemail','john'],['growth','digest']];
+  }
+  get TYPE_COLOR() { return { note: '#4a5b8a', prompt: '#8a6a2a', project: '#1c1c1f', person: '#3f7a56', agent: '#6a5f8a' }; }
+
+  // ---------- helpers ----------
+  fmt(sec) {
+    const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+    const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+
+  // ---------- tasks meta ----------
+  get ME() { return 'JM'; }
+  get COLS() {
+    return [
+      { id: 'backlog', name: 'Backlog' },
+      { id: 'todo', name: 'To do' },
+      { id: 'inprogress', name: 'In progress' },
+      { id: 'review', name: 'Review' },
+      { id: 'done', name: 'Done' },
+    ];
+  }
+  get PEOPLE() {
+    return {
+      JM: { name: 'John', bg: '#e7e5e0', fg: '#57534e' },
+      SM: { name: 'Sam', bg: '#c3ddca', fg: '#3f7a56' },
+      AL: { name: 'Alex', bg: '#cdd4ea', fg: '#4a5b8a' },
+    };
+  }
+  get PRIO() {
+    return { high: { label: 'High', color: '#b0442e' }, med: { label: 'Med', color: '#e0a53f' }, low: { label: 'Low', color: '#a8a29e' } };
+  }
+  get AREA() {
+    return {
+      frontend: { label: 'frontend', fg: '#4a5b8a', bg: '#eef1f8' },
+      backend: { label: 'backend', fg: '#3f7a56', bg: '#eef6f0' },
+      design: { label: 'design', fg: '#6a5f8a', bg: '#f1eefc' },
+      copy: { label: 'copy', fg: '#8a6a2a', bg: '#f8f1e6' },
+    };
+  }
+  myOpenCount() {
+    const t = (this.state && this.state.tickets) || [];
+    const n = t.filter(x => x.assignee === 'JM' && x.status !== 'done').length;
+    return n ? String(n) : '';
+  }
+  // areas with >1 in-progress ticket in the same project = overlap risk
+  overlapAreas(project) {
+    const counts = {};
+    this.state.tickets.filter(t => t.project === project && t.status === 'inprogress')
+      .forEach(t => { counts[t.area] = (counts[t.area] || 0) + 1; });
+    return new Set(Object.keys(counts).filter(a => counts[a] > 1));
+  }
+  mutateTicket(id, fn) {
+    this.setState(s => ({ tickets: s.tickets.map(t => t.id === id ? fn({ ...t }) : t) }));
+  }
+
+  renderVals() {
+    const accent = this.props.accentColor || '#5b3fd6';
+    const flowOn = this.props.animateFlow !== false;
+    const v = this.state.view;
+    const setView = (id) => this.setState({ view: id });
+
+    // nav
+    const nav = this.NAV.map(n => ({
+      ...n,
+      onClick: () => setView(n.id),
+      bg: v === n.id ? '#efece7' : 'transparent',
+      fg: v === n.id ? '#1c1c1f' : '#57534e',
+      iconColor: v === n.id ? '#78716c' : '#c4c1ba',
+      weight: v === n.id ? 500 : 400,
+    }));
+
+    // filters
+    const feedRaw = [
+      { actor: 'Alex', actorColor: '#4a5b8a', verb: 'linked note', chipA: 'Positioning v3', kindA: 'note', chipB: 'Ramp', kindB: 'project', meta: '14m ago · +1 backlink', mine: false, project: 'ramp' },
+      { actor: 'You', actorColor: '#1c1c1f', verb: 'saved prompt', chipA: 'Cold email rewrite', kindA: 'prompt', meta: '1h ago · ★★★★☆', mine: true, project: 'ramp' },
+      { actor: 'Sam', actorColor: '#3f7a56', verb: 'logged 2.5h on', chipA: 'Warehouse sim', kindA: 'project', meta: '3h ago · closed 2 tasks', mine: false, project: 'warehouse' },
+      { actor: 'Digest agent', actorColor: '#6a5f8a', verb: 'summarized 9 notes into', chipA: 'the brain', kindA: 'brain', meta: 'yesterday', mine: false, project: null },
+      { actor: 'You', actorColor: '#1c1c1f', verb: 'edited', chipA: 'Onboarding idea', kindA: 'note', meta: 'yesterday · #product', mine: true, project: 'sidequest' },
+      { actor: 'Sam', actorColor: '#3f7a56', verb: 'linked', chipA: 'Streak copy', kindA: 'prompt', chipB: 'Sidequest', kindB: 'project', meta: '2d ago', mine: false, project: 'sidequest' },
+    ];
+    const chipBg = { note: '#eef1f8', prompt: '#f8f1e6', project: '#1c1c1f', brain: '#efe9ff' };
+    const chipFg = { note: '#4a5b8a', prompt: '#8a6a2a', project: '#ffffff', brain: '#5b3fd6' };
+    const f = this.state.filter;
+    const feed = feedRaw.filter(x => f === 'all' ? true : f === 'mine' ? x.mine : x.project === 'ramp').map(x => ({
+      ...x,
+      dot: x.actorColor,
+      chipAbg: chipBg[x.kindA], chipAfg: chipFg[x.kindA],
+      chipBbg: x.kindB ? chipBg[x.kindB] : '', chipBfg: x.kindB ? chipFg[x.kindB] : '',
+    }));
+    const setFilter = (id) => this.setState({ filter: id });
+    const filters = [['all','All'],['mine','Mine'],['ramp','Ramp']].map(([id, label]) => ({
+      label, onClick: () => setFilter(id),
+      bg: f === id ? '#1c1c1f' : '#f4f2ef',
+      fg: f === id ? '#fff' : '#78716c',
+      weight: f === id ? 500 : 400,
+    }));
+
+    // notes
+    const nId = this.state.noteId;
+    const selectNote = (id) => this.setState({ view: 'notes', noteId: id });
+    const tagColors = { '#marketing': '#5b3fd6', '#strategy': '#3f7a56', '#product': '#4a5b8a', '#project': '#8a6a2a' };
+    const notesArr = Object.entries(this.NOTES).map(([id, n]) => ({
+      title: n.title, edited: n.edited, tag: n.tag,
+      tagColor: tagColors[n.tag] || '#a8a29e',
+      snippet: n.body.replace(/\[\[|\]\]/g, ''),
+      onClick: () => selectNote(id),
+      bg: id === nId ? '#efece7' : 'transparent',
+      weight: id === nId ? 600 : 500,
+    }));
+    const cur = this.NOTES[nId];
+    // parse wiki links
+    const segments = [];
+    const re = /\[\[([^\]]+)\]\]/g;
+    let last = 0, m;
+    while ((m = re.exec(cur.body)) !== null) {
+      if (m.index > last) segments.push({ isText: true, value: cur.body.slice(last, m.index) });
+      const tid = this.TITLE_TO_ID[m[1]];
+      segments.push({ isLink: true, value: m[1], onClick: () => selectNote(tid) });
+      last = m.index + m[0].length;
+    }
+    if (last < cur.body.length) segments.push({ isText: true, value: cur.body.slice(last) });
+    const linkCount = segments.filter(s => s.isLink).length;
+    // backlinks
+    const backlinks = Object.entries(this.NOTES).filter(([id, n]) => id !== nId && n.body.includes('[[' + cur.title + ']]')).map(([id, n]) => ({
+      title: n.title,
+      context: '…' + n.body.replace(/\[\[|\]\]/g, '').slice(0, 64) + '…',
+      onClick: () => selectNote(id),
+    }));
+
+    // graph — force-directed (obsidian-style), draggable
+    const gId = this.state.nodeId;
+    const selectNode = (id) => this.setState({ nodeId: id });
+    const edges = this.GEDGES;
+    const N = this.GNODES;
+    const VBW = 760, VBH = 480;
+    const connectedIds = new Set();
+    const degree = {};
+    edges.forEach(([a, b]) => {
+      degree[a] = (degree[a] || 0) + 1; degree[b] = (degree[b] || 0) + 1;
+      if (a === gId) connectedIds.add(b); if (b === gId) connectedIds.add(a);
+    });
+    if (!this.G) this.initGraph();
+    const pos = {};
+    Object.keys(N).forEach(id => { pos[id] = { x: this.G.nodes[id].x, y: this.G.nodes[id].y }; });
+    const ids = Object.keys(N);
+    const graphEdges = edges.map(([a, b]) => {
+      const active = a === gId || b === gId;
+      const p = pos[a], q = pos[b];
+      return {
+        d: `M ${p.x.toFixed(1)} ${p.y.toFixed(1)} L ${q.x.toFixed(1)} ${q.y.toFixed(1)}`,
+        stroke: active ? accent : '#cfc9c0',
+        w: active ? 1.8 : 1.1,
+        opacity: active ? 0.65 : 0.32,
+      };
+    });
+    const TYPE_ICON = { note: '✎', prompt: '❝', project: '▦', person: '☺', agent: '✦' };
+    const TYPE_TINT = { note: '#eef1f8', prompt: '#f8f1e6', project: '#eceae7', person: '#eef6f0', agent: '#f1eefc' };
+    const graphNodes = ids.map((id) => {
+      const n = N[id];
+      const isSel = id === gId;
+      const isConn = connectedIds.has(id);
+      const col = this.TYPE_COLOR[n.type];
+      const deg = degree[id] || 0;
+      const r = 26 + deg * 2.6 + (isSel ? 8 : 0);
+      let bg, iconColor, border, shadow, fg, weight, opacity, z;
+      if (isSel) {
+        bg = col; iconColor = '#fff'; border = '2px solid #fff';
+        shadow = `0 0 0 4px ${accent}33, 0 0 26px ${col}55, 0 6px 16px rgba(0,0,0,.22)`;
+        fg = '#1c1c1f'; weight = 600; opacity = 1; z = 4;
+      } else if (isConn) {
+        bg = TYPE_TINT[n.type]; iconColor = col; border = '1.5px solid ' + col;
+        shadow = '0 2px 8px rgba(0,0,0,.07)';
+        fg = '#33312e'; weight = 500; opacity = 1; z = 3;
+      } else {
+        bg = '#f6f4f1'; iconColor = '#c4beb4'; border = '1.5px solid #e7e3dc';
+        shadow = 'none'; fg = '#b5b0a8'; weight = 400; opacity = 0.55; z = 2;
+      }
+      return {
+        label: n.label, icon: TYPE_ICON[n.type],
+        onDown: (e) => this.startDrag(id, e),
+        left: (pos[id].x / VBW * 100).toFixed(2) + '%',
+        top: (pos[id].y / VBH * 100).toFixed(2) + '%',
+        d: r.toFixed(1) + 'px',
+        iconSize: (r * 0.42).toFixed(1) + 'px',
+        size: isSel ? '12.5px' : '11px',
+        weight, bg, iconColor, border, shadow, fg, opacity, z,
+      };
+    });
+    const focusX = (pos[gId].x / VBW * 100).toFixed(2) + '%';
+    const focusY = (pos[gId].y / VBH * 100).toFixed(2) + '%';
+    const selNode = N[gId];
+    const nodeConnections = [...connectedIds].map(id => ({
+      label: N[id].label, color: this.TYPE_COLOR[N[id].type], onClick: () => selectNode(id),
+    }));
+
+    return {
+      accent,
+      nav,
+      viewTitle: this.NAV.find(n => n.id === v).label,
+      // timer
+      timerText: this.fmt(this.state.seconds),
+      timerRunning: this.state.timerRunning,
+      timerPaused: !this.state.timerRunning,
+      timerColor: this.state.timerRunning ? '#22c55e' : '#e0a53f',
+      savedToast: this.state.savedToast,
+      pauseTimer: () => this.setState({ timerRunning: false }),
+      resumeTimer: () => this.setState({ timerRunning: true, savedToast: '' }),
+      endTimer: () => {
+        const secs = this.state.seconds;
+        const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60);
+        const hoursText = (secs / 3600).toFixed(1) + 'h';
+        const entry = { who: 'JM', avBg: '#e7e5e0', avFg: '#57534e', task: 'Ramp landing page', project: 'Ramp landing', hours: hoursText };
+        if (this._toastT) clearTimeout(this._toastT);
+        this.setState(s => ({ logs: [entry, ...s.logs], seconds: 0, timerRunning: false, savedToast: `Saved ${h}h ${m}m to your time log` }));
+        this._toastT = setTimeout(() => this.setState({ savedToast: '' }), 3200);
+      },
+      // view flags
+      isHome: v === 'home', isNotes: v === 'notes', isGraph: v === 'graph',
+      isProjects: v === 'projects', isTime: v === 'time', isPrompts: v === 'prompts',
+      isAgents: v === 'agents', isBrain: v === 'brain', isMarketing: v === 'marketing',
+      isTasks: v === 'tasks',
+      // home
+      greeting: 'Good morning',
+      feedSummary: f === 'all' ? 'Six things moved through the brain since you left.' : f === 'mine' ? 'Your recent activity.' : 'Everything touching the Ramp launch.',
+      filters, feed,
+      flowAnim: flowOn ? 'flowSlow 3s linear infinite' : 'none',
+      projects: this.PROJECTS.map(p => {
+        const tk = this.state.tickets.filter(t => t.project === p.name);
+        const done = tk.filter(t => t.status === 'done').length;
+        const pct = tk.length ? Math.round(done / tk.length * 100) : 0;
+        return { ...p, pctText: pct + '%', doneCount: done, totalCount: tk.length, taskText: done + ' / ' + tk.length + ' tasks done', onClick: () => this.setState({ view: 'tasks', taskProject: p.name }) };
+      }),
+      goProjects: () => setView('projects'),
+      goTasks: () => setView('tasks'),
+      goGraph: () => setView('graph'),
+      goNotes: () => setView('notes'),
+      // notes
+      noteCount: notesArr.length,
+      notes: notesArr,
+      noteTitle: cur.title, noteTag: cur.tag, noteTagColor: tagColors[cur.tag] || '#a8a29e',
+      noteEdited: cur.edited, noteLinkCount: linkCount,
+      noteSegments: segments,
+      backlinks, noBacklinks: backlinks.length === 0,
+      // graph
+      graphEdges, graphNodes, focusX, focusY,
+      canvasRef: (el) => { this._canvas = el; },
+      nodeLabel: selNode.label,
+      nodeType: selNode.type.toUpperCase(),
+      nodeTypeColor: this.TYPE_COLOR[selNode.type],
+      nodeConnCount: nodeConnections.length,
+      nodeConnections,
+      nodeIsNote: selNode.type === 'note',
+      // tasks — kanban board / list / detail
+      ...(() => {
+        const PEOPLE = this.PEOPLE, PRIO = this.PRIO, AREA = this.AREA, ME = this.ME;
+        const tp = this.state.taskProject;
+        const layout = this.state.taskLayout;
+        const all = this.state.tickets;
+        const scoped = tp === 'all' ? all : all.filter(t => t.project === tp);
+        // overlap map per project
+        const overlapByProject = {};
+        [...new Set(all.map(t => t.project))].forEach(p => { overlapByProject[p] = this.overlapAreas(p); });
+        const isOverlap = (t) => t.status === 'inprogress' && overlapByProject[t.project].has(t.area);
+        const overlapPartner = (t) => {
+          const others = all.filter(o => o.id !== t.id && o.project === t.project && o.status === 'inprogress' && o.area === t.area);
+          return others.length ? (PEOPLE[others[0].claimedBy] ? PEOPLE[others[0].claimedBy].name : 'someone') + ' · ' + others[0].id : '';
+        };
+        const openId = this.state.openTicket;
+        const enrichCard = (t) => {
+          const done = t.checklist.filter(c => c.done).length;
+          const av = t.assignee ? PEOPLE[t.assignee] : null;
+          const lockedByOther = t.claimedBy && t.claimedBy !== ME;
+          return {
+            id: t.id, title: t.title, project: t.project,
+            priColor: PRIO[t.priority].color,
+            areaLabel: AREA[t.area].label, areaBg: AREA[t.area].bg, areaFg: AREA[t.area].fg,
+            hasAssignee: !!av, avInit: t.assignee || '', avBg: av ? av.bg : '#f0eeeb', avFg: av ? av.fg : '#b5b3ad',
+            claimedByOther: lockedByOther, claimedByName: t.claimedBy ? (PEOPLE[t.claimedBy] ? PEOPLE[t.claimedBy].name : t.claimedBy) : '',
+            lockIcon: lockedByOther ? '🔒' : '',
+            hasViewers: t.viewers.length > 0, viewerName: t.viewers.length ? (PEOPLE[t.viewers[0]] ? PEOPLE[t.viewers[0]].name : t.viewers[0]) : '',
+            hasChecklist: t.checklist.length > 0, checkText: done + '/' + t.checklist.length,
+            linkCount: t.links.length, hasLinks: t.links.length > 0,
+            conflict: isOverlap(t), conflictText: isOverlap(t) ? 'Same area as ' + overlapPartner(t) : '',
+            cardBorder: openId === t.id ? '#1c1c1f' : (isOverlap(t) ? '#e6c9b0' : '#ededeb'),
+            onClick: () => this.setState({ openTicket: t.id }),
+          };
+        };
+        const boardColumns = this.COLS.map(c => {
+          const items = scoped.filter(t => t.status === c.id);
+          return { id: c.id, name: c.name, count: items.length, tickets: items.map(enrichCard), empty: items.length === 0 };
+        });
+        const listRows = scoped.map(t => ({ ...enrichCard(t), statusName: this.COLS.find(c => c.id === t.status).name }));
+        // project tabs
+        const projNames = this.PROJECTS.map(p => p.name);
+        const taskTabs = [{ id: 'all', label: 'All projects' }, ...projNames.map(n => ({ id: n, label: n }))].map(x => ({
+          label: x.label, onClick: () => this.setState({ taskProject: x.id }),
+          bg: tp === x.id ? '#1c1c1f' : '#f4f2ef', fg: tp === x.id ? '#fff' : '#78716c', weight: tp === x.id ? 500 : 400,
+        }));
+        // detail
+        const ot = openId ? all.find(t => t.id === openId) : null;
+        let detail = { hasOpenTicket: false };
+        if (ot) {
+          const av = ot.assignee ? PEOPLE[ot.assignee] : null;
+          const lockedByOther = ot.claimedBy && ot.claimedBy !== ME;
+          const mineClaim = ot.claimedBy === ME;
+          detail = {
+            hasOpenTicket: true,
+            dId: ot.id, dTitle: ot.title, dProject: ot.project,
+            dPriLabel: PRIO[ot.priority].label, dPriColor: PRIO[ot.priority].color,
+            dAreaLabel: AREA[ot.area].label, dAreaBg: AREA[ot.area].bg, dAreaFg: AREA[ot.area].fg,
+            dHasAssignee: !!av, dAvInit: ot.assignee || '—', dAvBg: av ? av.bg : '#f0eeeb', dAvFg: av ? av.fg : '#b5b3ad', dAssigneeName: av ? av.name : 'Unassigned',
+            dConflict: isOverlap(ot), dConflictText: isOverlap(ot) ? 'Heads up — ' + overlapPartner(ot) + ' is also working in ' + AREA[ot.area].label + '. Coordinate to avoid a merge conflict.' : '',
+            dLockedByOther: lockedByOther, dMineClaim: mineClaim, dUnclaimed: !ot.claimedBy,
+            dClaimedName: ot.claimedBy ? (PEOPLE[ot.claimedBy] ? PEOPLE[ot.claimedBy].name : ot.claimedBy) : '',
+            dHasViewers: ot.viewers.length > 0, dViewerName: ot.viewers.length ? (PEOPLE[ot.viewers[0]] ? PEOPLE[ot.viewers[0]].name : ot.viewers[0]) : '',
+            dStatusBtns: this.COLS.map(c => ({
+              name: c.name, active: c.id === ot.status,
+              bg: c.id === ot.status ? '#1c1c1f' : '#f4f2ef', fg: c.id === ot.status ? '#fff' : '#78716c',
+              onClick: lockedByOther ? (() => {}) : (() => this.mutateTicket(ot.id, t => ({ ...t, status: c.id }))),
+              cursor: lockedByOther ? 'not-allowed' : 'pointer',
+            })),
+            dChecklist: ot.checklist.map((c, i) => ({
+              t: c.t, done: c.done,
+              box: c.done ? '#1c1c1f' : '#fff', boxBorder: c.done ? '#1c1c1f' : '#cfcac2', mark: c.done ? '✓' : '',
+              textColor: c.done ? '#a8a29e' : '#33312e', strike: c.done ? 'line-through' : 'none',
+              onClick: lockedByOther ? (() => {}) : (() => this.mutateTicket(ot.id, t => ({ ...t, checklist: t.checklist.map((x, j) => j === i ? { ...x, done: !x.done } : x) }))),
+            })),
+            dChecklistEmpty: ot.checklist.length === 0,
+            dLinks: ot.links.map(l => ({ label: l.label, type: l.type, onClick: () => (l.to === 'prompts' ? setView('prompts') : selectNote(l.to)) })),
+            dLinksEmpty: ot.links.length === 0,
+            claimTicket: () => this.mutateTicket(ot.id, t => ({ ...t, claimedBy: ME, assignee: t.assignee || ME })),
+            releaseTicket: () => this.mutateTicket(ot.id, t => ({ ...t, claimedBy: null })),
+            closeTicket: () => this.setState({ openTicket: null }),
+          };
+        }
+        return {
+          taskTabs, taskLayout: layout,
+          isBoard: layout === 'board', isList: layout === 'list',
+          boardTabBg: layout === 'board' ? '#fff' : 'transparent', boardTabFg: layout === 'board' ? '#1c1c1f' : '#a8a29e',
+          listTabBg: layout === 'list' ? '#fff' : 'transparent', listTabFg: layout === 'list' ? '#1c1c1f' : '#a8a29e',
+          setBoard: () => this.setState({ taskLayout: 'board' }),
+          setList: () => this.setState({ taskLayout: 'list' }),
+          boardColumns, listRows,
+          taskScopeLabel: tp === 'all' ? 'All projects' : tp,
+          ...detail,
+        };
+      })(),
+      // time — stacked weekly chart (segments: Ramp / Sidequest / Warehouse)
+      ...(() => {
+        const projCols = { Ramp: '#1c1c1f', Sidequest: accent, Warehouse: '#b7cfc0' };
+        const days = [
+          { day: 'M', segs: { Ramp: 1.0, Sidequest: 0.6 } },
+          { day: 'T', segs: { Ramp: 1.4, Warehouse: 1.2 } },
+          { day: 'W', segs: { Sidequest: 0.9 } },
+          { day: 'T', segs: { Ramp: 2.1, Sidequest: 1.0, Warehouse: 0.9 }, today: true },
+          { day: 'F', segs: { Ramp: 1.2, Warehouse: 0.8 } },
+          { day: 'S', segs: { Sidequest: 0.6 } },
+          { day: 'S', segs: { Ramp: 0.3 } },
+        ];
+        const totals = days.map(d => Object.values(d.segs).reduce((a, b) => a + b, 0));
+        const MAX = 6; // hours axis top
+        const avg = totals.reduce((a, b) => a + b, 0) / totals.length;
+        const order = ['Ramp', 'Sidequest', 'Warehouse'];
+        return {
+          timeLegend: order.map(name => ({ name, color: projCols[name] })),
+          timeYAxis: [0, 2, 4, 6].map(h => ({ label: h === 0 ? '0' : h + 'h', top: ((1 - h / MAX) * 100).toFixed(1) + '%' })),
+          timeAvg: avg.toFixed(1) + 'h',
+          timeAvgBottom: (avg / MAX * 100).toFixed(1) + '%',
+          weekBars: days.map((d, i) => {
+            const tot = totals[i];
+            return {
+              day: d.day,
+              total: tot.toFixed(1),
+              h: (tot / MAX * 100).toFixed(1) + '%',
+              valColor: d.today ? '#1c1c1f' : '#a8a29e',
+              valOpacity: d.today ? 1 : 0,
+              dayColor: d.today ? '#1c1c1f' : '#c4c1ba',
+              dayWeight: d.today ? 600 : 400,
+              miniBg: d.today ? '#1c1c1f' : '#e7e5e0',
+              shadow: d.today ? '0 4px 10px rgba(0,0,0,.14)' : 'none',
+              segments: order.filter(n => d.segs[n]).map(n => ({ h: (d.segs[n] / tot * 100).toFixed(1) + '%', color: projCols[n] })),
+            };
+          }),
+        };
+      })(),
+      timeEntries: [
+        ...this.state.logs,
+        { who: 'JM', avBg: '#e7e5e0', avFg: '#57534e', task: 'Landing hero + copy', project: 'Ramp landing', hours: '2.1h' },
+        { who: 'SM', avBg: '#c3ddca', avFg: '#3f7a56', task: 'Warehouse sim physics', project: 'Warehouse sim', hours: '2.5h' },
+        { who: 'JM', avBg: '#e7e5e0', avFg: '#57534e', task: 'Onboarding flow', project: 'Sidequest v2', hours: '1.6h' },
+        { who: 'AL', avBg: '#cdd4ea', avFg: '#4a5b8a', task: 'Positioning research', project: 'Ramp landing', hours: '1.2h' },
+      ],
+      // prompts
+      prompts: [
+        { title: 'Cold email rewrite', stars: '★★★★☆', body: 'Rewrites a cold outreach email to sound human and specific to the recipient.', tag: '#marketing', author: 'Alex' },
+        { title: 'PR / FAQ generator', stars: '★★★★★', body: 'Turns a rough idea into an Amazon-style press release + FAQ to pressure-test it.', tag: '#product', author: 'John' },
+        { title: 'Streak copy', stars: '★★★☆☆', body: 'Generates encouraging streak / retention microcopy in our voice.', tag: '#product', author: 'Sam' },
+        { title: 'Standup summarizer', stars: '★★★★☆', body: 'Condenses a week of notes into a 5-bullet team update.', tag: '#ops', author: 'John' },
+      ],
+      // agents — dev-agent registry + automations
+      agentSubtitle: this.state.agentTab === 'agents' ? 'The coding agents the team builds with — configured, shared, reusable.' : 'Background workers that keep the brain tidy.',
+      isAgentsTab: this.state.agentTab === 'agents', isAutoTab: this.state.agentTab === 'automations',
+      agTabBg: this.state.agentTab === 'agents' ? '#fff' : 'transparent', agTabFg: this.state.agentTab === 'agents' ? '#1c1c1f' : '#a8a29e',
+      autoTabBg: this.state.agentTab === 'automations' ? '#fff' : 'transparent', autoTabFg: this.state.agentTab === 'automations' ? '#1c1c1f' : '#a8a29e',
+      setAgentsTab: () => this.setState({ agentTab: 'agents' }),
+      setAutoTab: () => this.setState({ agentTab: 'automations' }),
+      devAgents: [
+        { name: 'Code Reviewer', model: 'Claude Sonnet 4.5', icon: '⌘', iconBg: '#eef1f8', iconFg: '#4a5b8a', stars: '★★★★★', desc: 'Reviews PRs for bugs, edge cases and style drift before they land. Leaves inline comments.', tools: ['GitHub', 'ESLint', 'repo read'], prompt: 'You are a senior reviewer. Flag correctness issues first, then style. Be terse and cite line numbers…', owner: 'John', ownerInit: 'JM', ownerBg: '#e7e5e0', ownerFg: '#57534e', usedOn: 24 },
+        { name: 'Test Writer', model: 'Claude Sonnet 4.5', icon: '✓', iconBg: '#eef6f0', iconFg: '#3f7a56', stars: '★★★★☆', desc: 'Generates unit + integration tests from a diff or a function, matching our Jest conventions.', tools: ['repo write', 'Jest', 'coverage'], prompt: 'Given changed code, write focused tests covering happy path and edge cases. Follow existing test style…', owner: 'Sam', ownerInit: 'SM', ownerBg: '#c3ddca', ownerFg: '#3f7a56', usedOn: 17 },
+        { name: 'Frontend Scaffolder', model: 'Claude Opus 4', icon: '◧', iconBg: '#f1eefc', iconFg: '#6a5f8a', stars: '★★★★☆', desc: 'Turns a component spec or Figma frame into a typed React component with our design tokens.', tools: ['repo write', 'Figma MCP', 'tokens'], prompt: 'Build accessible React components using our tokens. Prefer composition, no inline magic numbers…', owner: 'John', ownerInit: 'JM', ownerBg: '#e7e5e0', ownerFg: '#57534e', usedOn: 31 },
+        { name: 'Bug Triager', model: 'Claude Sonnet 4.5', icon: '⚑', iconBg: '#f8f1e6', iconFg: '#8a6a2a', stars: '★★★☆☆', desc: 'Reproduces issues from a report, finds the root cause, and drafts a ticket with a fix plan.', tools: ['repo read', 'Sentry', 'logs'], prompt: 'From a bug report, reproduce, isolate the root cause, and propose the smallest safe fix…', owner: 'Alex', ownerInit: 'AL', ownerBg: '#cdd4ea', ownerFg: '#4a5b8a', usedOn: 9 },
+      ],
+      automations: [
+        { name: 'Weekly digest', desc: 'Summarizes new notes into the brain every Friday.', schedule: 'Fri · 5pm', lastRun: 'ran 2d ago', statusColor: '#22c55e', statusLabel: 'Active' },
+        { name: 'Link suggester', desc: 'Proposes connections between new notes and existing ones.', schedule: 'On save', lastRun: 'ran 14m ago', statusColor: '#22c55e', statusLabel: 'Active' },
+        { name: 'Idle project nudge', desc: 'Flags projects with no activity for 7 days.', schedule: 'Daily', lastRun: 'ran today', statusColor: '#e0a53f', statusLabel: 'Warning' },
+        { name: 'Prompt curator', desc: 'Deduplicates and tags newly saved prompts.', schedule: 'Manual', lastRun: 'never run', statusColor: '#c4c1ba', statusLabel: 'Paused' },
+      ],
+      // brain — canon library
+      brainAsks: ['How do we run a launch?', 'Why did we pick our stack?', 'What\'s our voice?'],
+      brainCats: (() => {
+        const P = { JM: { bg: '#e7e5e0', fg: '#57534e' }, SM: { bg: '#c3ddca', fg: '#3f7a56' }, AL: { bg: '#cdd4ea', fg: '#4a5b8a' } };
+        const fresh = { fresh: { freshColor: '#3f9b6c', freshLabel: 'current' }, stale: { freshColor: '#e0a53f', freshLabel: 'needs review' } };
+        const mk = (title, summary, provenance, owner, reviewed, state) => ({ title, summary, provenance, ownerInit: owner, ownerBg: P[owner].bg, ownerFg: P[owner].fg, reviewed, ...fresh[state] });
+        return [
+          { name: 'Playbooks', icon: '▶', color: '#4a5b8a', blurb: 'repeatable how-tos', count: 2, entries: [
+            mk('How we run a launch', 'Positioning → waitlist → activation, with the checklist we used for Ramp.', 'from 3 notes · 2 tickets', 'JM', 'reviewed 2w ago', 'fresh'),
+            mk('Cold outreach that converts', 'The sequence + prompt that got our best reply rate.', 'from 2 notes · 1 prompt', 'AL', 'reviewed 5d ago', 'fresh'),
+          ] },
+          { name: 'Decisions', icon: '◈', color: '#6a5f8a', blurb: 'why we chose what we chose', count: 2, entries: [
+            mk('Why we chose our stack', 'Next.js + Postgres over the alternatives — the tradeoffs and what would change our mind.', 'from 2 notes', 'SM', 'reviewed 6w ago', 'stale'),
+            mk('Single-assignee task ownership', 'One owner per ticket + claim-locking, to keep merge conflicts down.', 'from 1 note · 4 tickets', 'JM', 'reviewed 1w ago', 'fresh'),
+          ] },
+          { name: 'Standards', icon: '▤', color: '#8a6a2a', blurb: 'how we do things consistently', count: 2, entries: [
+            mk('Team voice & tone', 'Plain, specific, warm. With on- and off-brand examples.', 'from 4 notes', 'AL', 'reviewed 3w ago', 'fresh'),
+            mk('Code review conventions', 'What the Code Reviewer agent enforces, and what humans still own.', 'from 2 notes · 1 agent', 'SM', 'reviewed 2d ago', 'fresh'),
+          ] },
+          { name: 'Goals', icon: '◎', color: '#3f7a56', blurb: 'what we\'re optimizing for', count: 1, entries: [
+            mk('Sandbox cohort goals', 'Activate whole teams, not single users — the metrics that matter this cohort.', 'from 1 note · Growth', 'JM', 'reviewed 4w ago', 'stale'),
+          ] },
+        ];
+      })(),
+    };
+  }
+}
+</script>
+</body>
+</html>
