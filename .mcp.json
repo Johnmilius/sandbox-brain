@@ -2,7 +2,13 @@
   "mcpServers": {
     "sandbox-brain": {
       "command": "node",
-      "args": ["mcp/dist/index.js"]
+      "args": [
+        "mcp/dist/index.js"
+      ]
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=spxyblbimvaqnkecxrlu"
     }
   }
 }
