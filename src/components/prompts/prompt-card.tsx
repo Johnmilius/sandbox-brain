@@ -4,14 +4,7 @@ import { useState, useTransition } from "react";
 import { Copy, Pencil, Star } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -61,80 +54,90 @@ export function PromptCard({
     });
   }
 
+  // Design: one mono footer line — "{tag} · saved by {author}" (11px).
+  const metaLine = [
+    [prompt.ai_tool, projectName].filter(Boolean).join(" · ") || null,
+    tags.length > 0 ? tags.map((t) => `#${t}`).join(" ") : null,
+    authorName ? `saved by ${authorName}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-            <DialogTrigger
-              render={
-                <button
-                  type="button"
-                  className="text-left font-medium leading-snug hover:underline"
-                />
-              }
-            >
-              {prompt.title}
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-xl">
-              <DialogHeader>
-                <DialogTitle>{prompt.title}</DialogTitle>
-                <DialogDescription>
-                  {[
-                    prompt.ai_tool,
-                    projectName,
-                    authorName,
-                    formatDate(prompt.created_at),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto">
-                <pre className="rounded-lg bg-muted p-3 text-sm whitespace-pre-wrap break-words">
-                  {prompt.prompt_text}
-                </pre>
-                {prompt.response_notes && (
-                  <div>
-                    <p className="mb-1 text-xs font-medium text-muted-foreground uppercase">
-                      Result / notes
-                    </p>
-                    <p className="text-sm whitespace-pre-wrap">
-                      {prompt.response_notes}
-                    </p>
-                  </div>
-                )}
-              </div>
-              <Button onClick={copyPrompt} variant="outline">
-                <Copy className="size-4" />
-                Copy prompt
-              </Button>
-            </DialogContent>
-          </Dialog>
-          <div className="flex shrink-0 items-center gap-1">
-            {prompt.is_favorite && (
-              <Star className="size-3.5 fill-amber-400 text-amber-400" />
-            )}
-            {prompt.rating != null && (
-              <span className="text-sm text-amber-500">
-                {"★".repeat(prompt.rating)}
-              </span>
-            )}
-          </div>
-        </div>
-        <CardDescription className="line-clamp-2">
-          {prompt.prompt_text}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex items-center justify-between gap-2 pt-0">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          {prompt.ai_tool && <Badge>{prompt.ai_tool}</Badge>}
-          {projectName && <Badge variant="outline">{projectName}</Badge>}
-          {tags.map((tag) => (
-            <Badge key={tag} variant="secondary">
-              {tag}
-            </Badge>
-          ))}
+    <div
+      className="flex flex-col rounded-[12px] bg-white"
+      style={{ border: "1px solid #ededeb", padding: "16px 20px" }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+          <DialogTrigger
+            render={
+              <button
+                type="button"
+                className="text-left text-[14px] font-semibold leading-snug text-[var(--v2-ink-1)] hover:underline"
+              />
+            }
+          >
+            {prompt.title}
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>{prompt.title}</DialogTitle>
+              <DialogDescription>
+                {[
+                  prompt.ai_tool,
+                  projectName,
+                  authorName,
+                  formatDate(prompt.created_at),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto">
+              <pre className="rounded-lg bg-muted p-3 text-sm whitespace-pre-wrap break-words">
+                {prompt.prompt_text}
+              </pre>
+              {prompt.response_notes && (
+                <div>
+                  <p className="mb-1 text-xs font-medium text-muted-foreground uppercase">
+                    Result / notes
+                  </p>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {prompt.response_notes}
+                  </p>
+                </div>
+              )}
+            </div>
+            <Button onClick={copyPrompt} variant="outline">
+              <Copy className="size-4" />
+              Copy prompt
+            </Button>
+          </DialogContent>
+        </Dialog>
+        {prompt.rating != null && (
+          <span
+            className="shrink-0 text-[12px]"
+            style={{ color: "var(--v2-amber)" }}
+            aria-label={`${prompt.rating} out of 5 stars`}
+          >
+            {"★".repeat(prompt.rating)}
+            {"☆".repeat(Math.max(0, 5 - prompt.rating))}
+          </span>
+        )}
+      </div>
+
+      <p className="mt-2 line-clamp-2 text-[12.5px] text-[var(--v2-ink-2)]">
+        {prompt.prompt_text}
+      </p>
+
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          {metaLine && (
+            <p className="font-mono truncate text-[11px] text-[var(--v2-ink-3)]">
+              {metaLine}
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 items-center">
           <Button
@@ -144,13 +147,14 @@ export function PromptCard({
             disabled={favPending}
             aria-label={prompt.is_favorite ? "Remove from favorites" : "Add to favorites"}
             aria-pressed={prompt.is_favorite}
+            className="hover:bg-[#efece7]"
           >
             <Star
               className={cn(
                 "size-3.5",
                 prompt.is_favorite
-                  ? "fill-amber-400 text-amber-400"
-                  : "text-muted-foreground",
+                  ? "fill-[var(--v2-amber)] text-[var(--v2-amber)]"
+                  : "text-[var(--v2-ink-3)]",
               )}
             />
           </Button>
@@ -159,6 +163,7 @@ export function PromptCard({
             size="icon-sm"
             onClick={copyPrompt}
             aria-label="Copy prompt"
+            className="text-[var(--v2-ink-3)] hover:bg-[#efece7] hover:text-[var(--v2-ink-1)]"
           >
             <Copy className="size-3.5" />
           </Button>
@@ -168,7 +173,12 @@ export function PromptCard({
             projects={projects}
             tagSuggestions={tagSuggestions}
             trigger={
-              <Button variant="ghost" size="icon-sm" aria-label="Edit prompt">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Edit prompt"
+                className="text-[var(--v2-ink-3)] hover:bg-[#efece7] hover:text-[var(--v2-ink-1)]"
+              >
                 <Pencil className="size-3.5" />
               </Button>
             }
@@ -180,7 +190,7 @@ export function PromptCard({
             onDelete={() => deletePrompt(prompt.id)}
           />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

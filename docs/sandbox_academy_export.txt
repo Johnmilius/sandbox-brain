@@ -1,0 +1,1351 @@
+# Setup, Next.js, Project Structure, Terminal, Git, and AI Coding Agents
+38 steps — copy each prompt into your AI coding assistant and follow along.
+
+## Step 1: What are we trying to do? [Chat]
+
+I am a beginner learning to build a real product with AI guidance. I may not have any coding tools installed yet. Please act as a patient tutor. Start by asking me what product I want to build, then explain what we are trying to accomplish in this first setup and Next.js module.
+
+## Step 2: What tools do I need? [Chat]
+
+Before I write any code, what tools do I need installed on my computer to build a modern web app? Please explain each tool from first principles: code editor, terminal, Node.js, npm, Git, GitHub, Next.js, and an AI coding agent.
+
+## Step 3: Chat AI vs coding agent [Chat]
+
+Right now I am talking to you in a chat interface. I’ve also heard about AI coding agents like Codex and Claude Code that can run next to my code. What is the difference between asking questions here in chat versus using an AI coding agent inside my project? What kinds of tasks should I do in each place?
+
+## Step 4: Check the latest AI coding agent options [Chat]
+
+Please check the latest official information about Codex and Claude Code. Explain the difference between their chat/web/app experiences, desktop or GUI options, IDE integrations, and CLI versions. Then recommend which one I should use for this bootcamp based on my operating system, comfort with the terminal, and whether I want the simplest setup or the most powerful setup.
+
+## Step 5: What is a terminal? [Chat]
+
+I might not know what a terminal is. Explain the terminal from first principles. Why do developers use it? What does it mean to “run a command”? How do I open the terminal on my computer?
+
+## Step 6: What is a code editor? [Chat]
+
+I may not have a code editor installed. What is a code editor, and why do developers often use VS Code or similar editors? Please help me decide what editor to install for this bootcamp and walk me through installing it.
+
+## Step 7: Check what is already installed [Chat]
+
+Help me check what coding tools are already installed on my computer. Give me one terminal command at a time to check for Node.js, npm, Git, and any AI coding agent. For each command, explain what it checks and what the result means.
+
+## Step 8: Install missing tools [Chat]
+
+Based on what we found, help me install whatever is missing. Give me operating-system-specific instructions and only one step at a time. Prioritize official installation sources. Explain what each tool does before I install it.
+
+## Step 9: Install or open a coding agent [Chat]
+
+Help me install and run either Codex or Claude Code for this bootcamp. First explain the difference between using the GUI/desktop/app version and the CLI version. Then guide me through the option that best fits my setup. After installation, help me verify it works.
+
+## Step 10: Decide where to ask what [Chat]
+
+Before we start building, make me a simple rule-of-thumb table for this bootcamp: which questions should I ask in ChatGPT/Claude chat, and which tasks should I give to Codex/Claude Code running inside my project?
+
+## Step 11: Start the project [Coding Agent]
+
+I’m now using an AI coding agent next to my code. Help me choose or create a folder for my bootcamp project. Explain what a project folder is and why it matters before running any commands.
+
+## Step 12: Why Node/npm/Next.js? [Coding Agent]
+
+Before creating the app, explain why a Next.js project needs Node.js and npm. What job does each one do? Then help me verify they are working.
+
+## Step 13: Create the Next.js app [Coding Agent]
+
+Help me create a new Next.js app for this bootcamp. Give me one command at a time. Explain every setup question, including TypeScript, ESLint, Tailwind, App Router, src directory, and import aliases. Recommend beginner-friendly choices.
+
+## Step 14: Understand what got created [Coding Agent]
+
+The Next.js project has been created. Please inspect the project files and explain the important files and folders in beginner-friendly language. Tell me which files matter now and which files I can ignore for the moment.
+
+## Step 15: Run the app locally [Coding Agent]
+
+Help me run the app locally. Explain what a development server is, what localhost means, and how I can tell whether the app is working.
+
+## Step 16: Debug setup problems [Coding Agent]
+
+If the app does not run, help me debug it step by step. Check the terminal output, installed versions, current folder, package install, and common beginner mistakes. Do not skip straight to random fixes.
+
+## Step 17: Why save progress? [Coding Agent]
+
+I’m about to start changing code, and I’m worried I might break something or lose progress. Is there a system developers use to save progress, compare changes, and go back if needed?
+
+## Step 18: Git and GitHub from first principles [Coding Agent]
+
+Explain Git and GitHub from first principles. What problem does Git solve locally? What problem does GitHub solve online? What are commits, diffs, branches, repositories, and remotes?
+
+## Step 19: Set up Git [Coding Agent]
+
+Help me check whether this project is already a Git repository. If not, help me initialize Git. Then help me inspect the current files, stage them, and make my first commit. Explain each command before running it.
+
+## Step 20: Should I create a GitHub repo now? [Coding Agent]
+
+Should I connect this project to GitHub now or wait until later? Explain the tradeoffs for a beginner. If it makes sense to do now, walk me through creating a GitHub repository and pushing my first commit.
+
+## Step 21: How URLs become pages [Coding Agent]
+
+When I visit a URL like /dashboard, how does the app know what page to show? Explain routing from first principles, then explain how Next.js uses files and folders to create pages.
+
+## Step 22: Page vs layout [Coding Agent]
+
+What is the difference between a page and a layout in Next.js? Why would an app have shared navigation or a shared layout? Use my product idea as the example.
+
+## Step 23: Plan the first skeleton [Coding Agent]
+
+Based on the product idea I described earlier, plan the first simple app skeleton: homepage, dashboard page, and one detail page. If you do not have my product idea in this context, ask me to restate it first. Explain the purpose of each route before editing files.
+
+## Step 24: Build the homepage [Coding Agent]
+
+Help me update the homepage so it feels like my product. Make the smallest useful change. Explain which file controls the homepage, what you changed, and how I can see it in the browser.
+
+## Step 25: Build the dashboard page [Coding Agent]
+
+Help me add a dashboard page. Explain which folder and file create the route, then make the change and show me how to test it.
+
+## Step 26: Build a simple detail page [Coding Agent]
+
+Help me add one simple detail page for an item in my product. Explain whether this should be a normal route or a dynamic route, then build the simplest useful version.
+
+## Step 27: Add navigation [Coding Agent]
+
+Help me add navigation between the homepage, dashboard, and detail page. Explain how links work in Next.js and how this differs from typing URLs manually.
+
+## Step 28: Verify the skeleton [Coding Agent]
+
+Help me verify the app skeleton. Give me a checklist of what to click, what URLs to visit, what terminal output to check, and what common mistakes to look for.
+
+## Step 29: Review the structure [Coding Agent]
+
+Review the project structure like a mentor. Inspect the files we changed, explain what each one does, and tell me if anything is misplaced, confusing, or too complicated for this stage.
+
+## Step 30: Save the skeleton [Coding Agent]
+
+Help me inspect the Git diff and make a clean commit for the app skeleton. Suggest a clear commit message and explain what the commit captures.
+
+## Step 31: Why deploy? [Coding Agent]
+
+My app works on my computer, but I want other people to be able to visit it. Explain deployment from first principles. What is the difference between localhost and a live website? What problem does Vercel solve for a Next.js app?
+
+## Step 32: Check the latest Vercel setup [Chat]
+
+Please check the latest official Vercel documentation for deploying a Next.js app. Explain the current recommended setup path for a beginner, including GitHub connection, project import, build settings, environment variables if needed, and how Vercel creates a live URL.
+
+## Step 33: Prepare the project for deployment [Coding Agent]
+
+Help me prepare this Next.js project for deployment to Vercel. Run the appropriate local checks, inspect package scripts, confirm the app builds, and explain any issues before fixing them.
+
+## Step 34: Deploy to Vercel [Coding Agent]
+
+Walk me through deploying this project to Vercel. If my project is already on GitHub, help me import it into Vercel. If it is not on GitHub yet, help me push it first. Give me one step at a time and explain what each step does.
+
+## Step 35: Verify the live site [Coding Agent]
+
+Help me verify the deployed site. Check the Vercel deployment status, visit the live URL, test the homepage, dashboard page, detail page, and navigation, and explain how to debug common deployment failures.
+
+## Step 36: Save the deployment checkpoint [Coding Agent]
+
+Help me inspect any changes made during deployment setup and make a clean Git commit if needed. Suggest a clear commit message and explain what deployment milestone this checkpoint captures.
+
+## Step 37: Explain everything back to me [Coding Agent]
+
+Explain what I learned in this module from first principles. Include: chat AI versus coding agent, code editor, terminal, Node.js, npm, Next.js, files, folders, routes, pages, layouts, localhost, Git, GitHub, commits, deployment, Vercel, and live URLs.
+
+## Step 38: Self-check [Chat]
+
+Give me a beginner-friendly self-check quiz for this module. Ask me 10 questions, including at least two about deployment and Vercel. After I answer, tell me what I understand well and what I should review.
+
+---
+
+# Client, React, Tailwind, Components, and Interaction
+31 steps — copy each prompt into your AI coding assistant and follow along.
+
+## Step 1: What makes a page interactive? [Chat]
+
+My app has pages now, but they mostly just sit there. I want users to click things, fill out forms, select items, and see the screen change. From first principles, what makes a webpage interactive?
+
+## Step 2: Browser vs server [Chat]
+
+When a user clicks a button or types into a form, where does that code run? Explain the difference between browser code and server code using examples from the product I am building.
+
+## Step 3: Why React? [Chat]
+
+Could I make my app interactive with plain JavaScript? Why do developers use React instead? Explain what problem React solves as the interface gets more complex.
+
+## Step 4: Components, props, and state [Chat]
+
+Explain React components, props, and state from first principles. Use examples from my product idea. Also explain how these three concepts relate to each other.
+
+## Step 5: Tailwind and styling [Chat]
+
+My app works, but it looks plain. Explain styling on the web from first principles. What is CSS, what is Tailwind, and why might Tailwind be useful in a fast product-building bootcamp?
+
+## Step 6: When should I switch to the coding agent? [Chat]
+
+For this client/UI module, which parts should I ask here in chat and which parts should I ask my coding agent to do inside the project? Please give me a practical workflow.
+
+## Step 7: Inspect the current app [Coding Agent]
+
+Inspect my current Next.js project. Summarize the routes and files we already have. Then recommend where we should build the main dashboard UI for this module.
+
+## Step 8: Choose a UI workflow [Coding Agent]
+
+Based on the product idea already discussed, help me choose the smallest useful UI workflow to prototype. If you do not have my product idea in this context, ask me to restate it first. Ask me questions if needed. The workflow should include a list or grid, item selection, and a simple create form.
+
+## Step 9: Plan components before editing [Coding Agent]
+
+Before editing files, plan the components for this workflow. Explain what each component should do, what data it needs, and which components need interactivity.
+
+## Step 10: Mock data from first principles [Coding Agent]
+
+I do not have a database yet, but I want the UI to feel real. Explain mock data, then create a small mock data file for this product. Put it in the right place in the project and explain the data shape.
+
+## Step 11: Render the first list or grid [Coding Agent]
+
+Use the mock data to render a list or grid on the dashboard. Make one file change at a time. Explain how arrays, mapping, props, and keys are being used.
+
+## Step 12: Extract a reusable component [Coding Agent]
+
+The dashboard should not become one giant file. Help me extract a reusable component for one item/card/row. Explain why this component boundary makes sense and what props it receives.
+
+## Step 13: Style the dashboard [Coding Agent]
+
+Improve the dashboard styling with Tailwind so it feels like a clean startup product. Explain the layout, spacing, typography, borders, hover states, and responsive choices.
+
+## Step 14: Add an empty state [Coding Agent]
+
+Add an empty state for when there are no records. Explain why empty states matter in product design and how this one should guide the user.
+
+## Step 15: Explain client state in this app [Coding Agent]
+
+The user needs to select an item and see more details. Explain where that selected state should live in this app and why.
+
+## Step 16: Add selection interaction [Coding Agent]
+
+Implement a simple selection interaction. When the user clicks an item, show its details in a detail area. Explain the state, click handler, and render logic as you make the change.
+
+## Step 17: Explain use client [Coding Agent]
+
+We added interactivity. Explain why Next.js may require "use client" here. Identify exactly which file needs it and why we should avoid adding it everywhere.
+
+## Step 18: Improve selected state UI [Coding Agent]
+
+Make it visually clear which item is selected. Explain the styling choices and how the UI helps the user understand what happened.
+
+## Step 19: Forms from first principles [Coding Agent]
+
+I want users to create a new item. Explain forms from first principles: inputs, labels, submit events, form state, and what should happen when the form is submitted.
+
+## Step 20: Build the create form [Coding Agent]
+
+Build a simple create form using local React state only. Do not connect to a database yet. Explain controlled inputs and how the new item appears in the UI.
+
+## Step 21: Add validation [Coding Agent]
+
+Add simple client-side validation to the form. Explain what can be checked in the browser for user experience and what will still need to be checked later on the server.
+
+## Step 22: Add useful error messages [Coding Agent]
+
+Improve the validation error messages so they are helpful to a beginner user of the product. Explain what makes an error message useful.
+
+## Step 23: Reset the form after submit [Coding Agent]
+
+After a successful submit, reset the form and update the selected item if appropriate. Explain what state changes and why.
+
+## Step 24: Manual testing checklist [Coding Agent]
+
+Help me manually test the UI. Give me a checklist covering rendering mock data, selecting items, empty states, form submission, validation errors, form reset, and refreshing the page.
+
+## Step 25: Debug UI issues [Coding Agent]
+
+If something is broken, debug it step by step. Check browser errors, terminal output, import paths, component props, state updates, and Tailwind class mistakes. Explain what you are checking before changing code.
+
+## Step 26: Review the component structure [Coding Agent]
+
+Review the UI code like a frontend mentor. Look for giant components, unclear state, repeated markup, confusing names, too much abstraction, and beginner mistakes. Suggest only small improvements.
+
+## Step 27: Make small cleanup improvements [Coding Agent]
+
+Apply the smallest cleanup improvements from your review. Do not over-engineer. Explain each change and why it makes the code easier to understand.
+
+## Step 28: Inspect Git changes [Coding Agent]
+
+Help me inspect the Git diff for this module. Explain which files changed and what the important changes were.
+
+## Step 29: Commit the UI work [Coding Agent]
+
+Help me make a clean Git commit for the client/UI module. Suggest a clear commit message and explain what this checkpoint captures.
+
+## Step 30: Explain the module back to me [Coding Agent]
+
+Explain what I learned in this module from first principles. Include browser interaction, React, components, props, state, Tailwind, mock data, arrays, mapping, forms, validation, "use client", debugging, and Git commits.
+
+## Step 31: Self-check quiz [Chat]
+
+Give me a beginner-friendly self-check quiz for this module. Ask me 10 questions. After I answer, tell me what I understand well and what I should review.
+
+---
+
+# Servers, APIs, Requests, Validation, and Trust Boundaries
+40 steps — copy each prompt into your AI coding assistant and follow along.
+
+## Step 1: Why isn't the browser enough? [Chat]
+
+My app can show pages, render UI, handle clicks, and use local state. Why isn't that enough for a real product? From first principles, explain what problems happen if everything lives in the browser.
+
+## Step 2: What is a server? [Chat]
+
+What is a server from first principles? Explain what the browser does, what the server does, and why web apps usually need both.
+
+## Step 3: What can the user control? [Chat]
+
+If a user can open developer tools, change browser code, edit form values, or send fake requests, what parts of my app can I actually trust? Explain the idea of trusted and untrusted environments.
+
+## Step 4: Why do secrets need a safe place? [Chat]
+
+Some apps need private keys, database credentials, or paid API keys. Why can't I put those directly in frontend code? What could go wrong if a secret is shipped to the browser?
+
+## Step 5: How does the browser talk to the server? [Chat]
+
+From first principles, how does a browser ask a server for something? Explain HTTP requests, HTTP responses, URLs, methods, headers, bodies, and status codes in beginner-friendly language.
+
+## Step 6: What is JSON? [Chat]
+
+I keep seeing JSON in web development. What is JSON, why do APIs use it, and how is it different from normal JavaScript objects? Explain using a simple example from my product.
+
+## Step 7: What is an API? [Chat]
+
+What is an API from first principles? Why do people say an API is like a contract between the frontend and backend? Use my product as the example.
+
+## Step 8: What is REST? [Chat]
+
+I have heard of REST APIs. What problem is REST trying to solve? Explain GET, POST, PATCH, and DELETE using the main thing my product manages.
+
+## Step 9: Chat vs coding agent for this module [Chat]
+
+For this server/API module, which questions should I keep asking here in chat, and which tasks should I give to the coding agent running inside my project? Give me a practical workflow.
+
+## Step 10: Inspect the current app [Coding Agent]
+
+Inspect my current Next.js project. Summarize the routes, components, mock data, and form behavior we already have. Then recommend the smallest API layer we should build in this module.
+
+## Step 11: Design before coding [Coding Agent]
+
+Before editing files, help me design a tiny API for this product. I want one health check route, one GET route for reading records, and one POST route for submitting a new record. Explain the path, method, request body, response body, and possible errors for each.
+
+## Step 12: Explain where API routes live [Coding Agent]
+
+Before creating the API routes, explain where API route files live in a Next.js App Router project. How does a file become an API endpoint instead of a page?
+
+## Step 13: Build a health check route [Coding Agent]
+
+Create a simple health check API route. Explain what file you are creating, what the code does, what status code it returns, and how I can test it in the browser.
+
+## Step 14: Verify the health route [Coding Agent]
+
+Help me verify that the health check route works. Tell me what URL to visit, what response I should see, what terminal output matters, and what errors would mean.
+
+## Step 15: Build a GET route with mock data [Coding Agent]
+
+Create a GET API route that returns the product's mock data as JSON. Reuse the mock data if possible. Explain how this is different from importing mock data directly into a React component.
+
+## Step 16: Test the GET route directly [Coding Agent]
+
+Help me test the GET route directly before connecting it to the UI. Explain what I should see in the browser or with a terminal command, and how to tell whether the response is valid JSON.
+
+## Step 17: Explain fetch [Coding Agent]
+
+Before changing the frontend, explain how frontend code calls an API. What is fetch? What does async mean? What is await? What can go wrong while waiting for data?
+
+## Step 18: Connect the frontend to the GET route [Coding Agent]
+
+Update the dashboard so it gets data from the GET API route instead of directly importing the mock data. Make the smallest clear change. Explain the data flow from browser to API route to UI.
+
+## Step 19: Add loading and error states [Coding Agent]
+
+Add simple loading and error states for the API request. Explain why these states matter once data comes from somewhere outside the component.
+
+## Step 20: Debug the GET flow [Coding Agent]
+
+Help me debug the full GET flow. Check the API route, browser network request, terminal output, frontend state, and rendered UI. Explain each thing you check before changing code.
+
+## Step 21: What happens when a form submits? [Coding Agent]
+
+I have a form in the UI. From first principles, explain what should happen when a user submits a form that needs to talk to the server.
+
+## Step 22: Design the POST route [Coding Agent]
+
+Design the POST route for creating a new record. Explain what data the browser should send, what the server should check, what the server should return on success, and what it should return on failure.
+
+## Step 23: Build the POST route [Coding Agent]
+
+Create the POST API route for adding a new record. Since we do not have a database yet, keep the behavior temporary and simple. Explain why this does not count as real persistence yet.
+
+## Step 24: Connect the form to the POST route [Coding Agent]
+
+Update the form so it submits to the POST route. Explain the full path from user input to request body to server response to UI update.
+
+## Step 25: Why browser validation is not enough [Coding Agent]
+
+Explain why client-side form validation is useful but not enough. How could someone bypass browser validation and send bad data directly to the API?
+
+## Step 26: Design server validation rules [Coding Agent]
+
+Based on the data this product needs, decide the simplest server-side validation rules for the POST route. Explain each rule and what could go wrong if we skipped it.
+
+## Step 27: Add server-side validation [Coding Agent]
+
+Add server-side validation to the POST route. Return clear error responses for invalid input. Explain the status codes and response shapes you choose.
+
+## Step 28: Show validation errors in the UI [Coding Agent]
+
+Update the frontend so it displays server validation errors in a user-friendly way. Explain the difference between helping the user and exposing too much technical detail.
+
+## Step 29: Test success and failure paths [Coding Agent]
+
+Help me manually test both the successful POST flow and the failed validation flow. Give me exact things to try in the UI and what result I should expect.
+
+## Step 30: Environment variables from first principles [Coding Agent]
+
+How do developers give an app configuration values without hard-coding them into source code? Explain environment variables from first principles.
+
+## Step 31: Public vs private environment variables [Coding Agent]
+
+In a Next.js app, what is the difference between an environment variable that is safe for browser code and one that must only be used on the server? Explain how naming and placement matter.
+
+## Step 32: Review for accidental secrets [Coding Agent]
+
+Inspect my project for anything that looks like it could accidentally expose a secret or configuration value. Explain what you are checking and why.
+
+## Step 33: Trust boundary review [Coding Agent]
+
+Review the API code like a security-minded mentor. Explain which code runs in the browser, which code runs on the server, what data crosses the boundary, and what should never be trusted from the user.
+
+## Step 34: Beginner API debugging checklist [Coding Agent]
+
+Give me a beginner-friendly checklist for debugging API problems. Include checking the URL, method, request body, response status, JSON shape, browser console, network tab, terminal logs, and file paths.
+
+## Step 35: Clean up without overengineering [Coding Agent]
+
+Review the API and frontend changes. Suggest small cleanup improvements only. Do not introduce complex abstractions yet. Explain which changes make the code easier to understand.
+
+## Step 36: Apply small cleanup improvements [Coding Agent]
+
+Apply the smallest cleanup improvements from your review. Explain each change and verify that the app still works afterward.
+
+## Step 37: Inspect Git changes [Coding Agent]
+
+Help me inspect the Git diff for this server/API module. Explain which files changed and what each important change did.
+
+## Step 38: Commit the API work [Coding Agent]
+
+Help me make a clean Git commit for this module. Suggest a clear commit message and explain what this checkpoint captures.
+
+## Step 39: Explain the module back to me [Coding Agent]
+
+Explain what I learned in this module from first principles. Include servers, browser trust, APIs, HTTP, JSON, REST, GET, POST, validation, status codes, environment variables, secrets, debugging, and Git commits.
+
+## Step 40: Self-check quiz [Chat]
+
+Give me a beginner-friendly self-check quiz for this module. Ask me 10 questions. After I answer, tell me what I understand well and what I should review before moving on.
+
+---
+
+# Supabase, Databases, Persistence, and CRUD
+49 steps — copy each prompt into your AI coding assistant and follow along.
+
+## Step 1: Why does my app forget things? [Chat]
+
+My app can show data and submit forms, but the data is still temporary. Why does data disappear when it only lives in mock files, local state, or temporary server code?
+
+## Step 2: Persistence from first principles [Chat]
+
+What does persistence mean in software? Explain why real products need data to survive refreshes, restarts, deployments, and multiple users.
+
+## Step 3: What is a database? [Chat]
+
+What is a database from first principles? What problem does it solve for a web app? Please explain using the product I am building.
+
+## Step 4: Why not just use a file? [Chat]
+
+Why don't real apps usually save important product data in a simple text file or JSON file? What problems do databases solve as the app grows?
+
+## Step 5: Tables, rows, and columns [Chat]
+
+Explain tables, rows, columns, IDs, data types, required fields, and timestamps using the main thing my product manages.
+
+## Step 6: What is SQL? [Chat]
+
+What is SQL from first principles? Why do developers use SQL to create, read, update, and delete data?
+
+## Step 7: What is Supabase? [Chat]
+
+What is Supabase, and what backend problems does it solve for a beginner building a real product? Explain how it relates to Postgres, authentication, APIs, storage, and security.
+
+## Step 8: What is Postgres? [Chat]
+
+Supabase uses Postgres. What is Postgres, and why is a relational database useful for product data? Keep the explanation beginner-friendly.
+
+## Step 9: Chat vs coding agent for this module [Chat]
+
+For this Supabase/database module, which questions should I ask here in chat, and which tasks should I give to the coding agent running inside my project? Give me a practical workflow.
+
+## Step 10: Decide the first table [Chat]
+
+Based on the product I am building, help me decide the first database table to create. Ask me any clarifying questions you need. Keep the first version simple and avoid overengineering.
+
+## Step 11: Design the schema [Chat]
+
+Design the first table for this product. Explain each column, data type, required field, default value, primary key, and timestamp. Also explain what we are intentionally not modeling yet.
+
+## Step 12: Explain schema tradeoffs [Chat]
+
+Review this table design like a mentor. What would be hard to change later? What is probably good enough for a bootcamp MVP? What should we avoid adding too early?
+
+## Step 13: Generate SQL [Chat]
+
+Generate the SQL to create this table in Supabase. Explain every line before I run it. Keep the SQL simple and beginner-friendly.
+
+## Step 14: Create the Supabase project [Chat]
+
+Guide me through creating a Supabase project from scratch. Use the latest official Supabase workflow. Explain what organization, project name, region, database password, and project dashboard mean.
+
+## Step 15: Run the SQL [Chat]
+
+Guide me through finding the SQL editor in Supabase and running the table creation SQL. Explain how I can verify that the table was created successfully.
+
+## Step 16: Add a few test rows [Chat]
+
+Help me add a few test rows to the table using the Supabase dashboard or SQL. Explain why test rows are useful before connecting the frontend.
+
+## Step 17: Query the table in Supabase [Chat]
+
+Help me query the table inside Supabase to confirm the data exists. Explain what SELECT means and how I should read the query result.
+
+## Step 18: How does my app connect to Supabase? [Chat]
+
+My Next.js app and Supabase project are separate systems. What information does my app need in order to connect to Supabase?
+
+## Step 19: Supabase keys and safety [Chat]
+
+Supabase gives me URLs and keys. Which values are safe for normal app use, and which values are dangerous? Explain the anon key, service role key, and why service role keys should never be exposed in frontend code.
+
+## Step 20: Environment variables for Supabase [Chat]
+
+Explain how to store Supabase connection values in environment variables in a Next.js project. Which variables are intended for browser-exposed code and which should remain server-only?
+
+## Step 21: Inspect current data flow [Coding Agent]
+
+Inspect my current project and explain where data currently comes from. Identify whether the dashboard reads from mock data, an API route, local state, or some combination.
+
+## Step 22: Install Supabase package [Coding Agent]
+
+Help me install the Supabase JavaScript package needed for this Next.js app. Explain the command, what package is being installed, and how to verify the install worked.
+
+## Step 23: Create environment file [Coding Agent]
+
+Help me create or update the local environment file for Supabase. Do not ask me to paste secret values into chat unless necessary. Explain exactly where each value comes from in Supabase and how to avoid committing secrets to Git.
+
+## Step 24: Check .gitignore [Coding Agent]
+
+Inspect my .gitignore file and make sure environment files with secrets will not be committed. Explain why this matters.
+
+## Step 25: Create the Supabase client [Coding Agent]
+
+Create the Supabase client file in the right place in my project. Explain what a client library is, what this file does, and whether the code runs in the browser, server, or both.
+
+## Step 26: Plan the replacement [Coding Agent]
+
+Before changing code, explain how we will replace temporary data with real Supabase data. What files probably need to change, and what should we verify after each step?
+
+## Step 27: Read from Supabase [Coding Agent]
+
+Update the app so the dashboard reads records from Supabase. Make the smallest clear change first. Explain the query, returned data, loading behavior, and error handling.
+
+## Step 28: Debug the first query [Coding Agent]
+
+If the Supabase read does not work, debug it step by step. Check environment variables, Supabase URL, anon key, table name, column names, browser console, terminal output, and Supabase permissions.
+
+## Step 29: Compare mock data vs database data [Coding Agent]
+
+Explain what changed now that the UI reads from Supabase instead of mock data. What is better, what is more complicated, and what new failure modes exist?
+
+## Step 30: Verify persistence [Coding Agent]
+
+Help me prove that the data is persistent. What should I refresh, restart, or change in Supabase to confirm the app is reading real database data?
+
+## Step 31: Create real records [Coding Agent]
+
+Update the create form so it inserts a new row into Supabase. Explain the full flow from user input to insert query to database row to UI update.
+
+## Step 32: Handle create errors [Coding Agent]
+
+Add useful error handling for failed inserts. Explain common causes: missing fields, wrong column names, permission issues, network problems, and validation problems.
+
+## Step 33: Refresh UI after create [Coding Agent]
+
+After creating a record, help me update the UI in the simplest beginner-friendly way. Explain the options: refetching, local update, optimistic update, or navigation. Choose the clearest option for now.
+
+## Step 34: Update a record [Coding Agent]
+
+Help me add a simple update feature for one field on a record. Explain how IDs let the app know which row to update and how the update query works.
+
+## Step 35: Delete a record [Coding Agent]
+
+Help me add a simple delete feature. Explain hard delete versus soft delete, what can go wrong with deletes, and why we are choosing the simplest version for now.
+
+## Step 36: Explain CRUD [Coding Agent]
+
+Now that the app can create, read, update, and delete data, explain CRUD from first principles. Show me exactly where each CRUD operation exists in the app.
+
+## Step 37: Why database security matters [Coding Agent]
+
+If my frontend can talk to Supabase, what stops a user from reading or changing data they should not access? Explain the security problem from first principles.
+
+## Step 38: Row Level Security from first principles [Coding Agent]
+
+Explain Row Level Security in Supabase from first principles. What is a policy? What does it mean to allow or deny access row by row? Why is RLS important for real products?
+
+## Step 39: RLS in this bootcamp MVP [Coding Agent]
+
+For this bootcamp MVP, what should I understand about RLS right now, and what can wait until the auth module? Explain the difference between learning-mode access and production-safe access.
+
+## Step 40: Review key usage [Coding Agent]
+
+Inspect the project and make sure we are not using unsafe Supabase keys. Explain where the key is used, whether it is safe, and what would be dangerous.
+
+## Step 41: Database debugging checklist [Coding Agent]
+
+Give me a beginner-friendly checklist for debugging Supabase problems. Include environment variables, package install, Supabase client, table names, columns, permissions, RLS, browser console, network tab, terminal logs, and dashboard data.
+
+## Step 42: Review the data flow [Coding Agent]
+
+Review the full data flow like a full-stack mentor: user action, React state, Supabase query, database row, response, UI update. Point out anything confusing, fragile, unsafe, or too complicated.
+
+## Step 43: Small cleanup [Coding Agent]
+
+Suggest small cleanup improvements only. Do not over-engineer. Focus on clearer names, less repeated code, better error handling, and easier-to-understand data flow.
+
+## Step 44: Apply cleanup [Coding Agent]
+
+Apply the smallest cleanup improvements from your review. Explain each change and verify that create, read, update, and delete still work.
+
+## Step 45: Inspect Git changes [Coding Agent]
+
+Help me inspect the Git diff for this Supabase/database module. Explain which files changed and what each important change did.
+
+## Step 46: Check for secrets before committing [Coding Agent]
+
+Before committing, check whether any secrets or local environment files are accidentally staged. Explain how to tell and what to do if something secret is about to be committed.
+
+## Step 47: Commit the database work [Coding Agent]
+
+Help me make a clean Git commit for this module. Suggest a clear commit message and explain what this checkpoint captures.
+
+## Step 48: Explain the module back to me [Coding Agent]
+
+Explain what I learned in this module from first principles. Include persistence, databases, Supabase, Postgres, tables, rows, columns, SQL, environment variables, keys, CRUD, Row Level Security, debugging, and Git commits.
+
+## Step 49: Self-check quiz [Chat]
+
+Give me a beginner-friendly self-check quiz for this module. Ask me 10 questions. After I answer, tell me what I understand well and what I should review before moving on.
+
+---
+
+# Supabase Auth, RLS, Data Access, and Security
+22 steps — copy each prompt into your AI coding assistant and follow along.
+
+## Step 1: Why do users need accounts? [Chat]
+
+My app currently has data, but it does not really know who is using it. From first principles, why do products need user accounts? What problems do accounts solve?
+
+## Step 2: Authentication vs authorization [Chat]
+
+I hear people use the words authentication and authorization. What is the difference? Explain it using my product as the example.
+
+## Step 3: Why login is not enough [Chat]
+
+If a user can log in, does that automatically mean their data is secure? Explain why logging in and controlling data access are different problems.
+
+## Step 4: User-owned data [Chat]
+
+In my product, users should probably only see their own records. How do apps connect a database row to the user who owns it? Explain user IDs from first principles.
+
+## Step 5: RLS from first principles [Chat]
+
+Explain Row Level Security from first principles. If my frontend can query Supabase, how does the database decide which rows a user is allowed to read, create, update, or delete?
+
+## Step 6: Chat vs coding agent for auth [Chat]
+
+For this auth and security module, which questions should I ask here in chat, and which tasks should I give to the coding agent inside my project? Give me a practical workflow.
+
+## Step 7: Inspect current data model [Coding Agent]
+
+Inspect my current Supabase schema and app code. Identify the main table users are creating records in. Tell me whether the table currently has a user ownership column, and explain what needs to change.
+
+## Step 8: Plan auth integration [Coding Agent]
+
+Before editing files, plan the auth integration. I want users to sign up, log in, log out, and only access their own data. Explain the app routes, Supabase changes, and RLS policies we need.
+
+## Step 9: Add user ownership to the table [Coding Agent]
+
+Help me update the database table so each record belongs to a user. Explain the user_id column, how it relates to Supabase Auth users, and what could go wrong if existing rows do not have owners.
+
+## Step 10: Add or configure Supabase Auth [Coding Agent]
+
+Help me add Supabase Auth to this Next.js app. Use the current recommended Supabase approach for Next.js. Explain what files or helpers are needed and what each one does.
+
+## Step 11: Build sign up and login UI [Coding Agent]
+
+Build the simplest useful sign up and login flow for this product. Explain the user flow first, then implement it step by step.
+
+## Step 12: Add logout [Coding Agent]
+
+Add a logout action and make sure the UI clearly shows whether the user is logged in or logged out. Explain what happens to the session when the user logs out.
+
+## Step 13: Protect the dashboard [Coding Agent]
+
+Protect the dashboard so logged-out users cannot access the product area. Explain whether the check happens on the client, server, middleware, or route level, and why.
+
+## Step 14: Insert records with the current user [Coding Agent]
+
+Update the create-record flow so new records are associated with the currently logged-in user. Explain where the user ID comes from and why the browser should not be trusted to invent it.
+
+## Step 15: Read only the current user's records [Coding Agent]
+
+Update the read/query flow so the app shows only records belonging to the logged-in user. Explain what is filtered in code and what should ultimately be enforced by RLS.
+
+## Step 16: Write basic RLS policies [Coding Agent]
+
+Help me enable Row Level Security and write simple policies so users can select, insert, update, and delete only their own rows. Explain each policy in plain English before applying it.
+
+## Step 17: Test with two users [Coding Agent]
+
+Help me test this with two different users. I want to confirm that User A cannot see or change User B's data. Give me a manual testing checklist.
+
+## Step 18: Debug auth or RLS issues [Coding Agent]
+
+If login works but data reads or writes fail, debug the issue step by step. Check session state, user ID, table columns, RLS enabled status, policies, browser errors, network requests, and Supabase logs.
+
+## Step 19: Security review [Coding Agent]
+
+Review the auth and data access implementation like a security-minded mentor. Look for places where we rely too much on frontend checks, expose unsafe keys, skip RLS, or allow users to access the wrong rows.
+
+## Step 20: Save the module [Coding Agent]
+
+Help me inspect the Git diff and make a clean commit for this auth/RLS module. Check that no secrets are staged. Suggest a clear commit message.
+
+## Step 21: Explain the module back to me [Coding Agent]
+
+Explain what I learned in this module from first principles. Include accounts, sessions, authentication, authorization, user IDs, ownership, protected routes, RLS, policies, and testing with multiple users.
+
+## Step 22: Self-check quiz [Chat]
+
+Give me a beginner-friendly self-check quiz for this module. Ask me 8 questions. After I answer, tell me what I understand well and what I should review.
+
+---
+
+# Third-Party APIs, Stripe Payments, Subscriptions, and Paywalls
+42 steps — copy each prompt into your AI coding assistant and follow along.
+
+## Step 1: Why integrate third-party APIs? [Chat]
+
+My app can handle users and data now. Why would a product connect to third-party APIs instead of building everything itself? Explain from first principles using examples like payments, email, maps, analytics, and AI.
+
+## Step 2: What is an API key? [Chat]
+
+When a product connects to another service, it often uses API keys. What is an API key from first principles? Why is it powerful, and why does it need to be protected?
+
+## Step 3: Public vs secret keys again [Chat]
+
+Some services give public keys and secret keys. Why are some keys safe for the browser and others only safe on the server? Explain this with Stripe as the example.
+
+## Step 4: What does Stripe do? [Chat]
+
+Explain Stripe from first principles. What payment problems does it solve for a SaaS product? What parts of billing would be hard or risky to build ourselves?
+
+## Step 5: One-time payments vs subscriptions [Chat]
+
+What is the difference between a one-time payment and a subscription? For a SaaS product like mine, when would each model make sense?
+
+## Step 6: Checkout from first principles [Chat]
+
+What is Stripe Checkout? Why would a beginner use Stripe-hosted Checkout instead of building a custom credit card form?
+
+## Step 7: Paywalls from first principles [Chat]
+
+What does it mean to paywall a feature? Explain the difference between hiding UI, checking subscription status in server logic, and enforcing access in the database or backend.
+
+## Step 8: Webhooks from first principles [Chat]
+
+If a user pays on Stripe's website, how does my app find out that the payment happened? Explain webhooks from first principles.
+
+## Step 9: Chat vs coding agent for payments [Chat]
+
+For this payments module, which questions should I ask here in chat, and which tasks should I give to the coding agent inside my project? Give me a practical workflow.
+
+## Step 10: Choose the paid feature [Chat]
+
+Based on the product we are building, help me choose one simple feature to paywall. It should be useful enough to demonstrate payments but not so complex that it derails the module.
+
+## Step 11: Design the pricing model [Chat]
+
+Help me design a simple pricing model for this bootcamp MVP. Should I use a one-time payment, monthly subscription, or free/paid plan? Explain the tradeoffs and choose the simplest useful version.
+
+## Step 12: Design the subscription data model [Chat]
+
+If a user subscribes, where should my app store that subscription status? Design the simplest Supabase table or columns needed to know whether a user has paid access.
+
+## Step 13: Plan the Stripe integration [Chat]
+
+Before editing code, plan the Stripe integration. Include environment variables, server routes, Checkout session creation, success page, cancel page, webhook endpoint, Supabase subscription status, and paywall check.
+
+## Step 14: Inspect the current app [Coding Agent]
+
+Inspect my current app. Identify where users log in, where user profiles or user-owned records live, and where a paywalled feature should be checked.
+
+## Step 15: Guide Stripe account/test setup [Coding Agent]
+
+Guide me through setting up Stripe test mode for this module. Explain where to create a product and price, what test mode means, and which values I need for the app.
+
+## Step 16: Install Stripe package [Coding Agent]
+
+Help me install the Stripe package for this Next.js project. Explain what package is being installed and whether it runs on the server, browser, or both.
+
+## Step 17: Add Stripe environment variables [Coding Agent]
+
+Help me add the Stripe environment variables safely. Explain which values are public, which are secret, where to put them, and how to make sure secrets are not committed to Git.
+
+## Step 18: Create subscription table or fields [Coding Agent]
+
+Help me update Supabase so the app can store a user's subscription or paid access status. Explain the table or column design before applying it.
+
+## Step 19: Build a Subscribe button [Coding Agent]
+
+Add a Subscribe button in the app for logged-in users. Explain what should happen when the user clicks it and why the button should not directly create payment access by itself.
+
+## Step 20: Create Checkout session route [Coding Agent]
+
+Create a server route that creates a Stripe Checkout session. Explain why this must happen on the server, what data is sent to Stripe, and what URL comes back.
+
+## Step 21: Connect button to Checkout [Coding Agent]
+
+Connect the Subscribe button to the Checkout session route. When the user clicks it, send them to Stripe Checkout. Explain the browser-to-server-to-Stripe flow.
+
+## Step 22: Add success and cancel pages [Coding Agent]
+
+Add success and cancel pages for the Stripe Checkout flow. Explain why success page visits alone should not be trusted as proof of payment.
+
+## Step 23: Test Checkout in test mode [Coding Agent]
+
+Help me test the Stripe Checkout flow in test mode. Explain what test card or test behavior to use, what I should see in Stripe, and what I should see in my app.
+
+## Step 24: Why success redirect is not enough [Coding Agent]
+
+Explain why I should not mark a user as paid just because they reached the success page. What could go wrong?
+
+## Step 25: Build the webhook endpoint [Coding Agent]
+
+Help me create a Stripe webhook endpoint. Explain what event or events we need to listen for to know whether a subscription is active.
+
+## Step 26: Verify webhook signatures [Coding Agent]
+
+Explain webhook signature verification. Why does my app need to verify that the webhook really came from Stripe before updating subscription status?
+
+## Step 27: Update Supabase from webhook [Coding Agent]
+
+Update the webhook handler so it records the user's subscription or paid access status in Supabase. Explain how Stripe customer IDs, user IDs, and subscription status connect.
+
+## Step 28: Test webhooks locally [Coding Agent]
+
+Help me test Stripe webhooks locally. Explain what tool or command is needed, what event to trigger, and how to verify that Supabase was updated.
+
+## Step 29: Debug webhook problems [Coding Agent]
+
+If the webhook is not working, debug it step by step. Check endpoint URL, local forwarding, webhook secret, event type, request body, signature verification, Supabase update, and logs.
+
+## Step 30: Design the paywall check [Coding Agent]
+
+Before coding the paywall, explain where paid access should be checked. Should we check in the UI, server route, database query, or all of them? Explain the tradeoffs.
+
+## Step 31: Implement the paywall [Coding Agent]
+
+Implement a simple paywall for the feature we chose. If the user is not paid, show an upgrade message. If the user is paid, allow access. Explain every place where access is checked.
+
+## Step 32: Test paid and unpaid users [Coding Agent]
+
+Help me test the paywall with one unpaid user and one paid user. Give me a manual testing checklist that proves the paywall is working.
+
+## Step 33: Add customer portal [Coding Agent]
+
+Add a simple "Manage billing" button using Stripe's customer portal if appropriate. Explain what the customer portal does and why it is useful for subscriptions.
+
+## Step 34: Payment security review [Coding Agent]
+
+Review the Stripe integration like a security-minded mentor. Look for exposed secret keys, trusting the frontend too much, trusting success redirects, missing webhook verification, weak paywall checks, or confusing subscription logic.
+
+## Step 35: Product review [Coding Agent]
+
+Review the payment experience like a product mentor. Is the upgrade path clear? Are free and paid states understandable? Are error states helpful?
+
+## Step 36: Cleanup without overengineering [Coding Agent]
+
+Suggest small cleanup improvements only. Do not over-engineer. Focus on clearer names, better error handling, safer access checks, and easier-to-understand payment flow.
+
+## Step 37: Apply small cleanup [Coding Agent]
+
+Apply the smallest cleanup improvements from your review. Explain each change and verify that Checkout, webhook handling, and the paywall still work.
+
+## Step 38: Inspect Git changes [Coding Agent]
+
+Help me inspect the Git diff for this payments module. Explain which files changed and what each important change did.
+
+## Step 39: Check for secrets before commit [Coding Agent]
+
+Before committing, check that no Stripe secrets, Supabase secrets, local environment files, webhook secrets, or test credentials are staged. Explain how to tell.
+
+## Step 40: Commit the payments work [Coding Agent]
+
+Help me make a clean Git commit for this module. Suggest a clear commit message and explain what this checkpoint captures.
+
+## Step 41: Explain the module back to me [Coding Agent]
+
+Explain what I learned in this module from first principles. Include third-party APIs, API keys, Stripe, Checkout, subscriptions, webhooks, signature verification, subscription status, paywalls, customer portal, debugging, and Git commits.
+
+## Step 42: Self-check quiz [Chat]
+
+Give me a beginner-friendly self-check quiz for this module. Ask me 10 questions. After I answer, tell me what I understand well and what I should review before moving on.
+
+---
+
+# AI Integration, Vercel AI SDK, OpenAI API, Embeddings, and Vector Search
+46 steps — copy each prompt into your AI coding assistant and follow along.
+
+## Step 1: Why add AI at all? [Chat]
+
+My product works as a normal web app now. From first principles, when does it actually make sense to add AI to a product? How do I avoid adding AI as a gimmick?
+
+## Step 2: Choose a useful AI job [Chat]
+
+Based on the product I am building, what are three useful AI features that could help the user? Rank them by user value, implementation difficulty, and risk. Recommend the smallest useful one for this module.
+
+## Step 3: AI API from first principles [Chat]
+
+What happens when an app calls an AI model through an API? Explain the flow from user action to server route to model provider to response back to the UI.
+
+## Step 4: AI keys and security [Chat]
+
+Why must AI API keys stay on the server? What could go wrong if an OpenAI or model provider key is exposed in frontend code?
+
+## Step 5: Prompts from first principles [Chat]
+
+What is a prompt in an AI-powered app? How is a product prompt different from a normal chat message? Explain system instructions, user input, context, and output expectations.
+
+## Step 6: AI output types [Chat]
+
+What are the main ways AI can return output in a product? Explain plain text, streaming text, structured JSON, classifications, summaries, recommendations, and tool calls.
+
+## Step 7: Vercel AI SDK vs direct API calls [Chat]
+
+Please check the latest official docs and explain the difference between using the OpenAI API directly and using Vercel's AI SDK in a Next.js app. Which should I use for this bootcamp and why?
+
+## Step 8: Chat vs coding agent for AI [Chat]
+
+For this AI module, which questions should I ask here in chat, and which tasks should I give to the coding agent inside my project? Give me a practical workflow.
+
+## Step 9: Pick the feature slice [Chat]
+
+Help me pick the smallest AI feature to build first. It should use data already in my app and create obvious user value. Avoid anything too agentic or complex for the first version.
+
+## Step 10: Define the AI interaction [Chat]
+
+For the feature we chose, define the input, context, AI instruction, output format, and user experience. Explain what data the model needs and what data it should not receive.
+
+## Step 11: Identify risks [Chat]
+
+Review this AI feature for risks. What could go wrong with privacy, hallucinations, bad advice, prompt injection, cost, latency, or confusing UI? Suggest guardrails for a beginner MVP.
+
+## Step 12: Plan the implementation [Chat]
+
+Before editing code, plan the implementation. Include packages, environment variables, server route, model call, UI component, loading state, error state, and how we will test the feature.
+
+## Step 13: Inspect current app [Coding Agent]
+
+Inspect my current app. Identify the best place to add this AI feature, what existing data it should use, and what route or component should trigger it.
+
+## Step 14: Install AI packages [Coding Agent]
+
+Help me install the packages needed for the AI integration. Use the current recommended approach for this stack. Explain each package and whether it runs on the server, client, or both.
+
+## Step 15: Add AI environment variables [Coding Agent]
+
+Help me add the AI provider environment variables safely. Explain which values are secret, where to store them, and how to make sure they are not committed to Git.
+
+## Step 16: Create the first AI server route [Coding Agent]
+
+Create a server route for the AI feature. Keep the first version simple. Explain why the model call belongs on the server and what request/response shape the route uses.
+
+## Step 17: Add a basic model call [Coding Agent]
+
+Add the simplest model call for this feature. Explain the prompt, model input, model output, error handling, and cost/latency considerations.
+
+## Step 18: Connect UI to AI route [Coding Agent]
+
+Add a button or UI action that calls the AI route. Show loading and error states. Explain the full flow from user click to AI response on the screen.
+
+## Step 19: Test the first AI feature [Coding Agent]
+
+Help me manually test the AI feature. Give me a checklist for good input, bad input, empty input, slow responses, model errors, and confusing output.
+
+## Step 20: Prompt review [Coding Agent]
+
+Review the prompt we are sending to the model. Is it clear, constrained, and product-specific? Suggest improvements that reduce vague output and hallucinations.
+
+## Step 21: Add structured output if useful [Coding Agent]
+
+Would this AI feature be better if the model returned structured JSON instead of plain text? Explain the tradeoffs. If useful, update the implementation to use a structured output shape.
+
+## Step 22: Add streaming if useful [Coding Agent]
+
+Would this AI feature benefit from streaming responses? Explain when streaming improves user experience. If useful, update the UI and server code to stream output.
+
+## Step 23: Add persistence if useful [Coding Agent]
+
+Should we save AI outputs to Supabase? Explain the tradeoffs around history, cost, auditability, privacy, and stale results. If useful, add simple persistence for AI outputs.
+
+## Step 24: Add usage limits [Coding Agent]
+
+Help me add a simple usage limit or guardrail for this AI feature. Explain why AI features need cost controls and abuse prevention.
+
+## Step 25: What are embeddings? [Chat]
+
+Explain embeddings from first principles. How can text become numbers, and why does that help with search or recommendations?
+
+## Step 26: What is vector search? [Chat]
+
+Explain vector search from first principles. How is semantic search different from keyword search? Use my product data as the example.
+
+## Step 27: What is RAG? [Chat]
+
+Explain retrieval-augmented generation, or RAG, from first principles. Why might an AI answer be better if it first retrieves relevant product data?
+
+## Step 28: Should this product use RAG now? [Chat]
+
+Based on my product, should we add embeddings/vector search in this module, or keep the AI feature simpler for now? Explain the tradeoffs and recommend the smallest useful version.
+
+## Step 29: Design vector storage [Coding Agent]
+
+If we add embeddings, design the simplest storage approach. Should we use Supabase with pgvector or another vector store? Explain what table we need, what text gets embedded, and how retrieval will work.
+
+## Step 30: Create embedding table [Coding Agent]
+
+Help me create the database table needed for embeddings or vector search. Explain the columns, vector field, source record relationship, and any indexes or extensions needed.
+
+## Step 31: Generate embeddings [Coding Agent]
+
+Help me generate embeddings for existing product records. Explain what text is being embedded, when embeddings should be created or updated, and how API costs are controlled.
+
+## Step 32: Add semantic search [Coding Agent]
+
+Build a simple semantic search or retrieval function using the embeddings. Explain how the query embedding is compared to stored embeddings and how the top results are chosen.
+
+## Step 33: Use retrieval in AI answer [Coding Agent]
+
+Update the AI feature so it retrieves relevant records first and then uses them as context in the model prompt. Explain how this reduces hallucination and what limits still remain.
+
+## Step 34: Show sources or context [Coding Agent]
+
+Add a simple way to show the user which records or sources the AI used. Explain why source visibility matters for trust.
+
+## Step 35: Prompt injection from first principles [Chat]
+
+Explain prompt injection from first principles. If users can create or upload text that later gets sent to the AI model, how could that text try to manipulate the model?
+
+## Step 36: AI privacy review [Coding Agent]
+
+Review the AI feature for privacy risks. What user data are we sending to the model? Is any sensitive information included? What should we avoid sending?
+
+## Step 37: Hallucination review [Coding Agent]
+
+Review the AI feature for hallucination risk. Where might the model make things up, overstate confidence, or give misleading results? How should the UI communicate uncertainty?
+
+## Step 38: Security and cost review [Coding Agent]
+
+Review the AI integration for security and cost risks. Check API key exposure, server-side calls, user input validation, rate limits, model choice, token usage, logging, and abuse cases.
+
+## Step 39: Product review [Coding Agent]
+
+Review the AI feature as a product mentor. Does it actually help the user complete a job? Is it clear when to use it? Is the output actionable? What should be improved later?
+
+## Step 40: Cleanup without overengineering [Coding Agent]
+
+Suggest small cleanup improvements only. Do not over-engineer. Focus on clearer prompts, safer data handling, better loading/error states, and easier-to-understand code.
+
+## Step 41: Apply cleanup [Coding Agent]
+
+Apply the smallest cleanup improvements from your review. Explain each change and verify that the AI feature still works.
+
+## Step 42: Inspect Git changes [Coding Agent]
+
+Help me inspect the Git diff for this AI module. Explain which files changed and what each important change did.
+
+## Step 43: Check for secrets before commit [Coding Agent]
+
+Before committing, check that no AI provider keys, Supabase secrets, environment files, or sensitive logs are staged. Explain how to tell.
+
+## Step 44: Commit the AI work [Coding Agent]
+
+Help me make a clean Git commit for this module. Suggest a clear commit message and explain what this checkpoint captures.
+
+## Step 45: Explain the module back to me [Coding Agent]
+
+Explain what I learned in this module from first principles. Include AI APIs, model calls, prompts, server-side keys, streaming, structured output, embeddings, vector search, RAG, prompt injection, privacy, cost controls, debugging, and Git commits.
+
+## Step 46: Self-check quiz [Chat]
+
+Give me a beginner-friendly self-check quiz for this module. Ask me 10 questions. After I answer, tell me what I understand well and what I should review before moving on.
+
+---
+
+# Product-Market Fit Workshop: Session 1 with Rob Snyder
+(Video session - no text transcript available on page)
+
+---
+
+# Product-Market Fit Workshop: Session 2 with Rob Snyder
+(Video session - no text transcript available on page)
+
+---
+
+# Product-Market Fit Workshop: Session 3 with Rob Snyder
+(Video session - no text transcript available on page)
+
+---
+
+# Product-Market Fit Workshop: Session 4 with Rob Snyder
+(Video session - no text transcript available on page)
+
+---
+
+# Product-Market Fit Workshop: Session 5 with Rob Snyder
+(Video session - no text transcript available on page)
+
+---
+
+# Learning Outcomes
+
+Go to app home
+Toggle sidebar
+John Milius
+Toggle user menu
+BYUI - sb06
+Main
+SBI
+Schedule
+Team
+Academy
+Academy
+learn
+Learning Outcomes
+measure
+Resources
+Directory
+Advisors
+Compendium
+Job Platform
+Reporting
+Build Night
+Other
+Your Local Director
+Grades
+Course Registration
+Demo Day
+Admissions
+Table of Contents
+Learning outcomes
+
+Skills we believe top tier founders possess.
+
+Overview
+
+COVERAGE
+
+0%
+
+AVG RATING
+
+—
+
+AVG CONFIDENCE
+
+—
+
+ABOVE 1750
+
+0
+
+Novice
+Developing
+Strong
+Advanced
+
+Business Model & Pricing
+
+No score yet
+
+—
+
+No score
+
+Core Coding Proficiency & Code Quality
+
+No score yet
+
+—
+
+No score
+
+Customer & Problem Understanding
+
+No score yet
+
+—
+
+No score
+
+Data Architecture & Analytics
+
+No score yet
+
+—
+
+No score
+
+Engineering Process & Collaboration
+
+No score yet
+
+—
+
+No score
+
+Fundraising & Investor Management
+
+No score yet
+
+—
+
+No score
+
+Go-to-Market Strategy & Growth Experimentation
+
+No score yet
+
+—
+
+No score
+
+Hiring, Culture & People Management
+
+No score yet
+
+—
+
+No score
+
+Infrastructure, DevOps & Deployment
+
+No score yet
+
+—
+
+No score
+
+Managing Technical Debt & Iteration Speed
+
+No score yet
+
+—
+
+No score
+
+Market & Opportunity Sizing
+
+No score yet
+
+—
+
+No score
+
+Metrics, Analytics & Financial Literacy
+
+No score yet
+
+—
+
+No score
+
+Operational Execution & Prioritization
+
+No score yet
+
+—
+
+No score
+
+Positioning, Story & Narrative
+
+No score yet
+
+—
+
+No score
+
+Product & User-Centric Technical Thinking
+
+No score yet
+
+—
+
+No score
+
+Sales & Deal Execution
+
+No score yet
+
+—
+
+No score
+
+Security, Privacy & Reliability (Early Stage)
+
+No score yet
+
+—
+
+No score
+
+System Design & Architecture (0→1)
+
+No score yet
+
+—
+
+No score
+
+Technical Hiring & Mentoring
+
+No score yet
+
+—
+
+No score
+
+Technical Roadmapping & Tradeoff Management
+
+No score yet
+
+—
+
+No score
+
+---
+

@@ -10,7 +10,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader } from "@/components/ui/card";
-import { AppHeader } from "@/components/app-header";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function SearchPage({
@@ -103,26 +102,21 @@ export default async function SearchPage({
 
   const totalHits = groups.reduce((n, g) => n + g.items.length, 0);
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
-
   return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
-      />
-      <main className="mx-auto w-full max-w-3xl flex-1 p-4 sm:p-6">
-        <h1 className="mb-4 text-2xl font-semibold tracking-tight">Search</h1>
+    <main className="mx-auto w-full max-w-3xl flex-1 px-[34px] py-[30px]">
+        <h1
+          className="font-display mb-5 text-[26px] text-[var(--v2-ink-1)]"
+          style={{ letterSpacing: "-0.01em" }}
+        >
+          Search
+        </h1>
         <form method="GET" className="relative mb-6">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--v2-ink-3)]" />
           <Input
             name="q"
             defaultValue={trimmed ?? ""}
-            placeholder="Search everything — projects, notes, prompts, the brain…"
-            className="h-11 pl-9"
+            placeholder="Search the brain…"
+            className="h-11 rounded-[9px] border-none bg-[#f6f4f1] pl-9 shadow-none"
             autoFocus
           />
         </form>
@@ -137,10 +131,9 @@ export default async function SearchPage({
           .filter((g) => g.items.length > 0)
           .map((group) => (
             <section key={group.label} className="mb-6">
-              <h2 className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <group.icon className="size-4" />
-                {group.label}
-                <span className="text-xs">({group.items.length})</span>
+              <h2 className="font-mono-label mb-2 flex items-center gap-2">
+                <group.icon className="size-3.5" />
+                {group.label} · {group.items.length}
               </h2>
               <div className="flex flex-col gap-2">
                 {group.items.map((item) => (
@@ -167,7 +160,6 @@ export default async function SearchPage({
               </div>
             </section>
           ))}
-      </main>
-    </>
+    </main>
   );
 }

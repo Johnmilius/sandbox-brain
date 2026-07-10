@@ -12,13 +12,14 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { assertConfigured, ACTOR_EMAIL } from "./context.js";
+import { assertConfigured, initAuth, getActor, AUTH_MODE } from "./context.js";
 import { registerProjectTools } from "./tools/projects.js";
 import { registerTimeTools } from "./tools/time.js";
 import { registerPromptTools } from "./tools/prompts.js";
 import { registerNoteTools } from "./tools/notes.js";
 import { registerKnowledgeTools } from "./tools/knowledge.js";
 import { registerSearchTools } from "./tools/search.js";
+import { registerAcademyTools } from "./tools/academy.js";
 
 const server = new McpServer({
   name: "sandbox-brain-mcp-server",
@@ -31,6 +32,7 @@ registerPromptTools(server);
 registerNoteTools(server);
 registerKnowledgeTools(server);
 registerSearchTools(server);
+registerAcademyTools(server);
 
 async function main(): Promise<void> {
   const configError = assertConfigured();
@@ -40,10 +42,13 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  await initAuth();
+  const actor = await getActor();
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error(
-    `sandbox-brain-mcp-server running (acting as ${ACTOR_EMAIL}).`,
+    `sandbox-brain-mcp-server running (acting as ${actor.email}, ${AUTH_MODE} auth).`,
   );
 }
 

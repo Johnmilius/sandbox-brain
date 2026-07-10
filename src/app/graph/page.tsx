@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { AppHeader } from "@/components/app-header";
+import { Waypoints } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { GraphExplorer } from "@/components/graph/graph-explorer";
 import type { GraphEdge, GraphNode } from "@/components/graph/graph-view";
 import { createClient } from "@/lib/supabase/server";
@@ -18,10 +19,14 @@ export default async function GraphPage() {
     knowledge,
     profiles,
     agents,
+    ideas,
     links,
     timeEntries,
     taggables,
     tags,
+    academyModules,
+    academySteps,
+    academyProgress,
   ] = await Promise.all([
     supabase.from("projects").select("id, name"),
     supabase.from("notes").select("id, title, author_id"),
@@ -29,10 +34,14 @@ export default async function GraphPage() {
     supabase.from("knowledge_items").select("id, title, project_id, created_by"),
     supabase.from("profiles").select("id, full_name, email"),
     supabase.from("agents").select("id, name, project_id, created_by"),
+    supabase.from("ideas").select("id, title, created_by, promoted_project_id"),
     supabase.from("links").select("source_type, source_id, target_type, target_id"),
     supabase.from("time_entries").select("user_id, project_id"),
     supabase.from("taggables").select("entity_type, entity_id, tag_id"),
     supabase.from("tags").select("id, name"),
+    supabase.from("academy_modules").select("id, title"),
+    supabase.from("academy_steps").select("id, module_id"),
+    supabase.from("academy_step_progress").select("user_id, step_id"),
   ]);
 
   // node id (`type:id`) -> tag names, for attaching to nodes + shared-tag edges.
@@ -92,6 +101,19 @@ export default async function GraphPage() {
       authorId: a.created_by,
       projectId: a.project_id ?? undefined,
     })),
+    ...(academyModules.data ?? []).map((m) => ({
+      id: `academy_module:${m.id}`,
+      label: m.title,
+      type: "academy_module" as const,
+      url: `/academy/${m.id}`,
+    })),
+    ...(ideas.data ?? []).map((i) => ({
+      id: `idea:${i.id}`,
+      label: i.title,
+      type: "idea" as const,
+      url: `/ideas/${i.id}`,
+      authorId: i.created_by,
+    })),
   ];
   const nodeIds = new Set(nodes.map((n) => n.id));
   for (const n of nodes) n.tags = tagsByNode.get(n.id);
@@ -142,6 +164,10 @@ export default async function GraphPage() {
     if (a.project_id) addEdge(`agent:${a.id}`, `project:${a.project_id}`);
     if (a.created_by) addEdge(`profile:${a.created_by}`, `agent:${a.id}`);
   }
+  for (const i of ideas.data ?? []) {
+    if (i.created_by) addEdge(`profile:${i.created_by}`, `idea:${i.id}`);
+    if (i.promoted_project_id) addEdge(`idea:${i.id}`, `project:${i.promoted_project_id}`);
+  }
   // People connect to projects they've logged time on.
   const worked = new Set(
     (timeEntries.data ?? []).map((t) => `${t.user_id}|${t.project_id}`),
@@ -149,6 +175,22 @@ export default async function GraphPage() {
   for (const pair of worked) {
     const [userId, projectId] = pair.split("|");
     addEdge(`profile:${userId}`, `project:${projectId}`);
+  }
+  // People connect to academy modules they've completed steps in.
+  const moduleByStep = new Map(
+    (academySteps.data ?? []).map((s) => [s.id, s.module_id]),
+  );
+  const studied = new Set(
+    (academyProgress.data ?? [])
+      .map((p) => {
+        const moduleId = moduleByStep.get(p.step_id);
+        return moduleId ? `${p.user_id}|${moduleId}` : null;
+      })
+      .filter((pair): pair is string => pair !== null),
+  );
+  for (const pair of studied) {
+    const [userId, moduleId] = pair.split("|");
+    addEdge(`profile:${userId}`, `academy_module:${moduleId}`);
   }
 
   // Suggested (soft) edges: items that share a tag. Skip tags used so widely
@@ -176,39 +218,21 @@ export default async function GraphPage() {
     label: p.name,
   }));
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
-
-  return (
-    <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
+  // Full-bleed canvas + right detail rail (design) — no boxed card.
+  return nodes.length === 0 ? (
+    <main className="mx-auto w-full max-w-6xl flex-1 px-[34px] py-[30px]">
+      <EmptyState
+        icon={Waypoints}
+        title="Nothing to map yet"
+        description="Add projects, notes, or prompts first — the graph draws itself from what the team saves."
       />
-      <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
-        <div className="mb-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Graph</h1>
-          <p className="text-sm text-muted-foreground">
-            Everything in the brain and how it connects. Filter by person or
-            project, toggle types, and click a node to open it.
-          </p>
-        </div>
-
-        {nodes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Nothing to show yet — add projects, notes, or prompts first.
-          </p>
-        ) : (
-          <GraphExplorer
-            nodes={nodes}
-            edges={edges}
-            people={people}
-            projects={projectOptions}
-          />
-        )}
-      </main>
-    </>
+    </main>
+  ) : (
+    <GraphExplorer
+      nodes={nodes}
+      edges={edges}
+      people={people}
+      projects={projectOptions}
+    />
   );
 }

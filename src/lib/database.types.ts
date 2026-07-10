@@ -28,9 +28,34 @@ export type EntityType =
   | "note"
   | "knowledge_item"
   | "profile"
-  | "agent";
+  | "agent"
+  | "academy_module"
+  | "academy_outcome"
+  | "idea"
+  | "task";
+
+export type TaskPriority = "high" | "med" | "low";
+export type TaskArea = "frontend" | "backend" | "design" | "copy";
+export type TaskStatus = "backlog" | "todo" | "inprogress" | "review" | "done";
+export type TaskChecklistItem = { text: string; done: boolean };
 
 export type AgentStatus = "active" | "archived";
+export type ModuleKind = "course" | "workshop" | "custom";
+export type AcademyStepType = "chat" | "coding_agent" | "video";
+export type IdeaVerdict = "strong" | "conditional" | "pass";
+export type IdeaStatus = "draft" | "validating" | "promoted" | "archived";
+export type IdeaScores = Partial<
+  Record<
+    | "problem"
+    | "market"
+    | "revenue"
+    | "moat"
+    | "distribution"
+    | "build"
+    | "team_fit",
+    number
+  >
+>;
 
 export type Database = {
   public: {
@@ -73,6 +98,7 @@ export type Database = {
           status: ProjectStatus;
           started_on: string | null;
           ended_on: string | null;
+          ticket_prefix: string | null;
           created_by: string;
           created_at: string;
           updated_at: string;
@@ -84,6 +110,7 @@ export type Database = {
           status?: ProjectStatus;
           started_on?: string | null;
           ended_on?: string | null;
+          ticket_prefix?: string | null;
           created_by?: string;
           created_at?: string;
           updated_at?: string;
@@ -95,6 +122,58 @@ export type Database = {
           status?: ProjectStatus;
           started_on?: string | null;
           ended_on?: string | null;
+          ticket_prefix?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      tasks: {
+        Row: {
+          id: string;
+          project_id: string;
+          ticket_num: number;
+          title: string;
+          description: string | null;
+          priority: TaskPriority;
+          area: TaskArea;
+          status: TaskStatus;
+          assignee: string | null;
+          claimed_by: string | null;
+          checklist: TaskChecklistItem[];
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          ticket_num: number;
+          title: string;
+          description?: string | null;
+          priority?: TaskPriority;
+          area?: TaskArea;
+          status?: TaskStatus;
+          assignee?: string | null;
+          claimed_by?: string | null;
+          checklist?: TaskChecklistItem[];
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          ticket_num?: number;
+          title?: string;
+          description?: string | null;
+          priority?: TaskPriority;
+          area?: TaskArea;
+          status?: TaskStatus;
+          assignee?: string | null;
+          claimed_by?: string | null;
+          checklist?: TaskChecklistItem[];
           created_by?: string;
           created_at?: string;
           updated_at?: string;
@@ -290,6 +369,174 @@ export type Database = {
         };
         Relationships: [];
       };
+      academy_modules: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          description: string | null;
+          kind: ModuleKind;
+          sort_order: number;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          description?: string | null;
+          kind?: ModuleKind;
+          sort_order: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          description?: string | null;
+          kind?: ModuleKind;
+          sort_order?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      academy_steps: {
+        Row: {
+          id: string;
+          module_id: string;
+          step_no: number;
+          title: string;
+          prompt_text: string;
+          step_type: AcademyStepType;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          module_id: string;
+          step_no: number;
+          title: string;
+          prompt_text?: string;
+          step_type?: AcademyStepType;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          module_id?: string;
+          step_no?: number;
+          title?: string;
+          prompt_text?: string;
+          step_type?: AcademyStepType;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      academy_step_progress: {
+        Row: {
+          id: string;
+          user_id: string;
+          step_id: string;
+          completed_at: string;
+          notes: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          step_id: string;
+          completed_at?: string;
+          notes?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          step_id?: string;
+          completed_at?: string;
+          notes?: string | null;
+        };
+        Relationships: [];
+      };
+      academy_outcomes: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          description: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name: string;
+          description?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name?: string;
+          description?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      academy_module_outcomes: {
+        Row: {
+          module_id: string;
+          outcome_id: string;
+        };
+        Insert: {
+          module_id: string;
+          outcome_id: string;
+        };
+        Update: {
+          module_id?: string;
+          outcome_id?: string;
+        };
+        Relationships: [];
+      };
+      academy_outcome_assessments: {
+        Row: {
+          id: string;
+          user_id: string;
+          outcome_id: string;
+          rating: number;
+          confidence: number | null;
+          note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          outcome_id: string;
+          rating: number;
+          confidence?: number | null;
+          note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          outcome_id?: string;
+          rating?: number;
+          confidence?: number | null;
+          note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       tags: {
         Row: { id: string; name: string; created_at: string };
         Insert: { id?: string; name: string; created_at?: string };
@@ -311,6 +558,63 @@ export type Database = {
           tag_id?: string;
           entity_type?: string;
           entity_id?: string;
+        };
+        Relationships: [];
+      };
+      ideas: {
+        Row: {
+          id: string;
+          title: string;
+          tagline: string | null;
+          problem: string | null;
+          customer: string | null;
+          solution: string | null;
+          revenue_model: string | null;
+          stack_notes: string | null;
+          verdict: IdeaVerdict | null;
+          status: IdeaStatus;
+          scores: IdeaScores;
+          source_url: string | null;
+          promoted_project_id: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          tagline?: string | null;
+          problem?: string | null;
+          customer?: string | null;
+          solution?: string | null;
+          revenue_model?: string | null;
+          stack_notes?: string | null;
+          verdict?: IdeaVerdict | null;
+          status?: IdeaStatus;
+          scores?: IdeaScores;
+          source_url?: string | null;
+          promoted_project_id?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          tagline?: string | null;
+          problem?: string | null;
+          customer?: string | null;
+          solution?: string | null;
+          revenue_model?: string | null;
+          stack_notes?: string | null;
+          verdict?: IdeaVerdict | null;
+          status?: IdeaStatus;
+          scores?: IdeaScores;
+          source_url?: string | null;
+          promoted_project_id?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -354,6 +658,17 @@ export type Database = {
         Args: Record<string, never>;
         Returns: boolean;
       };
+      find_similar_ideas: {
+        Args: { p_idea_id: string; p_limit?: number };
+        Returns: {
+          id: string;
+          title: string;
+          tagline: string | null;
+          verdict: IdeaVerdict | null;
+          status: IdeaStatus;
+          rank: number;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
@@ -363,10 +678,19 @@ export type Database = {
 // Convenience row aliases used across the app.
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Project = Database["public"]["Tables"]["projects"]["Row"];
+export type Task = Database["public"]["Tables"]["tasks"]["Row"];
 export type TimeEntry = Database["public"]["Tables"]["time_entries"]["Row"];
 export type Prompt = Database["public"]["Tables"]["prompts"]["Row"];
 export type Note = Database["public"]["Tables"]["notes"]["Row"];
 export type KnowledgeItem = Database["public"]["Tables"]["knowledge_items"]["Row"];
 export type Agent = Database["public"]["Tables"]["agents"]["Row"];
+export type Idea = Database["public"]["Tables"]["ideas"]["Row"];
 export type Tag = Database["public"]["Tables"]["tags"]["Row"];
 export type LinkRow = Database["public"]["Tables"]["links"]["Row"];
+export type AcademyModule = Database["public"]["Tables"]["academy_modules"]["Row"];
+export type AcademyStep = Database["public"]["Tables"]["academy_steps"]["Row"];
+export type AcademyStepProgress =
+  Database["public"]["Tables"]["academy_step_progress"]["Row"];
+export type AcademyOutcome = Database["public"]["Tables"]["academy_outcomes"]["Row"];
+export type AcademyOutcomeAssessment =
+  Database["public"]["Tables"]["academy_outcome_assessments"]["Row"];

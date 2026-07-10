@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Boxes, ChevronRight, FileText, MessageSquareText } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { DeleteEntryButton } from "@/components/time/delete-entry-button";
 import { cn } from "@/lib/utils";
@@ -49,8 +48,8 @@ function EntryRows({ entry }: { entry: SessionEntry }) {
 
   return (
     <>
-      <TableRow>
-        <TableCell className="font-medium">
+      <TableRow style={{ borderColor: "#f4f2ef" }}>
+        <TableCell className="text-[13px] font-medium text-[var(--v2-ink-1)]">
           <div className="flex items-center gap-1">
             {hasActivity ? (
               <button
@@ -60,7 +59,7 @@ function EntryRows({ entry }: { entry: SessionEntry }) {
                 aria-label={
                   open ? "Hide session activity" : "Show session activity"
                 }
-                className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                className="rounded p-0.5 text-[var(--v2-ink-3)] hover:text-[var(--v2-ink-1)]"
               >
                 <ChevronRight
                   className={cn("size-3.5 transition-transform", open && "rotate-90")}
@@ -72,21 +71,35 @@ function EntryRows({ entry }: { entry: SessionEntry }) {
             {entry.projectName}
           </div>
         </TableCell>
-        <TableCell>{entry.whoName}</TableCell>
-        <TableCell className="text-muted-foreground">{entry.when}</TableCell>
-        <TableCell className="text-right tabular-nums">
+        <TableCell className="text-[13px] text-[var(--v2-ink-1)]">
+          {entry.whoName}
+        </TableCell>
+        <TableCell className="font-mono text-[11px] text-[var(--v2-ink-2)]">
+          {entry.when}
+        </TableCell>
+        <TableCell className="font-mono text-right text-[12px] text-[var(--v2-ink-1)] tabular-nums">
           {entry.durationLabel}
         </TableCell>
         <TableCell className="max-w-56">
           <div className="flex items-center gap-2">
-            <span className="truncate text-muted-foreground">
+            <span className="truncate text-[13px] text-[var(--v2-ink-2)]">
               {entry.notes ?? ""}
             </span>
-            {entry.source === "manual" && <Badge variant="outline">manual</Badge>}
+            {entry.source === "manual" && (
+              <span
+                className="font-mono shrink-0 rounded border px-1.5 py-0.5 text-[9.5px] text-[var(--v2-ink-3)]"
+                style={{ borderColor: "#e2ddd6" }}
+              >
+                manual
+              </span>
+            )}
             {hasActivity && (
-              <Badge variant="secondary" className="shrink-0">
+              <span
+                className="font-mono shrink-0 rounded-full px-2 py-0.5 text-[10px] text-[var(--v2-ink-2)]"
+                style={{ backgroundColor: "#f4f2ef" }}
+              >
                 {entry.activity.length} item{entry.activity.length === 1 ? "" : "s"}
-              </Badge>
+              </span>
             )}
           </div>
         </TableCell>
@@ -96,23 +109,24 @@ function EntryRows({ entry }: { entry: SessionEntry }) {
       </TableRow>
 
       {open && hasActivity && (
-        <TableRow className="bg-muted/30 hover:bg-muted/30">
+        <TableRow
+          className="hover:bg-transparent"
+          style={{ borderColor: "#f4f2ef", backgroundColor: "#faf9f7" }}
+        >
           <TableCell colSpan={6} className="py-2">
             <div className="flex flex-col gap-1.5 pl-6">
-              <p className="text-xs font-medium text-muted-foreground uppercase">
-                Done during this session
-              </p>
+              <p className="font-mono-label">Done during this session</p>
               {entry.activity.map((item) => {
                 const Icon = KIND_ICON[item.kind];
                 return (
                   <Link
                     key={`${item.kind}:${item.id}`}
                     href={item.href}
-                    className="flex items-center gap-2 text-sm hover:underline"
+                    className="flex items-center gap-2 text-[13px] text-[var(--v2-ink-1)] hover:underline"
                   >
-                    <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                    <Icon className="size-3.5 shrink-0 text-[var(--v2-ink-3)]" />
                     <span className="truncate">{item.title}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <span className="font-mono shrink-0 text-[10px] text-[var(--v2-ink-3)]">
                       {KIND_LABEL[item.kind]}
                     </span>
                   </Link>

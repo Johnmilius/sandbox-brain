@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { AppHeader } from "@/components/app-header";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { createClient } from "@/lib/supabase/server";
+import { relativeTime } from "@/lib/home-digest";
+import { noteSnippet, noteTagColor } from "@/lib/note-tags";
 import { rewriteWikiLinks } from "@/lib/wiki-links";
 
 export default async function NotePage({
@@ -20,78 +20,135 @@ export default async function NotePage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [noteRes, allNotesRes, backlinksRes] = await Promise.all([
-    supabase.from("notes").select("*").eq("id", id).maybeSingle(),
-    supabase.from("notes").select("id, title"),
-    supabase
-      .from("links")
-      .select("source_id")
-      .eq("relationship", "wiki")
-      .eq("target_type", "note")
-      .eq("target_id", id),
-  ]);
+  const [noteRes, allNotesRes, backlinksRes, outboundRes, tagRes] =
+    await Promise.all([
+      supabase.from("notes").select("*").eq("id", id).maybeSingle(),
+      supabase.from("notes").select("id, title, body"),
+      supabase
+        .from("links")
+        .select("source_id")
+        .eq("relationship", "wiki")
+        .eq("target_type", "note")
+        .eq("target_id", id),
+      supabase
+        .from("links")
+        .select("target_id")
+        .eq("relationship", "wiki")
+        .eq("source_type", "note")
+        .eq("source_id", id),
+      supabase
+        .from("taggables")
+        .select("tag_id")
+        .eq("entity_type", "note")
+        .eq("entity_id", id)
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
   const note = noteRes.data;
   if (!note) notFound();
 
-  const idByLowerTitle = new Map(
-    (allNotesRes.data ?? []).map((n) => [n.title.toLowerCase(), n.id]),
-  );
-  const titleById = new Map(
-    (allNotesRes.data ?? []).map((n) => [n.id, n.title]),
-  );
+  const allNotes = allNotesRes.data ?? [];
+  const idByLowerTitle = new Map(allNotes.map((n) => [n.title.toLowerCase(), n.id]));
+  const noteById = new Map(allNotes.map((n) => [n.id, n]));
   const renderedBody = rewriteWikiLinks(note.body, idByLowerTitle);
 
   const backlinks = (backlinksRes.data ?? [])
-    .map((l) => ({ id: l.source_id, title: titleById.get(l.source_id) }))
-    .filter((l): l is { id: string; title: string } => Boolean(l.title));
+    .map((l) => {
+      const source = noteById.get(l.source_id);
+      return source
+        ? {
+            id: source.id,
+            title: source.title,
+            context: noteSnippet(source.body, 90),
+          }
+        : null;
+    })
+    .filter((l): l is { id: string; title: string; context: string } => l !== null);
 
-  const name =
-    (user.user_metadata.full_name as string | undefined) ??
-    (user.user_metadata.name as string | undefined);
+  const linkCount = (outboundRes.data?.length ?? 0) + backlinks.length;
+
+  let tag: string | null = null;
+  if (tagRes.data?.tag_id) {
+    const { data: tagRow } = await supabase
+      .from("tags")
+      .select("name")
+      .eq("id", tagRes.data.tag_id)
+      .maybeSingle();
+    tag = tagRow?.name ?? null;
+  }
+
+  const now = new Date();
+  const metaLine = `edited ${relativeTime(note.updated_at, now)} · ${linkCount} link${linkCount === 1 ? "" : "s"}`;
 
   return (
     <>
-      <AppHeader
-        email={user.email ?? ""}
-        name={name}
-        avatarUrl={user.user_metadata.avatar_url as string | undefined}
-      />
-      <main className="mx-auto w-full max-w-3xl flex-1 p-4 sm:p-6">
-        <Link
-          href="/notes"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          All notes
-        </Link>
-
+      {/* editor */}
+      <main
+        className="min-w-0 max-w-[680px] flex-1"
+        style={{ padding: "34px 40px" }}
+      >
+        {tag && (
+          <p
+            className="font-mono mb-2.5 text-[10px] tracking-[0.14em] uppercase"
+            style={{ color: noteTagColor(tag) }}
+          >
+            #{tag}
+          </p>
+        )}
         <NoteEditor
           note={note}
           renderedBody={renderedBody}
           startInEdit={edit === "1"}
+          metaLine={metaLine}
         />
-
-        {backlinks.length > 0 && (
-          <div className="mt-10 border-t pt-4">
-            <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">
-              Linked from
-            </p>
-            <ul className="flex flex-col gap-1">
-              {backlinks.map((b) => (
-                <li key={b.id}>
-                  <Link
-                    href={`/notes/${b.id}`}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    {b.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </main>
+
+      {/* backlinks rail */}
+      <aside
+        className="hidden w-[250px] shrink-0 border-l xl:block"
+        style={{
+          borderColor: "#f0eeeb",
+          backgroundColor: "var(--v2-rail-bg)",
+          padding: "34px 22px",
+        }}
+      >
+        <p className="font-mono-label mb-3.5">◍ Linked from</p>
+        <div className="flex flex-col gap-[9px]">
+          {backlinks.length === 0 ? (
+            <p className="text-[12px] leading-normal text-[var(--v2-ink-4)]">
+              No other notes link here yet.
+            </p>
+          ) : (
+            backlinks.map((b) => (
+              <Link
+                key={b.id}
+                href={`/notes/${b.id}`}
+                className="block rounded-[10px] bg-white transition-colors hover:bg-[#faf9f7]"
+                style={{ border: "1px solid #ededeb", padding: "11px 13px" }}
+              >
+                <div className="text-[12.5px] font-medium text-[var(--v2-ink-1)]">
+                  {b.title}
+                </div>
+                {b.context && (
+                  <div className="mt-[3px] line-clamp-2 text-[11px] leading-[1.4] text-[var(--v2-ink-3)]">
+                    {b.context}
+                  </div>
+                )}
+              </Link>
+            ))
+          )}
+        </div>
+
+        <p className="font-mono-label mt-6 mb-3">◷ In the graph</p>
+        <Link
+          href="/graph"
+          className="text-[12.5px] hover:underline"
+          style={{ color: "var(--v2-accent-purple)" }}
+        >
+          Open this note in the graph →
+        </Link>
+      </aside>
     </>
   );
 }

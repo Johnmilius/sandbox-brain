@@ -4,12 +4,6 @@ import { useEffect, useState, useTransition } from "react";
 import { Play, Square } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -72,16 +66,17 @@ export function TimerCard({ projects, runningEntry }: TimerCardProps) {
     : 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          {running ? `Working on ${runningEntry.projectName}` : "Start a timer"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+    <div
+      className="rounded-[13px] bg-white"
+      style={{ border: "1px solid #ededeb", padding: "20px 22px" }}
+    >
+      <p className="font-mono-label">
+        {running ? `Working on ${runningEntry.projectName}` : "Start a timer"}
+      </p>
+      <div className="mt-3 flex flex-col gap-3">
         {running ? (
           <>
-            <div className="font-mono text-4xl font-semibold tabular-nums">
+            <div className="font-mono text-4xl font-semibold text-[var(--v2-ink-1)] tabular-nums">
               {formatClock(elapsed)}
             </div>
             <Input
@@ -89,7 +84,16 @@ export function TimerCard({ projects, runningEntry }: TimerCardProps) {
               onChange={(e) => setNotes(e.target.value)}
               placeholder="What did you work on? (optional)"
             />
-            <Button onClick={onStop} disabled={pending} variant="destructive">
+            <Button
+              onClick={onStop}
+              disabled={pending}
+              className="rounded-full border"
+              style={{
+                backgroundColor: "white",
+                borderColor: "var(--v2-danger-border)",
+                color: "var(--v2-danger)",
+              }}
+            >
               <Square className="size-4" />
               Stop &amp; log
             </Button>
@@ -97,7 +101,7 @@ export function TimerCard({ projects, runningEntry }: TimerCardProps) {
         ) : (
           <>
             {projects.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-[13px] text-[var(--v2-ink-3)]">
                 No active projects yet — create one on the Projects page.
               </p>
             ) : (
@@ -122,13 +126,17 @@ export function TimerCard({ projects, runningEntry }: TimerCardProps) {
                 </SelectContent>
               </Select>
             )}
-            <Button onClick={onStart} disabled={pending || !selectedProject}>
+            <Button
+              onClick={onStart}
+              disabled={pending || !selectedProject}
+              className="rounded-full bg-[#1c1c1f] text-white hover:bg-[#1c1c1f]/85"
+            >
               <Play className="size-4" />
               Start timer
             </Button>
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
