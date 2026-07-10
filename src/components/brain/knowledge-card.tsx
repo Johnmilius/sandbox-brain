@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  Archive,
-  Code2,
-  Copy,
-  Download,
-  ExternalLink,
-  FileText,
-  Lightbulb,
-  Pencil,
-  Users,
-} from "lucide-react";
+import { Copy, Download, ExternalLink, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,19 +20,7 @@ import { deleteKnowledgeItem } from "@/app/brain/actions";
 import { createClient } from "@/lib/supabase/client";
 import { formatBytes, readManifest } from "@/lib/knowledge-files";
 import { formatDate } from "@/lib/format";
-import type {
-  KnowledgeItem,
-  KnowledgeKind,
-  Project,
-} from "@/lib/database.types";
-
-const KIND_ICONS: Record<KnowledgeKind, typeof Code2> = {
-  code_snippet: Code2,
-  decision: Lightbulb,
-  document: FileText,
-  contact: Users,
-  project_archive: Archive,
-};
+import type { KnowledgeItem, Project } from "@/lib/database.types";
 
 const OUTCOME_STYLES: Record<string, React.CSSProperties> = {
   worked: {
@@ -68,6 +46,14 @@ type KnowledgeCardProps = {
   projectName: string | null;
   projects: Project[];
   tagSuggestions: string[];
+  /** true = green "current", false = amber "needs review" (design freshness). */
+  fresh?: boolean;
+  /** e.g. "from 3 notes · 2 tickets" — null hides the purple provenance stat. */
+  provenance?: string | null;
+  ownerInitials?: string | null;
+  ownerName?: string | null;
+  /** e.g. "updated 3d ago". */
+  reviewedLabel?: string;
 };
 
 export function KnowledgeCard({
@@ -76,9 +62,15 @@ export function KnowledgeCard({
   projectName,
   projects,
   tagSuggestions,
+  fresh = true,
+  provenance = null,
+  ownerInitials = null,
+  ownerName = null,
+  reviewedLabel,
 }: KnowledgeCardProps) {
-  const Icon = KIND_ICONS[item.kind];
   const data = (item.data ?? {}) as Record<string, string>;
+  const freshColor = fresh ? "#3f9b6c" : "#e0a53f";
+  const freshLabel = fresh ? "current" : "needs review";
   const files = readManifest(item.data);
 
   function copyContent() {
@@ -102,24 +94,18 @@ export function KnowledgeCard({
 
   return (
     <div
-      className="flex flex-col gap-3 rounded-[13px] bg-white p-4"
-      style={{ border: "1px solid #ededeb" }}
+      className="flex flex-col rounded-[12px] bg-white transition-colors hover:bg-[#faf9f7]"
+      style={{ border: "1px solid #ededeb", padding: "15px 17px" }}
     >
       <div className="flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <span
-              className="flex size-7 shrink-0 items-center justify-center rounded-[7px] text-[var(--v2-ink-2)]"
-              style={{ backgroundColor: "#f4f2ef" }}
-            >
-              <Icon className="size-3.5" />
-            </span>
+        <div className="mb-[7px] flex items-start justify-between gap-[9px]">
+          <div className="flex min-w-0 flex-1 items-start gap-2">
             <Dialog>
               <DialogTrigger
                 render={
                   <button
                     type="button"
-                    className="truncate text-left text-[14px] font-semibold leading-snug text-[var(--v2-ink-1)] hover:underline"
+                    className="text-left text-[13.5px] font-semibold leading-[1.35] text-[var(--v2-ink-1)] hover:underline"
                   />
                 }
               >
@@ -213,35 +199,48 @@ export function KnowledgeCard({
               </DialogContent>
             </Dialog>
           </div>
-          {data.outcome && (
+          {/* freshness indicator (design: green current / amber needs review) */}
+          <span
+            className="flex flex-none items-center gap-[5px] text-[10px] whitespace-nowrap"
+            style={{ color: freshColor }}
+          >
             <span
-              className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-medium capitalize"
-              style={OUTCOME_STYLES[data.outcome]}
-            >
-              {data.outcome}
-            </span>
-          )}
+              className="size-1.5 rounded-full"
+              style={{ backgroundColor: freshColor }}
+            />
+            {freshLabel}
+          </span>
         </div>
         {item.description && (
-          <p className="mt-2 line-clamp-2 text-[13px] text-[var(--v2-ink-2)]">
+          <p className="mb-3 line-clamp-2 text-[12px] leading-normal text-[var(--v2-ink-2)]">
             {item.description}
           </p>
         )}
       </div>
-      <div
-        className="flex items-center justify-between gap-2 pt-2"
-        style={{ borderTop: "1px solid #f4f2ef" }}
-      >
-        <div className="min-w-0">
-          <p className="font-mono truncate text-[10px] text-[var(--v2-ink-3)]">
-            {[KIND_LABELS[item.kind], projectName].filter(Boolean).join(" · ")}
-          </p>
-          {tags.length > 0 && (
-            <p className="font-mono truncate text-[10.5px] text-[var(--v2-ink-label)]">
-              {tags.map((t) => `#${t}`).join(" ")}
-            </p>
+      <div className="mt-auto flex items-center gap-2">
+        <span
+          className="font-mono min-w-0 truncate text-[10.5px]"
+          style={{
+            color: provenance ? "var(--v2-accent-purple)" : "var(--v2-ink-label)",
+          }}
+          title={tags.length > 0 ? tags.map((t) => `#${t}`).join(" ") : undefined}
+        >
+          {provenance
+            ? `◍ ${provenance}`
+            : [KIND_LABELS[item.kind], projectName].filter(Boolean).join(" · ")}
+        </span>
+        <span className="ml-auto flex flex-none items-center gap-1.5 text-[11px] text-[var(--v2-ink-3)]">
+          {ownerInitials && (
+            <span
+              className="flex size-5 items-center justify-center rounded-full text-[8.5px] font-semibold"
+              style={{ backgroundColor: "#e7e5e0", color: "#57534e" }}
+              title={ownerName ?? undefined}
+            >
+              {ownerInitials}
+            </span>
           )}
-        </div>
+          {reviewedLabel}
+        </span>
         <div className="flex shrink-0 items-center">
           <KnowledgeFormDialog
             item={item}

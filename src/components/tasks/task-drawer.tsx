@@ -232,10 +232,10 @@ export function TaskDrawer({
               {priority.label}
             </span>
             <span
-              className="rounded-[6px] px-1.5 py-0.5 text-[10px] font-medium"
+              className="rounded-[5px] px-[7px] py-0.5 text-[10px]"
               style={{ color: area.fg, backgroundColor: area.bg }}
             >
-              {task.area}
+              {area.label}
             </span>
             {task.assignee ? (
               <span className="flex items-center gap-1.5 text-[11.5px] text-[var(--v2-ink-2)]">

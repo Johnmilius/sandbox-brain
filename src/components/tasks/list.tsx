@@ -55,13 +55,13 @@ export function List({ tasks, onOpen }: ListProps) {
                 className="cursor-pointer transition-colors hover:bg-[#faf9f7]"
                 style={{ borderTop: "1px solid #f4f2ef" }}
               >
-                <td className="font-mono px-3 py-2.5 text-[10.5px] text-[var(--v2-ink-3)]">
+                <td className="font-mono px-3 py-2.5 text-[10.5px] text-[var(--v2-ink-label)]">
                   {task.ticketId}
                 </td>
                 <td className="px-3 py-2.5">
                   <span className="flex items-center gap-2">
                     <span
-                      className="size-2 shrink-0 rounded-full"
+                      className="size-[7px] shrink-0 rounded-full"
                       style={{ backgroundColor: priority.color }}
                       title={`${priority.label} priority`}
                     />
@@ -84,17 +84,17 @@ export function List({ tasks, onOpen }: ListProps) {
                 </td>
                 <td className="px-3 py-2.5">
                   <span
-                    className="rounded-[6px] px-1.5 py-0.5 text-[10px] font-medium"
+                    className="rounded-[5px] px-[7px] py-0.5 text-[10px]"
                     style={{ color: area.fg, backgroundColor: area.bg }}
                   >
-                    {task.area}
+                    {area.label}
                   </span>
                 </td>
                 <td className="px-3 py-2.5">
                   {task.assignee ? (
                     <span className="flex items-center gap-1.5">
                       <span
-                        className="flex size-5 items-center justify-center rounded-full text-[9px] font-medium"
+                        className="flex size-[22px] items-center justify-center rounded-full text-[9px] font-semibold"
                         style={{ backgroundColor: "#e7e5e0", color: "#57534e" }}
                       >
                         {task.assignee.initials}

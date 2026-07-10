@@ -20,6 +20,8 @@ type TasksViewProps = {
   currentUserId: string;
   currentUserName: string;
   demo: boolean;
+  /** Pre-select a project pill (deep link from Home rail / project cards). */
+  initialProjectId?: string | null;
 };
 
 export function TasksView({
@@ -29,9 +31,12 @@ export function TasksView({
   currentUserId,
   currentUserName,
   demo,
+  initialProjectId = null,
 }: TasksViewProps) {
   const [view, setView] = useState<"board" | "list">("board");
-  const [projectFilter, setProjectFilter] = useState<string | null>(null);
+  const [projectFilter, setProjectFilter] = useState<string | null>(
+    initialProjectId,
+  );
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
 
   const visible = projectFilter
@@ -121,7 +126,11 @@ export function TasksView({
       </div>
 
       {view === "board" ? (
-        <Board tasks={visible} onOpen={(t) => setOpenTaskId(t.id)} />
+        <Board
+          tasks={visible}
+          onOpen={(t) => setOpenTaskId(t.id)}
+          openTaskId={openTaskId}
+        />
       ) : (
         <List tasks={visible} onOpen={(t) => setOpenTaskId(t.id)} />
       )}

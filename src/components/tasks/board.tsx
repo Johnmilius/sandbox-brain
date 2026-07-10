@@ -6,9 +6,10 @@ import { STATUS_COLUMNS, type TaskVM } from "@/components/tasks/types";
 type BoardProps = {
   tasks: TaskVM[];
   onOpen: (task: TaskVM) => void;
+  openTaskId?: string | null;
 };
 
-export function Board({ tasks, onOpen }: BoardProps) {
+export function Board({ tasks, onOpen, openTaskId = null }: BoardProps) {
   return (
     <div className="flex gap-3 overflow-x-auto pb-3">
       {STATUS_COLUMNS.map((col) => {
@@ -37,7 +38,12 @@ export function Board({ tasks, onOpen }: BoardProps) {
                 </p>
               ) : (
                 colTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} onOpen={onOpen} />
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onOpen={onOpen}
+                    isOpen={task.id === openTaskId}
+                  />
                 ))
               )}
             </div>

@@ -97,7 +97,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     : null;
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden">
+    <div className="flex h-dvh w-full overflow-hidden bg-white">
       <Sidebar
         badges={badges}
         name={name}

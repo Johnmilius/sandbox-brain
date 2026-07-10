@@ -113,9 +113,9 @@ function demoData(currentUserId: string, currentUserName: string) {
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ demo?: string }>;
+  searchParams: Promise<{ demo?: string; project?: string }>;
 }) {
-  const { demo } = await searchParams;
+  const { demo, project: projectParam } = await searchParams;
   const isDemo = demo === "1";
   const supabase = await createClient();
   const {
@@ -336,6 +336,11 @@ export default async function TasksPage({
           currentUserId={user.id}
           currentUserName={currentUserName}
           demo={isDemo}
+          initialProjectId={
+            projects.some((p) => p.id === projectParam)
+              ? (projectParam ?? null)
+              : null
+          }
         />
       )}
     </main>

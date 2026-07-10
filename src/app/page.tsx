@@ -4,6 +4,7 @@ import { Rss } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { createClient } from "@/lib/supabase/server";
 import { formatDuration, entryDurationMs } from "@/lib/format";
+import { FlowingFeed, type FlowFeedItem } from "@/components/home/flowing-feed";
 import {
   assembleFeed,
   bucketMsByDay,
@@ -17,12 +18,8 @@ import {
 
 const FEED_LIMIT = 8;
 
-const KIND_DOT: Record<FeedItem["kind"], string> = {
-  note: "#4a5b8a",
-  prompt: "#8a6a2a",
-  time: "#3f7a56",
-  idea: "#e0a53f",
-};
+/** Identity colors cycled per person (dot ring + actor name). */
+const ACTOR_COLORS = ["#4a5b8a", "#3f7a56", "#8a6a2a", "#5b3fd6"];
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -43,6 +40,7 @@ export default async function HomePage() {
     ideasRes,
     recentEntriesRes,
     weekEntriesRes,
+    tasksRes,
   ] = await Promise.all([
     supabase.from("profiles").select("id, full_name, email"),
     supabase.from("projects").select("id, name, status"),
@@ -72,12 +70,22 @@ export default async function HomePage() {
       .select("project_id, started_at, ended_at")
       .not("ended_at", "is", null)
       .gte("started_at", weekCutoff),
+    // Task-completion % per project (design intent for the rail bars).
+    // Errors (table missing pre-0007) degrade to the time-share fallback.
+    supabase.from("tasks").select("project_id, status"),
   ]);
 
   const profiles = profilesRes.data ?? [];
   const projects = projectsRes.data ?? [];
   const profileById = new Map(profiles.map((p) => [p.id, p]));
   const projectById = new Map(projects.map((p) => [p.id, p]));
+
+  // Stable identity color per person.
+  const actorColorById = new Map(
+    [...profiles]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((p, i) => [p.id, ACTOR_COLORS[i % ACTOR_COLORS.length]]),
+  );
 
   const actorName = (id: string) => {
     const p = profileById.get(id);
@@ -97,6 +105,7 @@ export default async function HomePage() {
   const candidates: FeedItem[] = [
     ...(notesRes.data ?? []).map((n) => ({
       key: `note:${n.id}:${n.updated_at}`,
+      actorId: n.author_id,
       actor: actorName(n.author_id),
       verb: n.created_at === n.updated_at ? "wrote" : "updated",
       object: n.title,
@@ -107,6 +116,7 @@ export default async function HomePage() {
     })),
     ...(promptsRes.data ?? []).map((p) => ({
       key: `prompt:${p.id}`,
+      actorId: p.user_id,
       actor: actorName(p.user_id),
       verb: "saved",
       object: p.title,
@@ -117,6 +127,7 @@ export default async function HomePage() {
     })),
     ...(ideasRes.data ?? []).map((i) => ({
       key: `idea:${i.id}`,
+      actorId: i.created_by,
       actor: actorName(i.created_by),
       verb: "captured",
       object: i.title,
@@ -127,6 +138,7 @@ export default async function HomePage() {
     })),
     ...(recentEntriesRes.data ?? []).map((e) => ({
       key: `time:${e.id}`,
+      actorId: e.user_id,
       actor: actorName(e.user_id),
       verb: "logged",
       object: formatDuration(entryDurationMs(e.started_at, e.ended_at)),
@@ -140,7 +152,13 @@ export default async function HomePage() {
   const feed = assembleFeed(candidates, FEED_LIMIT);
   const sinceCount = countSince(candidates, now);
 
-  // Right rail: this week's hours + per-project share.
+  const feedItems: FlowFeedItem[] = feed.map((item) => ({
+    ...item,
+    actorColor: actorColorById.get(item.actorId) ?? ACTOR_COLORS[0],
+    timeLabel: relativeTime(item.at, now),
+  }));
+
+  // Right rail: this week's hours per day + per-project stats.
   const weekEntries = weekEntriesRes.data ?? [];
   const dayMs = bucketMsByDay(weekEntries, dayBuckets);
   const weekTotalMs = dayMs.reduce((a, b) => a + b, 0);
@@ -155,18 +173,56 @@ export default async function HomePage() {
         entryDurationMs(e.started_at, e.ended_at),
     );
   }
+
+  // % complete per project from tasks (design intent); projects without
+  // tickets (or pre-0007) fall back to their share of this week's hours.
+  const taskTally = new Map<string, { done: number; total: number }>();
+  if (!tasksRes.error) {
+    for (const t of tasksRes.data ?? []) {
+      const tally = taskTally.get(t.project_id) ?? { done: 0, total: 0 };
+      tally.total += 1;
+      if (t.status === "done") tally.done += 1;
+      taskTally.set(t.project_id, tally);
+    }
+  }
+
   const activeProjects = projects
     .filter((p) => p.status === "active")
-    .map((p) => ({
-      id: p.id,
-      name: p.name,
-      pct:
-        weekTotalMs > 0
+    .map((p) => {
+      const tally = taskTally.get(p.id);
+      const pct = tally
+        ? Math.round((tally.done / tally.total) * 100)
+        : weekTotalMs > 0
           ? Math.round(((msByProject.get(p.id) ?? 0) / weekTotalMs) * 100)
-          : 0,
-    }))
+          : 0;
+      return { id: p.id, name: p.name, pct };
+    })
     .sort((a, b) => b.pct - a.pct)
     .slice(0, 3);
+
+  // Third feed pill: the project with the most hours this week.
+  let topProject: string | null = null;
+  let topMs = 0;
+  for (const [projectId, ms] of msByProject) {
+    if (ms > topMs) {
+      topMs = ms;
+      topProject = projectById.get(projectId)?.name ?? null;
+    }
+  }
+
+  // "Time logged" footer caption — today vs the busiest day of the week.
+  const todayIdx = dayBuckets.findIndex((d) => d.isToday);
+  const busiestIdx = dayMs.indexOf(Math.max(...dayMs));
+  const shortDay = (i: number) =>
+    dayBuckets[i]?.start.toLocaleDateString(undefined, { weekday: "short" }) ??
+    "";
+  const hoursOf = (i: number) => (dayMs[i] / 3_600_000).toFixed(1);
+  const caption =
+    todayIdx >= 0 && weekTotalMs > 0
+      ? busiestIdx === todayIdx
+        ? `${shortDay(todayIdx)} is today — your busiest day at ${hoursOf(todayIdx)}h`
+        : `${shortDay(todayIdx)} is today — busiest was ${shortDay(busiestIdx)} at ${hoursOf(busiestIdx)}h`
+      : null;
 
   return (
     <div className="flex min-h-full flex-1">
@@ -178,53 +234,31 @@ export default async function HomePage() {
           >
             {greetingFor(now.getHours())}, {firstName}
           </h1>
-          <span className="font-mono shrink-0 text-[10px] tracking-[0.1em] text-[var(--v2-ink-3)]">
+          <span className="font-mono shrink-0 text-[11px] text-[var(--v2-ink-3)]">
             {monoDate(now)}
           </span>
         </div>
-        <p className="mt-1 text-[13.5px] text-[var(--v2-ink-2)]">
+        <p className="mt-0.5 text-[13.5px] text-[var(--v2-ink-2)]">
           {sinceCount === 0
             ? "All quiet since you left — nothing new in the brain."
             : `${sinceCount} thing${sinceCount === 1 ? "" : "s"} moved through the brain since you left.`}
         </p>
 
-        <p className="font-mono-label mt-8 mb-4">Flowing now</p>
-
-        {feed.length === 0 ? (
-          <EmptyState
-            icon={Rss}
-            title="Nothing flowing yet"
-            description="Notes, prompts, ideas, and logged time will show up here as the team works."
-          />
+        {feedItems.length === 0 ? (
+          <>
+            <p className="font-mono-label mt-8 mb-4">Flowing now</p>
+            <EmptyState
+              icon={Rss}
+              title="Nothing flowing yet"
+              description="Notes, prompts, ideas, and logged time will show up here as the team works."
+            />
+          </>
         ) : (
-          <div
-            className="relative flex flex-col gap-4 pl-5"
-            style={{ borderLeft: "1px dashed #d6d3cd", marginLeft: 4 }}
-          >
-            {feed.map((item) => (
-              <div key={item.key} className="relative">
-                <span
-                  className="absolute top-[5px] -left-[25px] size-2 rounded-full border-2 border-white"
-                  style={{ backgroundColor: KIND_DOT[item.kind] }}
-                />
-                <p className="text-[13.5px] leading-snug text-[var(--v2-ink-1)]">
-                  <span className="font-semibold">{item.actor}</span>{" "}
-                  {item.verb}{" "}
-                  <Link
-                    href={item.href}
-                    className="font-medium hover:underline"
-                    style={{ color: "var(--v2-accent-purple)" }}
-                  >
-                    {item.object}
-                  </Link>{" "}
-                  <span className="text-[var(--v2-ink-3)]">→ {item.context}</span>
-                </p>
-                <p className="font-mono mt-0.5 text-[10px] text-[var(--v2-ink-3)]">
-                  {relativeTime(item.at, now)}
-                </p>
-              </div>
-            ))}
-          </div>
+          <FlowingFeed
+            items={feedItems}
+            currentUserId={user.id}
+            topProject={topProject}
+          />
         )}
       </div>
 
@@ -232,33 +266,33 @@ export default async function HomePage() {
         className="w-[262px] shrink-0 border-l"
         style={{
           backgroundColor: "var(--v2-rail-bg)",
-          borderColor: "#ededeb",
-          padding: "26px 22px",
+          borderColor: "#f0eeeb",
+          padding: "30px 22px",
         }}
       >
-        <p className="font-mono-label">Active projects</p>
-        <div className="mt-3 flex flex-col gap-3.5">
+        <p className="font-mono-label mb-3.5">Active projects</p>
+        <div className="mb-7 flex flex-col gap-[15px]">
           {activeProjects.length === 0 && (
             <p className="text-[12px] text-[var(--v2-ink-4)]">
               No active projects yet.
             </p>
           )}
           {activeProjects.map((p) => (
-            <Link key={p.id} href="/projects" className="block">
+            <Link key={p.id} href={`/tasks?project=${p.id}`} className="block">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-[12.5px] font-medium text-[var(--v2-ink-1)]">
+                <span className="truncate text-[13px] font-medium text-[var(--v2-ink-1)]">
                   {p.name}
                 </span>
-                <span className="font-mono shrink-0 text-[10px] text-[var(--v2-ink-3)] tabular-nums">
+                <span className="font-mono shrink-0 text-[11px] text-[var(--v2-ink-3)] tabular-nums">
                   {p.pct}%
                 </span>
               </div>
               <div
-                className="mt-1.5 h-[5px] w-full overflow-hidden rounded-full"
+                className="mt-1.5 h-[5px] w-full overflow-hidden rounded-[3px]"
                 style={{ backgroundColor: "#efece7" }}
               >
                 <div
-                  className="h-full rounded-full bg-[#1c1c1f]"
+                  className="h-full rounded-[3px] bg-[#1c1c1f]"
                   style={{ width: `${p.pct}%` }}
                 />
               </div>
@@ -266,51 +300,77 @@ export default async function HomePage() {
           ))}
         </div>
 
-        <p className="font-mono-label mt-8">This week · {weekHours}h</p>
-        <p className="mt-1 text-[11px] text-[var(--v2-ink-3)]">
-          Whole team, completed sessions.
+        <div className="flex items-baseline justify-between">
+          <p className="font-mono-label">Time logged</p>
+          <span className="font-mono text-[10px] text-[var(--v2-ink-2)]">
+            {weekHours}h total
+          </span>
+        </div>
+        <p className="mt-0.5 mb-3.5 text-[11px] text-[var(--v2-ink-3)]">
+          Hours the team tracked each day this week.
         </p>
         {weekTotalMs === 0 ? (
-          <p className="mt-3 text-[12px] text-[var(--v2-ink-4)]">
+          <p className="text-[12px] text-[var(--v2-ink-4)]">
             No time logged yet this week.
           </p>
         ) : (
-          <div className="mt-3 flex items-end gap-1.5" style={{ height: 84 }}>
-            {dayBuckets.map((day, i) => {
-              const ms = dayMs[i];
-              const barHeight = Math.max(2, Math.round((ms / dayMax) * 58));
-              return (
-                <div
-                  key={day.key}
-                  className="flex flex-1 flex-col items-center gap-1"
-                  title={`${formatDuration(ms)}`}
-                >
-                  <span className="font-mono text-[9px] text-[var(--v2-ink-3)] tabular-nums">
-                    {ms > 0 ? (ms / 3_600_000).toFixed(1) : ""}
-                  </span>
-                  <div className="flex w-full flex-1 items-end" style={{ height: 58 }}>
+          <>
+            <div className="flex items-end gap-[5px]" style={{ height: 66 }}>
+              {dayBuckets.map((day, i) => {
+                const ms = dayMs[i];
+                const barHeight = Math.max(2, Math.round((ms / dayMax) * 48));
+                return (
+                  <div
+                    key={day.key}
+                    className="flex h-full flex-1 flex-col items-center justify-end gap-1"
+                    title={formatDuration(ms)}
+                  >
+                    <span
+                      className="font-mono text-[9px] tabular-nums"
+                      style={{
+                        color: day.isToday
+                          ? "var(--v2-ink-1)"
+                          : "var(--v2-ink-3)",
+                        fontWeight: day.isToday ? 600 : 400,
+                      }}
+                    >
+                      {ms > 0 ? (ms / 3_600_000).toFixed(1) : ""}
+                    </span>
                     <div
-                      className="w-full rounded-t-[3px]"
+                      className="w-full rounded-[3px]"
                       style={{
                         height: barHeight,
                         backgroundColor: day.isToday ? "#1c1c1f" : "#e7e5e0",
                       }}
                     />
                   </div>
-                  <span
-                    className="font-mono text-[9.5px]"
-                    style={{
-                      color: day.isToday
-                        ? "var(--v2-ink-1)"
-                        : "var(--v2-ink-3)",
-                    }}
-                  >
-                    {day.letter}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            <div className="font-mono mt-1.5 flex gap-[5px]">
+              {dayBuckets.map((day) => (
+                <span
+                  key={day.key}
+                  className="flex-1 text-center text-[9.5px]"
+                  style={{
+                    color: day.isToday ? "var(--v2-ink-1)" : "var(--v2-ink-3)",
+                    fontWeight: day.isToday ? 600 : 400,
+                  }}
+                >
+                  {day.letter}
+                </span>
+              ))}
+            </div>
+            {caption && (
+              <div className="mt-3 flex items-center gap-1.5 text-[11px] text-[var(--v2-ink-2)]">
+                <span
+                  className="size-2 shrink-0 rounded-[2px]"
+                  style={{ backgroundColor: "#1c1c1f" }}
+                />
+                {caption}
+              </div>
+            )}
+          </>
         )}
       </aside>
     </div>

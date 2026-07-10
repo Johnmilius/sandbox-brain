@@ -17,9 +17,16 @@ type NoteEditorProps = {
   /** Body with [[wiki-links]] already rewritten to /notes/<id> markdown links. */
   renderedBody: string;
   startInEdit: boolean;
+  /** Design meta line under the title, e.g. "edited 2h ago · 3 links". */
+  metaLine?: string;
 };
 
-export function NoteEditor({ note, renderedBody, startInEdit }: NoteEditorProps) {
+export function NoteEditor({
+  note,
+  renderedBody,
+  startInEdit,
+  metaLine,
+}: NoteEditorProps) {
   const [editing, setEditing] = useState(startInEdit);
   const [title, setTitle] = useState(note.title);
   const [body, setBody] = useState(note.body);
@@ -45,7 +52,7 @@ export function NoteEditor({ note, renderedBody, startInEdit }: NoteEditorProps)
 
   if (!editing) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col">
         <div className="flex items-start justify-between gap-3">
           <h1
             className="font-display text-[30px] leading-tight text-[var(--v2-ink-1)]"
@@ -72,12 +79,20 @@ export function NoteEditor({ note, renderedBody, startInEdit }: NoteEditorProps)
             />
           </div>
         </div>
+        {metaLine && (
+          <p className="font-mono mt-1.5 text-[11px] text-[var(--v2-ink-3)]">
+            {metaLine}
+          </p>
+        )}
         {note.body.trim() === "" ? (
-          <p className="text-[13px] text-[var(--v2-ink-3)]">
+          <p className="mt-5 text-[13px] text-[var(--v2-ink-3)]">
             Empty note — hit Edit to start writing. Use [[Another Note]] to link.
           </p>
         ) : (
-          <div className="text-[15px] leading-[1.85] text-[var(--v2-ink-1)]">
+          <div
+            className="mt-[22px] text-[15px] leading-[1.85]"
+            style={{ color: "#33312e" }}
+          >
             <MarkdownView markdown={renderedBody} />
           </div>
         )}
@@ -91,7 +106,7 @@ export function NoteEditor({ note, renderedBody, startInEdit }: NoteEditorProps)
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="font-display border-none px-0 !text-[26px] leading-tight shadow-none focus-visible:ring-0"
+          className="font-display h-auto border-none px-0 !text-[30px] leading-tight shadow-none focus-visible:ring-0"
         />
         <div className="flex shrink-0 items-center gap-1">
           <Button

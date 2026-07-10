@@ -218,34 +218,21 @@ export default async function GraphPage() {
     label: p.name,
   }));
 
-  return (
+  // Full-bleed canvas + right detail rail (design) — no boxed card.
+  return nodes.length === 0 ? (
     <main className="mx-auto w-full max-w-6xl flex-1 px-[34px] py-[30px]">
-      <div className="mb-5">
-        <h1
-          className="font-display text-[24px] text-[var(--v2-ink-1)]"
-          style={{ letterSpacing: "-0.01em" }}
-        >
-          The graph
-        </h1>
-        <p className="mt-1 text-[12.5px] text-[var(--v2-ink-2)]">
-          {edges.length} connections · drag the nodes around
-        </p>
-      </div>
-
-      {nodes.length === 0 ? (
-        <EmptyState
-          icon={Waypoints}
-          title="Nothing to map yet"
-          description="Add projects, notes, or prompts first — the graph draws itself from what the team saves."
-        />
-      ) : (
-        <GraphExplorer
-          nodes={nodes}
-          edges={edges}
-          people={people}
-          projects={projectOptions}
-        />
-      )}
+      <EmptyState
+        icon={Waypoints}
+        title="Nothing to map yet"
+        description="Add projects, notes, or prompts first — the graph draws itself from what the team saves."
+      />
     </main>
+  ) : (
+    <GraphExplorer
+      nodes={nodes}
+      edges={edges}
+      people={people}
+      projects={projectOptions}
+    />
   );
 }

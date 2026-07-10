@@ -10,7 +10,10 @@ import {
 import { EmptyState } from "@/components/empty-state";
 import { TimerCard } from "@/components/time/timer-card";
 import { ManualEntryDialog } from "@/components/time/manual-entry-dialog";
-import { DailyHoursChart } from "@/components/time/daily-hours-chart";
+import {
+  StackedWeekChart,
+  type WeekChartBar,
+} from "@/components/time/stacked-week-chart";
 import { TimePeopleFilter } from "@/components/time/time-people-filter";
 import {
   SessionTable,
@@ -128,25 +131,61 @@ export default async function TimePage({
     };
   });
   const msByDay = new Map(days.map((d) => [d.key, 0]));
+  // Per-day per-project totals feed the stacked "HOURS THIS WEEK" chart.
+  const msByDayProject = new Map<string, Map<string, number>>(
+    days.map((d) => [d.key, new Map()]),
+  );
   for (const e of metrics) {
     const key = dayKey(new Date(e.started_at));
     if (msByDay.has(key)) {
-      msByDay.set(key, msByDay.get(key)! + entryDurationMs(e.started_at, e.ended_at));
+      const ms = entryDurationMs(e.started_at, e.ended_at);
+      msByDay.set(key, msByDay.get(key)! + ms);
+      const perProject = msByDayProject.get(key)!;
+      perProject.set(e.project_id, (perProject.get(e.project_id) ?? 0) + ms);
     }
   }
-  const chartData = days.map((d) => ({
-    label: d.label,
-    fullLabel: d.fullLabel,
-    ms: msByDay.get(d.key)!,
-  }));
-  // Display-only slice of the same 14-day dataset for the week mini bar
-  // chart (spec calls for 7 day columns) — no additional query, no change
-  // to what's tracked.
-  const weekBars = days.slice(-7).map((d) => ({
+  const weekDays = days.slice(-7).map((d) => ({
     ...d,
     ms: msByDay.get(d.key)!,
   }));
-  const weekBarsMax = Math.max(1, ...weekBars.map((d) => d.ms));
+
+  // Design chart palette: black / accent purple / sage, then a grey bucket
+  // for anything past the top three projects.
+  const SEGMENT_COLORS = ["#1c1c1f", "#5b3fd6", "#b7cfc0"];
+  const OTHER_COLOR = "#d6d3cd";
+  const legendProjects = topProjects.map(([projectId], i) => ({
+    id: projectId,
+    name: projectById.get(projectId)?.name ?? "Unknown",
+    color: SEGMENT_COLORS[i],
+  }));
+  let hasOtherSegment = false;
+  const weekChartBars: WeekChartBar[] = weekDays.map((d) => {
+    const perProject = msByDayProject.get(d.key)!;
+    const segments = legendProjects.map((p) => ({
+      name: p.name,
+      color: p.color,
+      ms: perProject.get(p.id) ?? 0,
+    }));
+    const knownMs = segments.reduce((sum, s) => sum + s.ms, 0);
+    const otherMs = Math.max(0, d.ms - knownMs);
+    if (otherMs > 0) {
+      hasOtherSegment = true;
+      segments.push({ name: "Other", color: OTHER_COLOR, ms: otherMs });
+    }
+    return {
+      key: d.key,
+      letter: d.dayLetter,
+      isToday: d.isToday,
+      totalMs: d.ms,
+      segments,
+    };
+  });
+  const weekChartLegend = [
+    ...legendProjects.map(({ name, color }) => ({ name, color })),
+    ...(hasOtherSegment ? [{ name: "Other", color: OTHER_COLOR }] : []),
+  ];
+  const weekChartTotal = weekDays.reduce((sum, d) => sum + d.ms, 0);
+  const weekAvgMs = weekChartTotal / 7;
 
   // Session activity: items each person created *during* one of their entries.
   // Fetch once over the window the displayed entries span, then bucket per entry.
@@ -244,6 +283,14 @@ export default async function TimePage({
         />
       </div>
 
+      {weekChartTotal > 0 && (
+        <StackedWeekChart
+          bars={weekChartBars}
+          legend={weekChartLegend}
+          avgMs={weekAvgMs}
+        />
+      )}
+
       <div className="grid gap-4 lg:grid-cols-3">
         <TimerCard
           projects={activeProjects}
@@ -298,63 +345,6 @@ export default async function TimePage({
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <div
-          className="rounded-[13px] bg-white lg:col-span-2"
-          style={{ border: "1px solid #ededeb", padding: "20px 22px" }}
-        >
-          <p className="font-mono-label">This week</p>
-          <p className="mt-1 mb-4 text-[13px] text-[var(--v2-ink-2)]">
-            Whole team, daily totals · completed sessions
-          </p>
-          {teamMs === 0 && weekBars.every((d) => d.ms === 0) ? (
-            <p className="text-[13px] text-[var(--v2-ink-3)]">
-              No time logged this week yet.
-            </p>
-          ) : (
-            <div className="flex items-end gap-2" style={{ height: 88 }}>
-              {weekBars.map((d) => {
-                const barHeight = Math.max(
-                  2,
-                  Math.round((d.ms / weekBarsMax) * 66),
-                );
-                return (
-                  <div
-                    key={d.key}
-                    className="flex flex-1 flex-col items-center gap-1.5"
-                    title={`${d.fullLabel}: ${formatDuration(d.ms)}`}
-                  >
-                    <span className="font-mono text-[9px] text-[var(--v2-ink-3)] tabular-nums">
-                      {d.ms > 0 ? formatDuration(d.ms) : ""}
-                    </span>
-                    <div
-                      className="flex w-full flex-1 items-end"
-                      style={{ height: 66 }}
-                    >
-                      <div
-                        className="w-full rounded-t-[3px]"
-                        style={{
-                          height: barHeight,
-                          backgroundColor: d.isToday ? "#1c1c1f" : "#e7e5e0",
-                        }}
-                      />
-                    </div>
-                    <span
-                      className="font-mono text-[9.5px] tabular-nums"
-                      style={{
-                        color: d.isToday
-                          ? "var(--v2-ink-1)"
-                          : "var(--v2-ink-3)",
-                      }}
-                    >
-                      {d.dayLetter}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div
           className="rounded-[13px] bg-white"
           style={{ border: "1px solid #ededeb", padding: "20px 22px" }}
         >
@@ -392,26 +382,6 @@ export default async function TimePage({
           </div>
         </div>
       </div>
-
-      {/* Kept for reference in the "Daily hours" 14-day view — same data,
-          longer window; visually secondary to the week bar chart above. */}
-      <details className="mt-4">
-        <summary className="font-mono-label cursor-pointer select-none">
-          Daily hours · last 14 days
-        </summary>
-        <div
-          className="mt-2 rounded-[13px] bg-white"
-          style={{ border: "1px solid #ededeb", padding: "20px 22px" }}
-        >
-          {teamMs === 0 && chartData.every((d) => d.ms === 0) ? (
-            <p className="text-[13px] text-[var(--v2-ink-3)]">
-              No time logged in the last two weeks yet.
-            </p>
-          ) : (
-            <DailyHoursChart data={chartData} />
-          )}
-        </div>
-      </details>
 
       <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-[18px] text-[var(--v2-ink-1)]">

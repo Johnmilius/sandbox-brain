@@ -39,6 +39,8 @@ export function relativeTime(iso: string, now: Date): string {
 export type FeedItem = {
   /** Stable key for React lists. */
   key: string;
+  /** Profile id of who did it — drives the "Mine" filter + identity color. */
+  actorId: string;
   /** Display name of who did it. */
   actor: string;
   /** Past-tense verb, e.g. "updated". */

@@ -54,7 +54,9 @@ export function PromptCard({
     });
   }
 
+  // Design: one mono footer line — "{tag} · saved by {author}" (11px).
   const metaLine = [
+    [prompt.ai_tool, projectName].filter(Boolean).join(" · ") || null,
     tags.length > 0 ? tags.map((t) => `#${t}`).join(" ") : null,
     authorName ? `saved by ${authorName}` : null,
   ]
@@ -63,8 +65,8 @@ export function PromptCard({
 
   return (
     <div
-      className="flex flex-col rounded-[13px] bg-white"
-      style={{ border: "1px solid #ededeb", padding: "16px 18px" }}
+      className="flex flex-col rounded-[12px] bg-white"
+      style={{ border: "1px solid #ededeb", padding: "16px 20px" }}
     >
       <div className="flex items-start justify-between gap-2">
         <Dialog open={viewOpen} onOpenChange={setViewOpen}>
@@ -125,19 +127,14 @@ export function PromptCard({
         )}
       </div>
 
-      <p className="mt-2 line-clamp-2 text-[13px] text-[var(--v2-ink-2)]">
+      <p className="mt-2 line-clamp-2 text-[12.5px] text-[var(--v2-ink-2)]">
         {prompt.prompt_text}
       </p>
 
       <div className="mt-3 flex items-end justify-between gap-2">
         <div className="min-w-0">
-          {(prompt.ai_tool || projectName) && (
-            <p className="font-mono text-[10px] text-[var(--v2-ink-3)]">
-              {[prompt.ai_tool, projectName].filter(Boolean).join(" · ")}
-            </p>
-          )}
           {metaLine && (
-            <p className="font-mono truncate text-[10.5px] text-[var(--v2-ink-label)]">
+            <p className="font-mono truncate text-[11px] text-[var(--v2-ink-3)]">
               {metaLine}
             </p>
           )}

@@ -1,28 +1,11 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Lightbulb, Plus, Waypoints } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/empty-state";
-import { NewIdeaDialog } from "@/components/ideas/new-idea-dialog";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate } from "@/lib/format";
-import type { IdeaStatus, IdeaVerdict } from "@/lib/database.types";
-
-const STAGE_STYLE: Record<IdeaStatus, { bg: string; fg: string }> = {
-  draft: { bg: "#f4f2ef", fg: "var(--v2-ink-2)" },
-  validating: { bg: "var(--v2-warning-bg)", fg: "var(--v2-warning-text-deep)" },
-  promoted: { bg: "#1c1c1f", fg: "#ffffff" },
-  archived: { bg: "#f4f2ef", fg: "var(--v2-ink-3)" },
-};
-
-const VERDICT_STYLE: Record<
-  IdeaVerdict,
-  { label: string; dot: string; fg: string }
-> = {
-  strong: { label: "Strong", dot: "#3f9b6c", fg: "var(--v2-success-text)" },
-  conditional: { label: "Conditional", dot: "var(--v2-amber)", fg: "var(--v2-warning-text-deep)" },
-  pass: { label: "Pass", dot: "var(--v2-danger)", fg: "var(--v2-danger)" },
-};
+import { relativeTime } from "@/lib/home-digest";
+import {
+  IdeasBrowser,
+  type IdeaCardVM,
+} from "@/components/ideas/ideas-browser";
+import { IDEA_ACCENT } from "@/components/ideas/idea-meta";
 
 export default async function IdeasPage() {
   const supabase = await createClient();
@@ -31,48 +14,69 @@ export default async function IdeasPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: ideas, error } = await supabase
-    .from("ideas")
-    .select("*")
-    .order("updated_at", { ascending: false });
+  const [ideasRes, projectsRes, linksRes] = await Promise.all([
+    supabase.from("ideas").select("*").order("updated_at", { ascending: false }),
+    supabase.from("projects").select("id, name"),
+    supabase
+      .from("links")
+      .select("source_id, target_id")
+      .eq("relationship", "related")
+      .eq("source_type", "idea")
+      .eq("target_type", "idea"),
+  ]);
 
-  const newIdeaTrigger = (
-    <NewIdeaDialog
-      trigger={
-        <Button className="rounded-full bg-[#1c1c1f] px-4 text-white hover:bg-[#1c1c1f]/85">
-          <Plus className="size-4" />
-          New idea
-        </Button>
-      }
-    />
-  );
+  const ideas = ideasRes.data ?? [];
+  const error = ideasRes.error;
+  const projectName = new Map((projectsRes.data ?? []).map((p) => [p.id, p.name]));
+
+  const relatedCount = new Map<string, number>();
+  for (const l of linksRes.data ?? []) {
+    relatedCount.set(l.source_id, (relatedCount.get(l.source_id) ?? 0) + 1);
+    relatedCount.set(l.target_id, (relatedCount.get(l.target_id) ?? 0) + 1);
+  }
+
+  const now = new Date();
+  const shortRelative = (iso: string) => {
+    const label = relativeTime(iso, now);
+    return label === "just now" ? "now" : label.replace(" ago", "");
+  };
+
+  const cards: IdeaCardVM[] = ideas.map((idea) => ({
+    id: idea.id,
+    title: idea.title,
+    tagline: idea.tagline,
+    status: idea.status,
+    verdict: idea.verdict,
+    scores: idea.scores,
+    updatedLabel: shortRelative(idea.updated_at),
+    promotedName: idea.promoted_project_id
+      ? (projectName.get(idea.promoted_project_id) ?? null)
+      : null,
+    relatedCount: relatedCount.get(idea.id) ?? 0,
+    sourceUrl: idea.source_url,
+  }));
 
   return (
     <main className="mx-auto w-full max-w-[900px] flex-1 px-[34px] py-[30px]">
-      <div className="mb-7 flex items-start justify-between gap-4">
-        <div>
+      <div className="mb-6">
+        <div className="flex items-center gap-2.5">
           <h1
             className="font-display text-[29px] text-[var(--v2-ink-1)]"
             style={{ letterSpacing: "-0.01em" }}
           >
             Ideas
           </h1>
-          <p className="mt-1 text-[13.5px] text-[var(--v2-ink-2)]">
-            Raw concepts, fleshed out over time. Capture first — decide later.
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={<Link href="/graph" />}
-            className="rounded-full border-[#e2ddd6] bg-white px-4 text-[var(--v2-ink-1)] hover:bg-[#f6f4f1]"
+          <span
+            className="flex size-6 items-center justify-center rounded-[7px] text-[13px]"
+            style={{ backgroundColor: "#f2ecfd", color: IDEA_ACCENT }}
+            aria-hidden
           >
-            <Waypoints className="size-4" />
-            Graph
-          </Button>
-          {newIdeaTrigger}
+            ◇
+          </span>
         </div>
+        <p className="mt-1 text-[13.5px] text-[var(--v2-ink-2)]">
+          Raw concepts, fleshed out over time. Capture first — decide later.
+        </p>
       </div>
 
       {error && (
@@ -81,79 +85,7 @@ export default async function IdeasPage() {
         </p>
       )}
 
-      {ideas && ideas.length === 0 && (
-        <EmptyState
-          icon={Lightbulb}
-          title="No ideas captured yet"
-          description="Jot down the first draft — problem, customer, and solution can come later."
-          action={newIdeaTrigger}
-        />
-      )}
-
-      <div
-        className="grid gap-4"
-        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(292px, 1fr))" }}
-      >
-        {ideas?.map((idea) => {
-          const stage = STAGE_STYLE[idea.status];
-          const verdict = idea.verdict ? VERDICT_STYLE[idea.verdict] : null;
-          const ratedCount = Object.values(idea.scores).filter(
-            (v) => v != null,
-          ).length;
-          return (
-            <Link
-              key={idea.id}
-              href={`/ideas/${idea.id}`}
-              className="block rounded-[13px] bg-white transition-shadow hover:shadow-[0_4px_14px_-4px_rgba(0,0,0,0.16)]"
-              style={{ border: "1px solid #ededeb", padding: "16px 18px" }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                {verdict ? (
-                  <span
-                    className="flex items-center gap-1.5 text-[11px] font-medium"
-                    style={{ color: verdict.fg }}
-                  >
-                    <span
-                      className="size-2 rounded-full"
-                      style={{ backgroundColor: verdict.dot }}
-                    />
-                    {verdict.label}
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5 text-[11px] text-[var(--v2-ink-4)]">
-                    <span className="size-2 rounded-full bg-[#e7e5e0]" />
-                    No verdict
-                  </span>
-                )}
-                <span className="font-mono shrink-0 text-[10px] text-[var(--v2-ink-3)]">
-                  updated {formatDate(idea.updated_at)}
-                </span>
-              </div>
-
-              <h2 className="mt-2.5 text-[15.5px] font-semibold leading-snug text-[var(--v2-ink-1)]">
-                {idea.title}
-              </h2>
-              <p className="mt-1 line-clamp-2 text-[12.5px] text-[var(--v2-ink-2)]">
-                {idea.tagline || "No tagline yet."}
-              </p>
-
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <span
-                  className="rounded-full px-2.5 py-0.5 text-[10.5px] font-medium capitalize"
-                  style={{ backgroundColor: stage.bg, color: stage.fg }}
-                >
-                  {idea.status}
-                </span>
-                {ratedCount > 0 && (
-                  <span className="font-mono text-[10px] text-[var(--v2-ink-label)]">
-                    {ratedCount} of 7 rated
-                  </span>
-                )}
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      {!error && <IdeasBrowser ideas={cards} />}
     </main>
   );
 }

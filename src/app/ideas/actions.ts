@@ -65,6 +65,28 @@ export async function updateIdea(
   return { error: null };
 }
 
+/**
+ * Partial update for the inline interactions the design calls for —
+ * click-to-score bars, verdict pills, and the lifecycle stepper.
+ */
+export async function patchIdea(
+  id: string,
+  patch: {
+    verdict?: IdeaVerdict | null;
+    status?: IdeaStatus;
+    scores?: IdeaScores;
+  },
+): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("ideas").update(patch).eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/ideas");
+  revalidatePath(`/ideas/${id}`);
+  revalidatePath("/graph");
+  return { error: null };
+}
+
 export async function deleteIdea(id: string): Promise<{ error: string | null }> {
   const supabase = await createClient();
   const { error } = await supabase.from("ideas").delete().eq("id", id);

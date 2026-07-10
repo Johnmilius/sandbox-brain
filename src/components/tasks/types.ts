@@ -62,9 +62,12 @@ export const PRIORITY_META: Record<
   low: { label: "Low", color: "#a8a29e" },
 };
 
-export const AREA_META: Record<TaskArea, { fg: string; bg: string }> = {
-  frontend: { fg: "#4a5b8a", bg: "#eef1f8" },
-  backend: { fg: "#3f7a56", bg: "#eef6f0" },
-  design: { fg: "#6a5f8a", bg: "#f1eefc" },
-  copy: { fg: "#8a6a2a", bg: "#f8f1e6" },
+export const AREA_META: Record<
+  TaskArea,
+  { label: string; fg: string; bg: string }
+> = {
+  frontend: { label: "Frontend", fg: "#4a5b8a", bg: "#eef1f8" },
+  backend: { label: "Backend", fg: "#3f7a56", bg: "#eef6f0" },
+  design: { label: "Design", fg: "#6a5f8a", bg: "#f1eefc" },
+  copy: { label: "Copy", fg: "#8a6a2a", bg: "#f8f1e6" },
 };

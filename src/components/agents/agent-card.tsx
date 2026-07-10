@@ -10,6 +10,23 @@ import type { Agent, Project } from "@/lib/database.types";
 
 type PromptOption = { id: string; title: string; is_favorite: boolean };
 
+/** Icon tile tints cycled per agent (design a.iconBg / a.iconFg). */
+const AGENT_ICON_COLORS = [
+  { bg: "#f1eefc", fg: "#6a5f8a" }, // purple
+  { bg: "#eef1f8", fg: "#4a5b8a" }, // blue
+  { bg: "#eef6f0", fg: "#3f7a56" }, // green
+  { bg: "#f8f1e6", fg: "#8a6a2a" }, // gold
+];
+
+/** Stable palette pick from the agent name. */
+function iconColorFor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  }
+  return AGENT_ICON_COLORS[Math.abs(hash) % AGENT_ICON_COLORS.length];
+}
+
 type AgentCardProps = {
   agent: Agent;
   tags: string[];
@@ -62,8 +79,11 @@ export function AgentCard({
     >
       <div className="flex items-start gap-3">
         <span
-          className="flex size-9 shrink-0 items-center justify-center rounded-[9px]"
-          style={{ backgroundColor: "#f1eefc", color: "#6a5f8a" }}
+          className="flex size-[38px] shrink-0 items-center justify-center rounded-[10px]"
+          style={{
+            backgroundColor: iconColorFor(agent.name).bg,
+            color: iconColorFor(agent.name).fg,
+          }}
           aria-hidden
         >
           <Bot className="size-4" />
@@ -103,7 +123,7 @@ export function AgentCard({
             {chips.map((chip) => (
               <span
                 key={chip}
-                className="rounded-[6px] px-2 py-0.5 text-[10.5px] text-[var(--v2-ink-2)]"
+                className="font-mono rounded-[6px] px-2 py-0.5 text-[10.5px] text-[var(--v2-ink-2)]"
                 style={{ backgroundColor: "#f4f2ef" }}
               >
                 {chip}

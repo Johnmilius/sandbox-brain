@@ -69,7 +69,10 @@ export function Sidebar({ badges, name, initials, runningEntry }: SidebarProps) 
         padding: "18px 13px",
       }}
     >
-      <Link href="/" className="mb-4 flex items-center gap-2 px-1">
+      <Link
+        href="/"
+        className="flex items-center gap-[9px] px-2 pt-0.5 pb-[18px]"
+      >
         <span
           className="flex size-[26px] shrink-0 items-center justify-center rounded-[7px] bg-[#1c1c1f] text-white"
           aria-hidden
@@ -81,9 +84,11 @@ export function Sidebar({ badges, name, initials, runningEntry }: SidebarProps) 
         </span>
       </Link>
 
-      <div className="font-mono-label px-1 pb-2">WORKSPACE</div>
+      <div className="font-mono-label font-mono-label-sm px-2 pb-2">
+        WORKSPACE
+      </div>
 
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
+      <nav className="flex flex-1 flex-col gap-px overflow-y-auto">
         {NAV_ITEMS.map(({ href, label, icon: Icon, badgeKey }) => {
           const active =
             href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -93,15 +98,15 @@ export function Sidebar({ badges, name, initials, runningEntry }: SidebarProps) 
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] transition-colors",
+                "flex items-center gap-2.5 rounded-[8px] px-[9px] py-[7px] text-[13.5px] transition-colors",
                 active
                   ? "bg-[#efece7] font-medium text-[var(--v2-ink-1)]"
-                  : "font-normal text-[#57534e] hover:bg-[#efece7]/50",
+                  : "font-normal text-[#57534e] hover:bg-[#efece7]",
               )}
             >
               <Icon
                 className={cn(
-                  "size-[15px] shrink-0",
+                  "size-4 shrink-0",
                   active ? "text-[var(--v2-ink-2)]" : "text-[var(--v2-ink-4)]",
                 )}
               />

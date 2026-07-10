@@ -16,6 +16,11 @@ type TopbarProps = {
   currentUser: PresenceUser;
 };
 
+const PRESENCE_COLORS = [
+  { bg: "#cdd4ea", fg: "#4a5b8a" }, // blue
+  { bg: "#c3ddca", fg: "#3f7a56" }, // green
+];
+
 function pageTitleFor(pathname: string): string {
   if (pathname === "/") return "Home";
   const match = NAV_ITEMS.find(
@@ -137,21 +142,27 @@ export function Topbar({ currentUser }: TopbarProps) {
           {present.length} online
         </span>
         <div className="flex items-center">
-          {visible.map((u, i) => (
-            <span
-              key={u.id}
-              className="flex size-6 items-center justify-center rounded-full border-2 border-white text-[10px] font-medium"
-              style={{
-                marginLeft: i === 0 ? 0 : -8,
-                zIndex: i,
-                backgroundColor: u.id === currentUser.id ? "#e7e5e0" : "#cdd4ea",
-                color: u.id === currentUser.id ? "#57534e" : "#4a5b8a",
-              }}
-              title={u.name}
-            >
-              {u.initials}
-            </span>
-          ))}
+          {visible.map((u, i) => {
+            // Design cycles identity colors per person (AL blue, SM green);
+            // the current user stays neutral cream.
+            const palette = PRESENCE_COLORS[i % PRESENCE_COLORS.length];
+            const self = u.id === currentUser.id;
+            return (
+              <span
+                key={u.id}
+                className="flex size-6 items-center justify-center rounded-full border-2 border-white text-[10px] font-medium"
+                style={{
+                  marginLeft: i === 0 ? 0 : -8,
+                  zIndex: i,
+                  backgroundColor: self ? "#e7e5e0" : palette.bg,
+                  color: self ? "#57534e" : palette.fg,
+                }}
+                title={u.name}
+              >
+                {u.initials}
+              </span>
+            );
+          })}
         </div>
       </div>
     </header>

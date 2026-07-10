@@ -49,7 +49,7 @@
 }
 
 :root {
-  --background: #e7e5e0;
+  --background: #ffffff;
   --foreground: #1c1c1f;
   --card: #ffffff;
   --card-foreground: #1c1c1f;
@@ -117,49 +117,38 @@
   --v2-ink-label: #b5b3ad;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+/* Design is light-only (DESIGN-SPEC §1.6) — no dark theme tokens. The
+   `dark` custom-variant stays class-based and the class is never applied,
+   so shadcn's dark: utilities are inert. */
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    /* Warm-cream frame behind the white app shell (design body bg). */
+    background: #e7e5e0;
+    @apply text-foreground;
   }
   html {
     @apply font-sans;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #d6d3cd;
+    border-radius: 6px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+/* Home "flowing now" rail — animated dashed flow line. */
+@keyframes flowSlow {
+  to {
+    background-position-y: -320px;
   }
 }
 
@@ -169,9 +158,13 @@
   }
   .font-mono-label {
     font-family: var(--font-geist-mono), monospace;
-    font-size: 9.5px;
+    font-size: 10px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--v2-ink-label);
+  }
+  /* Sidebar WORKSPACE eyebrow is the one 9.5px mono label in the design. */
+  .font-mono-label-sm {
+    font-size: 9.5px;
   }
 }
