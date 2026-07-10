@@ -3,12 +3,14 @@ import "../index.css";
 import { useToolInfo } from "../helpers.js";
 import type { DashboardData, ProjectBar } from "../summary.js";
 
-function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="kpi">
-      <p className="kpi-label">{label}</p>
-      <p className="kpi-value">{value}</p>
-      {sub ? <p className="kpi-sub">{sub}</p> : null}
+    <div className="card">
+      <p className="mono-label">{label}</p>
+      <p className="kpi-value">
+        {value}
+        <span className="kpi-unit">h</span>
+      </p>
     </div>
   );
 }
@@ -55,14 +57,21 @@ function Dashboard() {
     return <div className="state">Couldn&apos;t load dashboard data.</div>;
   }
   const maxProject = Math.max(...data.projects.map((p) => p.total), 1);
+  const sinceLabel = new Date(data.windowStartIso)
+    .toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    .toUpperCase();
 
   return (
     <div className="dash">
       <header className="dash-header">
-        <h1>Sandbox Brain</h1>
-        <span className="dash-sub">
-          last 7 days · since {new Date(data.windowStartIso).toLocaleDateString()}
-        </span>
+        <div className="dash-eyebrow-row">
+          <span className="mono-label">Sandbox Brain</span>
+          <span className="mono-label">since {sinceLabel}</span>
+        </div>
+        <h1 className="dash-title">This week</h1>
+        <p className="dash-sub">
+          Team logged {data.teamHours}h in the last 7 days.
+        </p>
       </header>
 
       <div className="kpi-grid">
@@ -72,41 +81,50 @@ function Dashboard() {
         ))}
       </div>
 
-      {data.people.length > 0 && (
-        <div className="legend">
-          {data.people.map((p) => (
-            <span key={p.email} className="legend-item">
-              <span className="legend-dot" style={{ backgroundColor: p.color }} />
-              {p.name}
-            </span>
-          ))}
+      <section className="card">
+        <div className="chart-head">
+          <p className="mono-label">Hours by project</p>
+          {data.people.length > 0 && (
+            <div className="legend">
+              {data.people.map((p) => (
+                <span key={p.email} className="legend-item">
+                  <span
+                    className="legend-swatch"
+                    style={{ backgroundColor: p.color }}
+                  />
+                  {p.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-      )}
-
-      {data.projects.length === 0 ? (
-        <div className="state">No time logged this week yet.</div>
-      ) : (
-        <div className="bars">
-          {data.projects.map((bar) => (
-            <StackedBar key={bar.project} bar={bar} max={maxProject} />
-          ))}
-        </div>
-      )}
+        {data.projects.length === 0 ? (
+          <div className="state">No time logged this week yet.</div>
+        ) : (
+          <div className="bars">
+            {data.projects.map((bar) => (
+              <StackedBar key={bar.project} bar={bar} max={maxProject} />
+            ))}
+          </div>
+        )}
+      </section>
 
       {data.activeTimers.length > 0 && (
-        <div className="timers">
-          <p className="timers-title">Running now</p>
-          {data.activeTimers.map((t) => (
-            <p key={`${t.name}-${t.startedAt}`} className="timer-row">
-              <span className="timer-pulse" />
-              {t.name} · {t.project} · since{" "}
-              {new Date(t.startedAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          ))}
-        </div>
+        <section className="card">
+          <p className="mono-label">Running now</p>
+          <div className="timer-rows">
+            {data.activeTimers.map((t) => (
+              <p key={`${t.name}-${t.startedAt}`} className="timer-row">
+                <span className="timer-pulse" />
+                {t.name} · {t.project} · since{" "}
+                {new Date(t.startedAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

@@ -16,6 +16,9 @@
     "node": ">=24"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "^5.2.9",
+    "@fontsource-variable/geist-mono": "^5.2.8",
+    "@fontsource-variable/newsreader": "^5.2.10",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@supabase/supabase-js": "^2.110.0",
     "dotenv": "^17.4.2",

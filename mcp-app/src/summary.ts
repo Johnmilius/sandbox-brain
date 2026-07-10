@@ -32,12 +32,14 @@ export interface DashboardData {
   activeTimers: ActiveTimer[];
 }
 
+// V2 chart palette — the first three (black, accent purple, sage) match the
+// site's time-chart SEGMENT_COLORS exactly; amber and danger red extend it.
 export const PERSON_COLORS = [
-  "#2a78d6",
-  "#1baf7a",
-  "#eda100",
-  "#e34948",
-  "#4a3aa7",
+  "#1c1c1f",
+  "#5b3fd6",
+  "#b7cfc0",
+  "#e0a53f",
+  "#b0442e",
 ];
 
 export const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
