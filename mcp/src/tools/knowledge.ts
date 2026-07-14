@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getActor, resolveProject, supabase } from "../context.js";
-import { fail, guarded, ok, setTagsForEntity } from "../helpers.js";
+import { emitMcpEvent, fail, guarded, ok, setTagsForEntity } from "../helpers.js";
 
 export function registerKnowledgeTools(server: McpServer): void {
   server.registerTool(
@@ -103,6 +103,12 @@ export function registerKnowledgeTools(server: McpServer): void {
         if (error) return fail(error.message);
 
         await setTagsForEntity("knowledge_item", created.id, tags);
+        await emitMcpEvent({
+          verb: "created",
+          object: { type: "knowledge_item", id: created.id, label: title.trim() },
+          projectId: proj?.id ?? null,
+          metadata: { kind },
+        });
         return ok(
           `Added ${kind.replace("_", " ")} **${title.trim()}** to the brain` +
             `${proj ? ` (project: ${proj.name})` : ""}.`,

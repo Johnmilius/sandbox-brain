@@ -1,7 +1,8 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getActor, resolveProject, supabase } from "../context.js";
-import { fail, formatDuration, guarded, ok } from "../helpers.js";
+import { emitMcpEvent, fail, formatDuration, guarded, ok } from "../helpers.js";
 
 export function registerTimeTools(server: McpServer): void {
   server.registerTool(
@@ -24,7 +25,10 @@ export function registerTimeTools(server: McpServer): void {
     },
     guarded(async ({ project }) => {
       const [actor, proj] = await Promise.all([getActor(), resolveProject(project)]);
+      // Id generated here so the emit below doesn't need a returning select.
+      const entryId = randomUUID();
       const { error } = await supabase().from("time_entries").insert({
+        id: entryId,
         user_id: actor.id,
         project_id: proj.id,
         started_at: new Date().toISOString(),
@@ -38,6 +42,12 @@ export function registerTimeTools(server: McpServer): void {
         }
         return fail(error.message);
       }
+      await emitMcpEvent({
+        verb: "started",
+        object: { type: "time_entry", id: entryId },
+        target: { type: "project", id: proj.id, label: proj.name },
+        projectId: proj.id,
+      });
       return ok(`Timer started on **${proj.name}**.`);
     }),
   );
@@ -90,6 +100,13 @@ export function registerTimeTools(server: McpServer): void {
       const duration = formatDuration(
         new Date(endedAt).getTime() - new Date(running.started_at).getTime(),
       );
+      await emitMcpEvent({
+        verb: "logged_time",
+        object: { type: "time_entry", id: running.id },
+        target: { type: "project", id: running.project_id, label: proj?.name },
+        projectId: running.project_id,
+        metadata: { started_at: running.started_at, ended_at: endedAt },
+      });
       return ok(
         `Stopped. Logged **${duration}** on **${proj?.name ?? "the project"}**.`,
       );
@@ -140,7 +157,9 @@ export function registerTimeTools(server: McpServer): void {
       }
       const endedAt = new Date(startedAt.getTime() + minutes * 60_000);
 
+      const entryId = randomUUID();
       const { error } = await supabase().from("time_entries").insert({
+        id: entryId,
         user_id: actor.id,
         project_id: proj.id,
         started_at: startedAt.toISOString(),
@@ -149,6 +168,16 @@ export function registerTimeTools(server: McpServer): void {
         source: "manual",
       });
       if (error) return fail(error.message);
+      await emitMcpEvent({
+        verb: "logged_time",
+        object: { type: "time_entry", id: entryId },
+        target: { type: "project", id: proj.id, label: proj.name },
+        projectId: proj.id,
+        metadata: {
+          started_at: startedAt.toISOString(),
+          ended_at: endedAt.toISOString(),
+        },
+      });
       return ok(
         `Logged **${formatDuration(minutes * 60_000)}** on **${proj.name}** for ${day}.`,
       );

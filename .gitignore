@@ -4,6 +4,8 @@
 /node_modules
 mcp/node_modules
 mcp/dist
+packages/*/node_modules
+packages/*/dist
 /.pnp
 .pnp.*
 .yarn/*

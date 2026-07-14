@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { emitEvent } from "@sandbox-brain/core";
 import { createClient } from "@/lib/supabase/server";
 import { setTagsForEntity } from "@/lib/tags";
 
@@ -22,6 +23,18 @@ export async function toggleStepComplete(
       .insert({ step_id: stepId, user_id: user.id });
     // 23505 = already complete; treat as success so double-clicks are harmless.
     if (error && error.code !== "23505") return { error: error.message };
+    if (!error) {
+      const { data: mod } = await supabase
+        .from("academy_modules")
+        .select("title")
+        .eq("id", moduleId)
+        .maybeSingle();
+      await emitEvent(supabase, {
+        verb: "completed",
+        object: { type: "academy_module", id: moduleId, label: mod?.title },
+        metadata: { step_id: stepId },
+      });
+    }
   } else {
     const { error } = await supabase
       .from("academy_step_progress")
@@ -66,6 +79,16 @@ export async function saveOutcomeAssessment(
   );
   if (error) return { error: error.message };
 
+  const { data: outcome } = await supabase
+    .from("academy_outcomes")
+    .select("name")
+    .eq("id", input.outcomeId)
+    .maybeSingle();
+  await emitEvent(supabase, {
+    verb: "rated",
+    object: { type: "academy_outcome", id: input.outcomeId, label: outcome?.name },
+    metadata: { rating: input.rating },
+  });
   revalidatePath("/academy");
   return { error: null };
 }
