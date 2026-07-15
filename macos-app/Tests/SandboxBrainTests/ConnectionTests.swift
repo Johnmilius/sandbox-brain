@@ -41,32 +41,32 @@ import Testing
     @Test func validateAcceptsHttpsProjectURL() {
         let result = AppState.validateConnection(urlString: "  https://xyzcompany.supabase.co  ", anonKey: "  key123  ")
         switch result {
-        case .success(let parsed):
-            #expect(parsed.urlString == "https://xyzcompany.supabase.co") // trimmed, byte-preserved
-            #expect(parsed.anonKey == "key123")
-        case .failure(let message):
-            Issue.record("expected success, got: \(message)")
+        case .valid(_, let urlString, let anonKey):
+            #expect(urlString == "https://xyzcompany.supabase.co") // trimmed, byte-preserved
+            #expect(anonKey == "key123")
+        case .invalid(let message):
+            Issue.record("expected valid, got: \(message)")
         }
     }
 
     @Test func validateRejectsNonHTTPS() {
         let result = AppState.validateConnection(urlString: "http://xyz.supabase.co", anonKey: "key")
-        #expect(isFailure(result, containing: "should look like https"))
+        #expect(isInvalid(result, containing: "should look like https"))
     }
 
     @Test func validateRejectsDashboardHost() {
         let result = AppState.validateConnection(urlString: "https://supabase.com/dashboard/project/abc", anonKey: "key")
-        #expect(isFailure(result, containing: "dashboard address"))
+        #expect(isInvalid(result, containing: "dashboard address"))
     }
 
     @Test func validateRejectsEmptyKey() {
         let result = AppState.validateConnection(urlString: "https://xyz.supabase.co", anonKey: "   ")
-        #expect(isFailure(result, containing: "anon (public) key"))
+        #expect(isInvalid(result, containing: "anon (public) key"))
     }
 
-    // Helper: assert a .failure whose message contains `needle`.
-    private func isFailure(_ result: Result<(url: URL, urlString: String, anonKey: String), String>, containing needle: String) -> Bool {
-        if case .failure(let message) = result { return message.contains(needle) }
+    // Helper: assert an .invalid outcome whose message contains `needle`.
+    private func isInvalid(_ result: AppState.ConnectionValidation, containing needle: String) -> Bool {
+        if case .invalid(let message) = result { return message.contains(needle) }
         return false
     }
 }

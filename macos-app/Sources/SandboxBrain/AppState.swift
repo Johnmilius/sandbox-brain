@@ -122,25 +122,32 @@ final class AppState {
                 String(decoded[decoded.index(after: separator)...]))
     }
 
-    /// Validate a project URL + anon key, returning either the parsed values or
-    /// a user-facing error message. Pure, so the error paths are unit-tested
-    /// without constructing a client or writing config.
-    nonisolated static func validateConnection(urlString: String, anonKey: String) -> Result<(url: URL, urlString: String, anonKey: String), String> {
+    /// Outcome of validating a pasted connection: either the parsed values or a
+    /// user-facing message explaining what's wrong. (Not `Result` — the message
+    /// is guidance to show, not a thrown `Error`.)
+    enum ConnectionValidation {
+        case valid(url: URL, urlString: String, anonKey: String)
+        case invalid(String)
+    }
+
+    /// Validate a project URL + anon key. Pure, so the error paths are
+    /// unit-tested without constructing a client or writing config.
+    nonisolated static func validateConnection(urlString: String, anonKey: String) -> ConnectionValidation {
         let trimmedURL = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedKey = anonKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: trimmedURL), url.scheme == "https" else {
-            return .failure("The project URL should look like https://xyzcompany.supabase.co")
+            return .invalid("The project URL should look like https://xyzcompany.supabase.co")
         }
         // Common mix-up: pasting the dashboard address instead of the API URL.
         if url.host()?.hasSuffix("supabase.com") == true {
-            return .failure("That's the Supabase dashboard address. Use the Project URL from Settings → API instead — it looks like https://xyzcompany.supabase.co")
+            return .invalid("That's the Supabase dashboard address. Use the Project URL from Settings → API instead — it looks like https://xyzcompany.supabase.co")
         }
         guard !trimmedKey.isEmpty else {
-            return .failure("Paste the anon (public) key from Supabase → Settings → API.")
+            return .invalid("Paste the anon (public) key from Supabase → Settings → API.")
         }
         // Preserve the pasted (trimmed) string for storage so the invite-code
         // round-trip is byte-identical; `url` is for building the client.
-        return .success((url, trimmedURL, trimmedKey))
+        return .valid(url: url, urlString: trimmedURL, anonKey: trimmedKey)
     }
 
     /// Generate the shareable code from the stored connection.
@@ -159,9 +166,9 @@ final class AppState {
 
     func connect(urlString: String, anonKey: String) {
         switch Self.validateConnection(urlString: urlString, anonKey: anonKey) {
-        case .failure(let message):
+        case .invalid(let message):
             lastError = message
-        case .success(let (url, trimmedURL, trimmedKey)):
+        case .valid(let url, let trimmedURL, let trimmedKey):
             ConfigStore.save(.init(supabaseURL: trimmedURL, anonKey: trimmedKey))
             let live = LiveBackend(url: url, anonKey: trimmedKey)
             backend = live
