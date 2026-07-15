@@ -14,6 +14,11 @@ let package = Package(
                 .product(name: "Supabase", package: "supabase-swift")
             ],
             path: "Sources/SandboxBrain"
+        ),
+        .testTarget(
+            name: "SandboxBrainTests",
+            dependencies: ["SandboxBrain"],
+            path: "Tests/SandboxBrainTests"
         )
     ]
 )
