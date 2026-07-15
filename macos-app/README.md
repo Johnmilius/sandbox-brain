@@ -38,13 +38,20 @@ right-click → Open the first time to get past Gatekeeper.
 Not on the team? **Demo mode** on the welcome screen explores the whole app
 with sample data, no credentials needed.
 
-### How sign-in works (no Supabase changes needed)
+### How sign-in works
 
-Google sign-in uses the loopback pattern: the app listens on
-`http://localhost:3000/auth/callback` — already on the project's redirect
-allowlist for web development — opens Google in your default browser, and
-catches the redirect locally. If port 3000 is busy (e.g. the Next dev server
-is running), quit it for a moment and sign in again.
+Primary path: an **in-window** sheet (`ASWebAuthenticationSession`) that
+redirects to the app's custom scheme `sandboxbrain://auth-callback`. No ports,
+no browser hop.
+
+If that's unavailable, it falls back to a **loopback**: the app opens Google in
+your default browser and briefly listens on
+`http://localhost:52847/auth/callback` to catch the redirect. The port is in the
+private range (49152–65535) so it won't clash with a running dev server.
+
+Both redirect URLs (`sandboxbrain://auth-callback` and
+`http://localhost:52847/auth/callback`) must be on the Supabase project's
+redirect allowlist (Auth → URL Configuration).
 
 ## Security notes
 

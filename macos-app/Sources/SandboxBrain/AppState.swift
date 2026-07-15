@@ -100,49 +100,74 @@ final class AppState {
     // MARK: invite codes — one pasteable string carrying URL + anon key,
     // so non-technical teammates never see Supabase jargon.
 
-    static let inviteCodePrefix = "SBRAIN1:"
+    nonisolated static let inviteCodePrefix = "SBRAIN1:"
+
+    /// Build the shareable code from a URL + anon key. Pure — the `|` join and
+    /// base64 encoding are the exact inverse of `decodeInviteCode`.
+    nonisolated static func makeInviteCode(urlString: String, anonKey: String) -> String {
+        inviteCodePrefix + Data("\(urlString)|\(anonKey)".utf8).base64EncodedString()
+    }
+
+    /// Decode a pasted invite code back into its URL + anon key. Pure and
+    /// side-effect-free (returns nil for anything that isn't a valid code) so
+    /// it can be unit-tested without touching disk or the network.
+    nonisolated static func decodeInviteCode(_ raw: String) -> (urlString: String, anonKey: String)? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.hasPrefix(inviteCodePrefix),
+              let data = Data(base64Encoded: String(trimmed.dropFirst(inviteCodePrefix.count))),
+              let decoded = String(data: data, encoding: .utf8),
+              let separator = decoded.firstIndex(of: "|")
+        else { return nil }
+        return (String(decoded[..<separator]),
+                String(decoded[decoded.index(after: separator)...]))
+    }
+
+    /// Validate a project URL + anon key, returning either the parsed values or
+    /// a user-facing error message. Pure, so the error paths are unit-tested
+    /// without constructing a client or writing config.
+    nonisolated static func validateConnection(urlString: String, anonKey: String) -> Result<(url: URL, urlString: String, anonKey: String), String> {
+        let trimmedURL = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedKey = anonKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: trimmedURL), url.scheme == "https" else {
+            return .failure("The project URL should look like https://xyzcompany.supabase.co")
+        }
+        // Common mix-up: pasting the dashboard address instead of the API URL.
+        if url.host()?.hasSuffix("supabase.com") == true {
+            return .failure("That's the Supabase dashboard address. Use the Project URL from Settings → API instead — it looks like https://xyzcompany.supabase.co")
+        }
+        guard !trimmedKey.isEmpty else {
+            return .failure("Paste the anon (public) key from Supabase → Settings → API.")
+        }
+        // Preserve the pasted (trimmed) string for storage so the invite-code
+        // round-trip is byte-identical; `url` is for building the client.
+        return .success((url, trimmedURL, trimmedKey))
+    }
 
     /// Generate the shareable code from the stored connection.
     var inviteCode: String? {
         guard let config = ConfigStore.load() else { return nil }
-        return Self.inviteCodePrefix + Data("\(config.supabaseURL)|\(config.anonKey)".utf8).base64EncodedString()
+        return Self.makeInviteCode(urlString: config.supabaseURL, anonKey: config.anonKey)
     }
 
     func connect(inviteCode raw: String) {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.hasPrefix(Self.inviteCodePrefix),
-              let data = Data(base64Encoded: String(trimmed.dropFirst(Self.inviteCodePrefix.count))),
-              let decoded = String(data: data, encoding: .utf8),
-              let separator = decoded.firstIndex(of: "|")
-        else {
+        guard let decoded = Self.decodeInviteCode(raw) else {
             lastError = "That doesn't look like a Sandbox Brain invite code. Ask a teammate to send a fresh one (⋯ menu → Copy team invite code)."
             return
         }
-        connect(urlString: String(decoded[..<separator]),
-                anonKey: String(decoded[decoded.index(after: separator)...]))
+        connect(urlString: decoded.urlString, anonKey: decoded.anonKey)
     }
 
     func connect(urlString: String, anonKey: String) {
-        let trimmedURL = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedKey = anonKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = URL(string: trimmedURL), url.scheme == "https" else {
-            lastError = "The project URL should look like https://xyzcompany.supabase.co"
-            return
+        switch Self.validateConnection(urlString: urlString, anonKey: anonKey) {
+        case .failure(let message):
+            lastError = message
+        case .success(let (url, trimmedURL, trimmedKey)):
+            ConfigStore.save(.init(supabaseURL: trimmedURL, anonKey: trimmedKey))
+            let live = LiveBackend(url: url, anonKey: trimmedKey)
+            backend = live
+            isDemo = false
+            phase = .signedOut
         }
-        // Common mix-up: pasting the dashboard address instead of the API URL.
-        if url.host()?.hasSuffix("supabase.com") == true {
-            lastError = "That's the Supabase dashboard address. Use the Project URL from Settings → API instead — it looks like https://xyzcompany.supabase.co"
-            return
-        }
-        guard !trimmedKey.isEmpty else {
-            lastError = "Paste the anon (public) key from Supabase → Settings → API."
-            return
-        }
-        ConfigStore.save(.init(supabaseURL: trimmedURL, anonKey: trimmedKey))
-        let live = LiveBackend(url: url, anonKey: trimmedKey)
-        backend = live
-        isDemo = false
-        phase = .signedOut
     }
 
     func signInWithGoogle() {
@@ -161,13 +186,14 @@ final class AppState {
                 } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
                     return // user closed the sheet — not a failure
                 } catch {
-                    // Fallback: loopback in the default browser —
-                    // localhost:3000/auth/callback is also allowlisted.
+                    // Fallback: loopback in the default browser. The dedicated
+                    // port (AuthLoopback.port) is allowlisted alongside the
+                    // custom scheme and stays clear of dev-server ports.
                     _ = try await live.client.auth.signInWithOAuth(
                         provider: .google,
-                        redirectTo: URL(string: "http://localhost:3000/auth/callback")
+                        redirectTo: AuthLoopback.redirectURL
                     ) { url in
-                        try await LoopbackCallbackServer.run(port: 3000, openURL: url)
+                        try await LoopbackCallbackServer.run(port: AuthLoopback.port, openURL: url)
                     }
                 }
                 revealAfterLoad { await self.checkAccess(live) }

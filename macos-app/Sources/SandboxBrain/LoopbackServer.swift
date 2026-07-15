@@ -2,10 +2,19 @@ import AppKit
 import Foundation
 import Network
 
-// Loopback OAuth callback: Supabase's redirect allowlist already contains
-// http://localhost:3000/auth/callback (for web dev), so the app listens
-// there for one request during sign-in instead of needing a custom URL
-// scheme added to the project's auth config.
+// Loopback OAuth callback: a *fallback* for when the primary in-window
+// sign-in (the `sandboxbrain://` custom scheme) is unavailable. The app
+// listens on a dedicated high port during sign-in and catches the redirect
+// locally. The matching `http://localhost:52847/auth/callback` must be on the
+// Supabase project's redirect allowlist (Auth → URL Configuration).
+//
+// The port lives in the private range (49152–65535) specifically so it won't
+// collide with a running dev server (e.g. Next.js on :3000).
+
+enum AuthLoopback {
+    static let port: UInt16 = 52847
+    static var redirectURL: URL { URL(string: "http://localhost:\(port)/auth/callback")! }
+}
 
 enum LoopbackCallbackServer {
     /// Not-Sendable-by-design guard; every touch happens on the main queue.
@@ -27,7 +36,7 @@ enum LoopbackCallbackServer {
             listener = try NWListener(using: .tcp, on: NWEndpoint.Port(rawValue: port)!)
         } catch {
             throw NSError(domain: "SandboxBrain", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: "Port \(port) is busy — quit whatever is using it (often a dev server) and try signing in again."
+                NSLocalizedDescriptionKey: "Couldn't open the local sign-in port (\(port)). Something else is using it — quit that app and try signing in again."
             ])
         }
 
