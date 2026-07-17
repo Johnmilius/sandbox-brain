@@ -7,7 +7,7 @@ import Supabase
 // tables + RLS as the web app); `DemoBackend` serves seeded in-memory data so
 // anyone can explore the app before wiring up credentials.
 
-protocol BrainBackend: Sendable {
+public protocol BrainBackend: Sendable {
     func currentUserId() async -> String?
     func isTeamMember() async throws -> Bool
     func signOut() async

@@ -1,3 +1,4 @@
+import SandboxBrainKit
 import SwiftUI
 
 // Branded boot screen — covers the window while the first data load runs.

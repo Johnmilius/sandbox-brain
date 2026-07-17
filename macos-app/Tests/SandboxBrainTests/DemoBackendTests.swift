@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-@testable import SandboxBrain
+@testable import SandboxBrainKit
 
 // Exercises the BrainBackend contract against the in-memory DemoBackend — no
 // Supabase, no network. Confirms the seed data loads and that a representative

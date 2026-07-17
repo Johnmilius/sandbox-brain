@@ -1,3 +1,4 @@
+import SandboxBrainKit
 import SwiftUI
 
 // MARK: - Projects (grid of cards + editor)

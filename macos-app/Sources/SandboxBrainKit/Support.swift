@@ -52,27 +52,27 @@ nonisolated(unsafe) private let isoPlain: ISO8601DateFormatter = {
     return f
 }()
 
-func parseISO(_ s: String) -> Date {
+public func parseISO(_ s: String) -> Date {
     isoFractional.date(from: s) ?? isoPlain.date(from: s) ?? .distantPast
 }
 
-func isoNow() -> String { isoFractional.string(from: Date()) }
-func iso(_ d: Date) -> String { isoFractional.string(from: d) }
+public func isoNow() -> String { isoFractional.string(from: Date()) }
+public func iso(_ d: Date) -> String { isoFractional.string(from: d) }
 
 // MARK: - Duration / date formatting (ports src/lib/format.ts + home-digest.ts)
 
-func entryDurationMs(startedAt: String, endedAt: String?, now: Date = Date()) -> Double {
+public func entryDurationMs(startedAt: String, endedAt: String?, now: Date = Date()) -> Double {
     let start = parseISO(startedAt)
     let end = endedAt.map(parseISO) ?? now
     return max(0, end.timeIntervalSince(start) * 1000)
 }
 
-func formatHours(ms: Double) -> String {
+public func formatHours(ms: Double) -> String {
     let hours = ms / 3_600_000
     return String(format: "%.1fh", hours)
 }
 
-func formatClock(ms: Double) -> String {
+public func formatClock(ms: Double) -> String {
     let total = Int(ms / 1000)
     let h = total / 3600, m = (total % 3600) / 60, s = total % 60
     return h > 0
@@ -81,7 +81,7 @@ func formatClock(ms: Double) -> String {
 }
 
 /// Compact relative time: "just now", "14m ago", "3h ago", "2d ago".
-func relativeTime(_ isoString: String, now: Date = Date()) -> String {
+public func relativeTime(_ isoString: String, now: Date = Date()) -> String {
     let ms = now.timeIntervalSince(parseISO(isoString))
     if ms < 60 { return "just now" }
     let minutes = Int(ms / 60)
@@ -92,7 +92,7 @@ func relativeTime(_ isoString: String, now: Date = Date()) -> String {
 }
 
 /// "Good morning" | "Good afternoon" | "Good evening" (local hour).
-func greeting(now: Date = Date()) -> String {
+public func greeting(now: Date = Date()) -> String {
     let hour = Calendar.current.component(.hour, from: now)
     if hour < 12 { return "Good morning" }
     if hour < 18 { return "Good afternoon" }
@@ -100,7 +100,7 @@ func greeting(now: Date = Date()) -> String {
 }
 
 /// Mono date stamp, e.g. "MON · JUL 6" (local).
-func monoDate(now: Date = Date()) -> String {
+public func monoDate(now: Date = Date()) -> String {
     let f = DateFormatter()
     f.dateFormat = "EEE"
     let weekday = f.string(from: now).uppercased()
@@ -111,7 +111,7 @@ func monoDate(now: Date = Date()) -> String {
 }
 
 /// Local midnight on the Monday of the week containing `d` (ports growth.ts).
-func weekStartLocal(_ d: Date = Date()) -> Date {
+public func weekStartLocal(_ d: Date = Date()) -> Date {
     let cal = Calendar.current
     let weekday = cal.component(.weekday, from: d) // 1 = Sunday … 7 = Saturday
     let sinceMonday = (weekday + 5) % 7
@@ -120,7 +120,7 @@ func weekStartLocal(_ d: Date = Date()) -> Date {
 }
 
 /// The last `count` local calendar days ending today, ascending (start, isToday, letter).
-func dayBuckets(count: Int = 7, now: Date = Date()) -> [(start: Date, end: Date, letter: String, isToday: Bool)] {
+public func dayBuckets(count: Int = 7, now: Date = Date()) -> [(start: Date, end: Date, letter: String, isToday: Bool)] {
     let cal = Calendar.current
     let today = cal.startOfDay(for: now)
     let f = DateFormatter()

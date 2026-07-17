@@ -1,10 +1,14 @@
+#if os(macOS)
 import AppKit
+#elseif os(iOS)
+import UIKit
+#endif
 import AuthenticationServices
 import SwiftUI
 
 // MARK: - App phases
 
-enum AppPhase: Equatable {
+public enum AppPhase: Equatable {
     case onboarding          // no connection configured yet
     case signedOut           // configured, needs Google sign-in
     case checkingAccess      // session exists, verifying allowlist
@@ -16,36 +20,36 @@ enum AppPhase: Equatable {
 
 @MainActor
 @Observable
-final class AppState {
-    var phase: AppPhase = .onboarding
-    var isDemo = false
-    var backend: BrainBackend?
-    var currentUserId: String?
-    var lastError: String?
+public final class AppState {
+    public var phase: AppPhase = .onboarding
+    public var isDemo = false
+    public var backend: BrainBackend?
+    public var currentUserId: String?
+    public var lastError: String?
     /// Drives the branded launch overlay: true on cold boot and whenever a
     /// workspace is loading; always shown for a minimum beat so it reads.
-    var showLaunchOverlay = true
+    public var showLaunchOverlay = true
     /// Set by SnapshotMode to drive RootView's selection programmatically.
-    var forcedSection: Section?
+    public var forcedSection: Section?
 
     // Cached table data — every view reads these; refresh() reloads them.
-    var profiles: [Profile] = []
-    var projects: [Project] = []
-    var entries: [TimeEntry] = []
-    var tasks: [TaskItem] = []
-    var notes: [Note] = []
-    var prompts: [Prompt] = []
-    var knowledge: [KnowledgeItem] = []
-    var agents: [Agent] = []
-    var ideas: [Idea] = []
-    var modules: [AcademyModule] = []
-    var steps: [AcademyStep] = []
-    var progress: [StepProgress] = []
-    var outcomes: [AcademyOutcome] = []
-    var assessments: [OutcomeAssessment] = []
-    var links: [EntityLink] = []
+    public var profiles: [Profile] = []
+    public var projects: [Project] = []
+    public var entries: [TimeEntry] = []
+    public var tasks: [TaskItem] = []
+    public var notes: [Note] = []
+    public var prompts: [Prompt] = []
+    public var knowledge: [KnowledgeItem] = []
+    public var agents: [Agent] = []
+    public var ideas: [Idea] = []
+    public var modules: [AcademyModule] = []
+    public var steps: [AcademyStep] = []
+    public var progress: [StepProgress] = []
+    public var outcomes: [AcademyOutcome] = []
+    public var assessments: [OutcomeAssessment] = []
+    public var links: [EntityLink] = []
 
-    init() {
+    public init() {
         // Reconnect from Keychain on launch; fall back to onboarding.
         if let config = ConfigStore.load(),
            let parsed = URL(string: config.supabaseURL) {
@@ -74,22 +78,22 @@ final class AppState {
 
     // MARK: lookups
 
-    func profile(_ id: String?) -> Profile? {
+    public func profile(_ id: String?) -> Profile? {
         guard let id else { return nil }
         return profiles.first { $0.id == id }
     }
 
-    func project(_ id: String?) -> Project? {
+    public func project(_ id: String?) -> Project? {
         guard let id else { return nil }
         return projects.first { $0.id == id }
     }
 
-    var runningEntries: [TimeEntry] { entries.filter(\.isRunning) }
-    var myRunningEntry: TimeEntry? { runningEntries.first { $0.userId == currentUserId } }
+    public var runningEntries: [TimeEntry] { entries.filter(\.isRunning) }
+    public var myRunningEntry: TimeEntry? { runningEntries.first { $0.userId == currentUserId } }
 
     // MARK: onboarding / auth
 
-    func startDemo() {
+    public func startDemo() {
         backend = DemoBackend()
         isDemo = true
         currentUserId = DemoStore.lukeId
@@ -100,18 +104,18 @@ final class AppState {
     // MARK: invite codes — one pasteable string carrying URL + anon key,
     // so non-technical teammates never see Supabase jargon.
 
-    nonisolated static let inviteCodePrefix = "SBRAIN1:"
+    public nonisolated static let inviteCodePrefix = "SBRAIN1:"
 
     /// Build the shareable code from a URL + anon key. Pure — the `|` join and
     /// base64 encoding are the exact inverse of `decodeInviteCode`.
-    nonisolated static func makeInviteCode(urlString: String, anonKey: String) -> String {
+    public nonisolated static func makeInviteCode(urlString: String, anonKey: String) -> String {
         inviteCodePrefix + Data("\(urlString)|\(anonKey)".utf8).base64EncodedString()
     }
 
     /// Decode a pasted invite code back into its URL + anon key. Pure and
     /// side-effect-free (returns nil for anything that isn't a valid code) so
     /// it can be unit-tested without touching disk or the network.
-    nonisolated static func decodeInviteCode(_ raw: String) -> (urlString: String, anonKey: String)? {
+    public nonisolated static func decodeInviteCode(_ raw: String) -> (urlString: String, anonKey: String)? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.hasPrefix(inviteCodePrefix),
               let data = Data(base64Encoded: String(trimmed.dropFirst(inviteCodePrefix.count))),
@@ -125,14 +129,14 @@ final class AppState {
     /// Outcome of validating a pasted connection: either the parsed values or a
     /// user-facing message explaining what's wrong. (Not `Result` — the message
     /// is guidance to show, not a thrown `Error`.)
-    enum ConnectionValidation {
+    public enum ConnectionValidation {
         case valid(url: URL, urlString: String, anonKey: String)
         case invalid(String)
     }
 
     /// Validate a project URL + anon key. Pure, so the error paths are
     /// unit-tested without constructing a client or writing config.
-    nonisolated static func validateConnection(urlString: String, anonKey: String) -> ConnectionValidation {
+    public nonisolated static func validateConnection(urlString: String, anonKey: String) -> ConnectionValidation {
         let trimmedURL = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedKey = anonKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: trimmedURL), url.scheme == "https" else {
@@ -151,12 +155,12 @@ final class AppState {
     }
 
     /// Generate the shareable code from the stored connection.
-    var inviteCode: String? {
+    public var inviteCode: String? {
         guard let config = ConfigStore.load() else { return nil }
         return Self.makeInviteCode(urlString: config.supabaseURL, anonKey: config.anonKey)
     }
 
-    func connect(inviteCode raw: String) {
+    public func connect(inviteCode raw: String) {
         guard let decoded = Self.decodeInviteCode(raw) else {
             lastError = "That doesn't look like a Sandbox Brain invite code. Ask a teammate to send a fresh one (⋯ menu → Copy team invite code)."
             return
@@ -164,7 +168,7 @@ final class AppState {
         connect(urlString: decoded.urlString, anonKey: decoded.anonKey)
     }
 
-    func connect(urlString: String, anonKey: String) {
+    public func connect(urlString: String, anonKey: String) {
         switch Self.validateConnection(urlString: urlString, anonKey: anonKey) {
         case .invalid(let message):
             lastError = message
@@ -177,7 +181,7 @@ final class AppState {
         }
     }
 
-    func signInWithGoogle() {
+    public func signInWithGoogle() {
         guard let live = backend as? LiveBackend else { return }
         Task {
             do {
@@ -239,7 +243,7 @@ final class AppState {
         }
     }
 
-    func signOut() {
+    public func signOut() {
         let b = backend
         Task { await b?.signOut() }
         if isDemo {
@@ -252,7 +256,7 @@ final class AppState {
         currentUserId = nil
     }
 
-    func resetConnection() {
+    public func resetConnection() {
         Task { await backend?.signOut() }
         ConfigStore.clear()
         backend = nil
@@ -263,7 +267,7 @@ final class AppState {
 
     // MARK: data loading
 
-    func refresh() async {
+    public func refresh() async {
         guard let backend else { return }
         if currentUserId == nil { currentUserId = await backend.currentUserId() }
         do {
@@ -305,7 +309,7 @@ final class AppState {
     /// Run a mutation, then refresh; surfaces failures in `lastError`.
     /// Refreshes on failure too, so optimistic UI updates get rolled back
     /// to the database's truth instead of lingering.
-    func perform(_ op: @escaping () async throws -> Void) {
+    public func perform(_ op: @escaping () async throws -> Void) {
         Task {
             do {
                 try await op()
@@ -322,8 +326,16 @@ final class AppState {
 
 final class WebAuthCoordinator: NSObject, ASWebAuthenticationPresentationContextProviding, Sendable {
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        MainActor.assumeIsolated {
-            NSApplication.shared.keyWindow ?? NSApplication.shared.windows.first ?? ASPresentationAnchor()
+        MainActor.assumeIsolated { () -> ASPresentationAnchor in
+            #if os(macOS)
+            return NSApplication.shared.keyWindow ?? NSApplication.shared.windows.first ?? ASPresentationAnchor()
+            #else
+            // Anchor to the foreground scene's key window (UIKit equivalent of
+            // NSApplication.keyWindow above).
+            let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+            return scene?.keyWindow ?? scene?.windows.first ?? ASPresentationAnchor()
+            #endif
         }
     }
 

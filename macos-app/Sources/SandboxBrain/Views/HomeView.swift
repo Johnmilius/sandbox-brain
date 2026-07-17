@@ -1,3 +1,4 @@
+import SandboxBrainKit
 import SwiftUI
 
 // Home digest — greeting, running timers, 7-day activity, latest team feed.

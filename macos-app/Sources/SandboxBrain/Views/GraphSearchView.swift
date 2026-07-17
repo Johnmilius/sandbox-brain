@@ -1,3 +1,4 @@
+import SandboxBrainKit
 import SwiftUI
 
 // MARK: - Graph (live force-directed simulation, Obsidian-style)
