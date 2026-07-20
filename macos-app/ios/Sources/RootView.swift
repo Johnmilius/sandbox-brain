@@ -49,7 +49,7 @@ struct RootView: View {
         .onChange(of: state.forcedSection) {
             if let forced = state.forcedSection { open(forced) }
         }
-        .tint(Brand.ink)
+        .tint(.blue)  // system blue — standard iOS control tint, adapts to dark mode
     }
 
     /// Route to a section on whichever layout is active.
