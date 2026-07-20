@@ -1,9 +1,8 @@
 import SandboxBrainKit
 import SwiftUI
 
-// More — everything that doesn't fit in the phone tab bar. Projects is real
-// this phase; the rest push "Coming in Phase 2" stubs. Account actions live
-// in the footer (mirrors the Mac sidebar footer menu).
+// More — everything that doesn't fit in the phone tab bar. Account actions
+// live in the footer (mirrors the Mac sidebar footer menu).
 
 struct MoreView: View {
     @Environment(AppState.self) private var state
@@ -18,15 +17,7 @@ struct MoreView: View {
                 ForEach(sections) { s in
                     NavigationLink(value: s) {
                         Label {
-                            HStack {
-                                Text(s.rawValue)
-                                if s != .projects {
-                                    Spacer()
-                                    Text("PHASE 2")
-                                        .font(.system(size: 8, weight: .bold, design: .monospaced))
-                                        .foregroundStyle(Brand.mutedText)
-                                }
-                            }
+                            Text(s.rawValue)
                         } icon: {
                             Image(systemName: s.symbol)
                                 .foregroundStyle(Brand.ink)

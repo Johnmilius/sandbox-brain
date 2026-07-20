@@ -115,8 +115,14 @@ struct RootView: View {
         case .tasks: TasksView()
         case .time: TimeView()
         case .search: SearchView()
-        case .ideas, .prompts, .agents, .notes, .brain, .graph, .academy, .growth:
-            ComingSoonView(section: section)
+        case .ideas: IdeasView()
+        case .prompts: PromptsView()
+        case .agents: AgentsView()
+        case .notes: NotesView()
+        case .brain: BrainView()
+        case .graph: GraphView()
+        case .academy: AcademyView()
+        case .growth: GrowthView()
         }
     }
 
@@ -125,7 +131,7 @@ struct RootView: View {
     private func moreDetail(for section: Section) -> some View {
         switch section {
         case .projects: ProjectsView()
-        default: ComingSoonView(section: section)
+        default: detail(for: section)
         }
     }
 
@@ -191,22 +197,5 @@ struct RootView: View {
         }
         .padding(10)
         .background(.ultraThinMaterial)
-    }
-}
-
-// MARK: - Phase 2 placeholder
-
-struct ComingSoonView: View {
-    let section: Section
-
-    var body: some View {
-        Page(kicker: "Phase 2", title: section.rawValue) {
-            EmptyStateView(symbol: section.symbol,
-                           title: "Coming in Phase 2",
-                           message: "\(section.rawValue) is on the Mac app today and lands here next.")
-        }
-        .navigationTitle(section.rawValue)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
     }
 }
