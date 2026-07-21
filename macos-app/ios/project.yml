@@ -20,6 +20,13 @@ targets:
     platform: iOS
     sources:
       - Sources
+      # Icon Composer bundle shared with the Mac app. `type: file` keeps the
+      # .icon directory as a single file reference (not a group) so Xcode 26's
+      # build system compiles it natively via actool — Liquid Glass treatment
+      # comes free. Pairs with ASSETCATALOG_COMPILER_APPICON_NAME below.
+      - path: ../SandboxBrain.icon
+        type: file
+        buildPhase: resources
     dependencies:
       - package: SandboxBrain
         product: SandboxBrainKit
@@ -32,6 +39,9 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
+        # Matches the SandboxBrain.icon bundle name (minus extension); actool
+        # emits the compiled icon + CFBundleIconName into the merged Info.plist.
+        ASSETCATALOG_COMPILER_APPICON_NAME: SandboxBrain
     info:
       path: Info.plist
       properties:

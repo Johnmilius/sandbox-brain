@@ -10,6 +10,7 @@ struct ProjectsView: View {
     @State private var editing: Project?
     @State private var creating = false
     @State private var timerTick = Date()
+    @State private var isVisible = false
 
     // @State so the publisher survives re-renders (hard-won Mac lesson).
     @State private var clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -39,6 +40,17 @@ struct ProjectsView: View {
         .navigationTitle("Projects")
         .navigationBarTitleDisplayMode(.inline)
         .onReceive(clock) { timerTick = $0 }
+        .onAppear { isVisible = true }
+        .onDisappear { isVisible = false }
+        // Haptic on timer start/stop from the card chips — same trigger as
+        // TimeView (the confirmed myRunningEntry transition, not the tap), with
+        // the same visibility guard so only whichever screen is frontmost fires.
+        .sensoryFeedback(trigger: state.myRunningEntry?.id) { oldValue, newValue in
+            guard isVisible else { return nil }
+            if oldValue == nil, newValue != nil { return .impact }   // started
+            if oldValue != nil, newValue == nil { return .success }  // stopped
+            return nil
+        }
         .sheet(item: $editing) {
             ProjectSheet(project: $0)
                 .presentationDetents([.medium, .large])

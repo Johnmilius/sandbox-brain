@@ -12,6 +12,9 @@ struct TasksView: View {
     @State private var creating = false
     @State private var projectFilter = ""
     @State private var dropTarget: TaskStatus?
+    /// Bumped only when an optimistic move actually mutates a task's status,
+    /// so failed/no-op drops don't buzz.
+    @State private var landedDrops = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -29,6 +32,7 @@ struct TasksView: View {
         }
         .background(Brand.cream)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .sensoryFeedback(.impact(weight: .light), trigger: landedDrops)
         .sheet(item: $editing) {
             TaskSheet(task: $0)
                 .presentationDetents([.large])
@@ -163,6 +167,7 @@ struct TasksView: View {
         updated.updatedAt = isoNow()
         if let index = state.tasks.firstIndex(where: { $0.id == task.id }) {
             withAnimation(.snappy) { state.tasks[index] = updated }
+            landedDrops += 1  // haptic fires off the mutation, not the gesture
         }
         state.perform { [backend = state.backend] in
             try await backend?.updateTask(updated)

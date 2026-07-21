@@ -10,6 +10,7 @@ struct TimeView: View {
     @State private var timerProject: String = ""
     @State private var showingManual = false
     @State private var timerTick = Date()
+    @State private var isVisible = false
 
     // @State so the publisher survives re-renders — a `let` publisher dies
     // when the parent re-renders every second, freezing the clock at 00:00.
@@ -45,6 +46,20 @@ struct TimeView: View {
         }
         .toolbarBackground(.hidden, for: .navigationBar)
         .onReceive(clock) { timerTick = $0 }
+        .onAppear { isVisible = true }
+        .onDisappear { isVisible = false }
+        // Haptic on timer start/stop, keyed off the backend-confirmed state
+        // transition (myRunningEntry) rather than button taps — so it buzzes
+        // exactly once, when the change is real. Visibility-guarded because on
+        // iPhone this view stays alive in the tab hierarchy while ProjectsView
+        // (which watches the same transition) is frontmost; only the visible
+        // screen should fire.
+        .sensoryFeedback(trigger: state.myRunningEntry?.id) { oldValue, newValue in
+            guard isVisible else { return nil }
+            if oldValue == nil, newValue != nil { return .impact }   // started
+            if oldValue != nil, newValue == nil { return .success }  // stopped
+            return nil
+        }
         .sheet(isPresented: $showingManual) {
             ManualEntrySheet()
                 .presentationDetents([.medium, .large])
