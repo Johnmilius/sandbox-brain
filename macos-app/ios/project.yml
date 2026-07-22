@@ -34,6 +34,11 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sandboxbrain.ios
         PRODUCT_NAME: Sandbox Brain
+        # Free "Personal Team" signing, baked in so it survives xcodegen regens
+        # (Luke's Apple ID team). Automatic signing lets Xcode mint/refresh the
+        # provisioning profile and register the device on first device build.
+        DEVELOPMENT_TEAM: 2NHC34VHN3
+        CODE_SIGN_STYLE: Automatic
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"        # iPhone + iPad (split view on pad)
         GENERATE_INFOPLIST_FILE: NO
