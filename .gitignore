@@ -45,6 +45,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# macOS app (Xcode/SwiftPM local state — real source lives on feature/macos-app,
+# but this can show up locally regardless of which branch is checked out)
+macos-app/.swiftpm/
+macos-app/.build/
+macos-app/build/
+*.xcuserstate
+
 # graphify (local dev tool: knowledge graph for AI assistants — not part of the app)
 graphify-out/
 .graphifyignore
