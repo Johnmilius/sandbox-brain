@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PromptCard } from "@/components/prompts/prompt-card";
 import { PromptFilters } from "@/components/prompts/prompt-filters";
 import { PromptFormDialog } from "@/components/prompts/prompt-form-dialog";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import { getTagsByEntity } from "@/lib/tags";
 
 export default async function PromptsPage({
@@ -15,10 +15,7 @@ export default async function PromptsPage({
 }) {
   const { q, tool, tag, favorite } = await searchParams;
   const favoriteOnly = favorite === "1";
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   let query = supabase

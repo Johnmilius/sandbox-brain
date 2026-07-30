@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import { relativeTime } from "@/lib/home-digest";
 import { noteSnippet, noteTagColor } from "@/lib/note-tags";
 import { NotesRail, type NoteRailItem } from "@/components/notes/notes-rail";
@@ -13,10 +13,7 @@ export default async function NotesLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
 
   let items: NoteRailItem[] = [];
   if (user) {

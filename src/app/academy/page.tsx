@@ -17,13 +17,10 @@ import {
   type OutcomeRowData,
 } from "@/components/academy/outcomes-dashboard";
 import { TIER_LABELS } from "@/components/academy/assessment-dialog";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 
 export default async function AcademyPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const [

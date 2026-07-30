@@ -4,7 +4,7 @@ import { nodeKey, urlFor, type ObjectRef } from "@sandbox-brain/core";
 import { EmptyState } from "@/components/empty-state";
 import { GraphExplorer } from "@/components/graph/graph-explorer";
 import type { GraphEdge, GraphNode } from "@/components/graph/graph-view";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 
 /** nodeKey + urlFor from the shared object contract (@sandbox-brain/core). */
 function node(ref: ObjectRef): { id: string; url: string | null } {
@@ -12,10 +12,7 @@ function node(ref: ObjectRef): { id: string; url: string | null } {
 }
 
 export default async function GraphPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const [

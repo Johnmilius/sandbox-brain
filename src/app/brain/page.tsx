@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { KnowledgeCard } from "@/components/brain/knowledge-card";
 import { KnowledgeFormDialog } from "@/components/brain/knowledge-form-dialog";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import { relativeTime } from "@/lib/home-digest";
 import { getTagsByEntity } from "@/lib/tags";
 import type { KnowledgeKind } from "@/lib/database.types";
@@ -40,10 +40,7 @@ const EXAMPLE_QUESTIONS = [
 const STALE_AFTER_DAYS = 60;
 
 export default async function BrainPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const [itemsRes, projectsRes, tagsRes, itemTags, linksRes, profilesRes] =

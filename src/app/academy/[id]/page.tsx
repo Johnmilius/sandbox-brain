@@ -8,7 +8,7 @@ import {
   type MemberProgress,
 } from "@/components/academy/module-progress-bars";
 import { StepRow } from "@/components/academy/step-row";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 
 export default async function AcademyModulePage({
   params,
@@ -16,10 +16,7 @@ export default async function AcademyModulePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const [moduleRes, stepsRes, profilesRes, moduleOutcomesRes, outcomesRes] =

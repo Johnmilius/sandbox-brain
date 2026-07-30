@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import { relativeTime } from "@/lib/home-digest";
 import {
   IdeasBrowser,
@@ -8,10 +8,7 @@ import {
 import { IDEA_ACCENT } from "@/components/ideas/idea-meta";
 
 export default async function IdeasPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const [ideasRes, projectsRes, linksRes] = await Promise.all([

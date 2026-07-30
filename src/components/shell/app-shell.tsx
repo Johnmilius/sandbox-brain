@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import { daysAgoISO, entryDurationMs } from "@/lib/format";
 import { Sidebar, type NavBadges } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
@@ -15,10 +15,7 @@ function initialsFor(name: string, email: string): string {
 }
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
 
   // AppShell is only rendered once layout.tsx has confirmed a session
   // exists, but guard defensively in case that check ever drifts.

@@ -20,7 +20,7 @@ import {
   type SessionActivityItem,
   type SessionEntry,
 } from "@/components/time/session-table";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import {
   daysAgoISO,
   entryDurationMs,
@@ -34,10 +34,7 @@ export default async function TimePage({
   searchParams: Promise<{ who?: string }>;
 }) {
   const { who } = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const weekAgo = daysAgoISO(7);

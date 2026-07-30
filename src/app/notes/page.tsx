@@ -3,7 +3,7 @@ import { NotebookPen, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { NewNoteDialog } from "@/components/notes/new-note-dialog";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 
 /**
  * Notes index — the design is a 3-pane screen with a note always open, so
@@ -11,10 +11,7 @@ import { createClient } from "@/lib/supabase/server";
  * state renders in the editor pane when there's nothing yet.
  */
 export default async function NotesPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const { data: latest } = await supabase
