@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-@testable import SandboxBrain
+@testable import SandboxBrainKit
 
 // The pure invite-code + connection-validation helpers extracted from AppState.
 // No disk or network: makeInviteCode/decodeInviteCode are inverses, and

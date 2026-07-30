@@ -1,3 +1,4 @@
+import SandboxBrainKit
 import SwiftUI
 
 // MARK: - Brain (knowledge items by kind)

@@ -1,9 +1,10 @@
 import SandboxBrainKit
 import SwiftUI
 
-// First-run flow, written for the least technical teammate: paste one invite
-// code, sign in with Google, done. Manual URL/key entry hides under Advanced.
-// Credentials land in the macOS Keychain — never on disk, never in the repo.
+// First-run flow — same structure as the Mac app (welcome → invite code →
+// Google sign-in → allowlist check, demo button underneath), resized for a
+// phone: full-width cards in a scroll view so the keyboard never clips it.
+// All the actual auth lives in the kit's AppState; this is just the shell.
 
 struct OnboardingView: View {
     @Environment(AppState.self) private var state
@@ -17,34 +18,41 @@ struct OnboardingView: View {
         ZStack {
             Brand.cream.ignoresSafeArea()
 
-            VStack(spacing: 26) {
-                header
+            ScrollView {
+                VStack(spacing: 26) {
+                    header
+                        .padding(.top, 40)
 
-                Group {
-                    switch state.phase {
-                    case .onboarding: connectCard
-                    case .signedOut: signInCard
-                    case .checkingAccess: checkingCard
-                    case .denied(let email): deniedCard(email: email)
-                    case .ready: EmptyView()
+                    Group {
+                        switch state.phase {
+                        case .onboarding: connectCard
+                        case .signedOut: signInCard
+                        case .checkingAccess: checkingCard
+                        case .denied(let email): deniedCard(email: email)
+                        case .ready: EmptyView()
+                        }
+                    }
+
+                    if state.phase == .onboarding || state.phase == .signedOut {
+                        Button {
+                            state.startDemo()
+                        } label: {
+                            Text("Just looking around? ")
+                                .foregroundStyle(Brand.mutedText)
+                            + Text("Try the demo")
+                                .foregroundStyle(Brand.purple)
+                                .fontWeight(.medium)
+                        }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 14))
+                        .padding(.bottom, 24)
                     }
                 }
-                .frame(width: 460)
-
-                if state.phase == .onboarding || state.phase == .signedOut {
-                    Button {
-                        state.startDemo()
-                    } label: {
-                        Text("Just looking around? ")
-                            .foregroundStyle(Brand.mutedText)
-                        + Text("Try the demo")
-                            .foregroundStyle(Brand.purple)
-                            .fontWeight(.medium)
-                    }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 13))
-                }
+                .padding(.horizontal, 20)
+                .frame(maxWidth: 460)
+                .frame(maxWidth: .infinity)
             }
+            .scrollBounceBehavior(.basedOnSize)
             .animation(.snappy, value: state.phase)
         }
     }
@@ -63,12 +71,15 @@ struct OnboardingView: View {
             Text("Your team's shared memory — time, tasks, notes, and ideas in one place.")
                 .font(.system(size: 13))
                 .foregroundStyle(Brand.mutedText)
+                .multilineTextAlignment(.center)
         }
     }
 
     private func stepLabel(_ text: String) -> some View {
         HStack(spacing: 8) {
             MonoLabel(text: text)
+                .lineLimit(1)
+                .fixedSize()
             Rectangle().fill(Brand.border).frame(height: 1)
         }
     }
@@ -91,17 +102,19 @@ struct OnboardingView: View {
                     TextField("Paste your invite code…", text: $inviteCode)
                         .textFieldStyle(.plain)
                         .font(.system(size: 13, design: .monospaced))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                         .onSubmit(joinWithCode)
                 }
                 .padding(12)
-                .background(.white, in: .rect(cornerRadius: 10))
+                .background(Brand.surface, in: .rect(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Brand.border, lineWidth: 1))
 
                 Button(action: joinWithCode) {
                     Text("Join team")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 8)
                 }
                 .buttonStyle(.glassProminent)
                 .tint(Brand.inkSolid)
@@ -116,6 +129,9 @@ struct OnboardingView: View {
                             MonoLabel(text: "Project URL")
                             TextField("https://xyzcompany.supabase.co", text: $urlString)
                                 .textFieldStyle(.roundedBorder)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .keyboardType(.URL)
                         }
                         VStack(alignment: .leading, spacing: 4) {
                             MonoLabel(text: "Anon (public) key")
@@ -134,6 +150,7 @@ struct OnboardingView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Brand.mutedText)
                 }
+                .tint(Brand.mutedText)
             }
         }
     }
@@ -169,32 +186,28 @@ struct OnboardingView: View {
                     HStack(spacing: 8) {
                         GoogleGMark()
                         Text("Sign in with Google")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 15, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 5)
+                    .padding(.vertical, 8)
                 }
                 .buttonStyle(.glassProminent)
                 .tint(Brand.inkSolid)
 
                 if let code = state.inviteCode {
                     Divider()
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Inviting a teammate?")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(Brand.ink)
-                            Text("Send them the app and this code — that's all they need.")
-                                .font(.system(size: 11))
-                                .foregroundStyle(Brand.mutedText)
-                        }
-                        Spacer()
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Inviting a teammate?")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Brand.ink)
+                        Text("Send them the app and this code — that's all they need.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Brand.mutedText)
                         Button {
-                            NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(code, forType: .string)
+                            UIPasteboard.general.string = code
                         } label: {
                             Label("Copy invite code", systemImage: "doc.on.doc")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 12, weight: .medium))
                         }
                         .buttonStyle(.glass)
                     }

@@ -1,40 +1,10 @@
+import SandboxBrainKit
 import SwiftUI
 
-enum Section: String, CaseIterable, Identifiable {
-    case home = "Home"
-    case projects = "Projects"
-    case ideas = "Ideas"
-    case tasks = "Tasks"
-    case time = "Time"
-    case prompts = "Prompts"
-    case agents = "Agents"
-    case notes = "Notes"
-    case brain = "Brain"
-    case graph = "Graph"
-    case academy = "Academy"
-    case growth = "Growth"
-    case search = "Search"
-
-    var id: String { rawValue }
-
-    var symbol: String {
-        switch self {
-        case .home: "house"
-        case .projects: "square.grid.2x2"
-        case .ideas: "lightbulb"
-        case .tasks: "square.split.2x1"
-        case .time: "clock"
-        case .prompts: "quote.opening"
-        case .agents: "sparkles"
-        case .notes: "pencil"
-        case .brain: "brain"
-        case .graph: "point.3.connected.trianglepath.dotted"
-        case .academy: "graduationcap"
-        case .growth: "chart.line.uptrend.xyaxis"
-        case .search: "magnifyingglass"
-        }
-    }
-}
+// The nav enum moved into the kit (AppState.forcedSection is typed on it).
+// This module-level alias keeps unqualified `Section` resolving to ours
+// instead of colliding with SwiftUI.Section across all view files.
+typealias Section = SandboxBrainKit.Section
 
 struct RootView: View {
     @Environment(AppState.self) private var state

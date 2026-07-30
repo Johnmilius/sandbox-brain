@@ -2,8 +2,8 @@ import SandboxBrainKit
 import SwiftUI
 
 // Branded boot screen — covers the window while the first data load runs.
-// Entrance: the ink squircle springs in, the brain draws itself on (macOS 26
-// symbol draw animation), title + dots settle in, then a calm breathe loop.
+// Same choreography as the Mac app: ink squircle springs in, the brain draws
+// itself on, title + dots settle, then a calm breathe loop.
 
 struct LaunchOverlay: View {
     @State private var squircleIn = false
@@ -20,8 +20,6 @@ struct LaunchOverlay: View {
 
             VStack(spacing: 20) {
                 ZStack {
-                    // Deliberately OPPOSITE of the system theme (unlike the
-                    // Dock icon) so the mark stands out against the page.
                     RoundedRectangle(cornerRadius: 21)
                         .fill(Brand.ink)
                         .frame(width: 84, height: 84)
@@ -66,7 +64,6 @@ struct LaunchOverlay: View {
             withAnimation(.easeOut(duration: 0.5).delay(0.55)) {
                 textIn = true
             }
-            // Hand off to the calm breathe loop once the entrance lands.
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
                 withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
                     breathe = true

@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-@testable import SandboxBrain
+@testable import SandboxBrainKit
 
 // Pure formatting / date helpers ported from the web app (format.ts, growth.ts,
 // home-digest.ts). Deterministic: every helper takes an injectable `now`, and

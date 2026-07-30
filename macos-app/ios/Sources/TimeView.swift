@@ -2,17 +2,18 @@ import SandboxBrainKit
 import SwiftUI
 
 // Time — start/stop timers, weekly per-person + per-project totals, entry log.
-// Ports src/app/time/page.tsx.
+// Port of the Mac TimeView; phone layout: cards stack, manual-entry sheet
+// uses presentation detents with its own scroll.
 
 struct TimeView: View {
     @Environment(AppState.self) private var state
     @State private var timerProject: String = ""
     @State private var showingManual = false
     @State private var timerTick = Date()
+    @State private var isVisible = false
 
-    // @State so the publisher survives re-renders: the sidebar's ticking clock
-    // reconstructs this view every second, and a `let` publisher would be
-    // replaced before ever firing — freezing the big timer at 00:00.
+    // @State so the publisher survives re-renders — a `let` publisher dies
+    // when the parent re-renders every second, freezing the clock at 00:00.
     @State private var clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -25,6 +26,10 @@ struct TimeView: View {
             GlassEffectContainer(spacing: 14) {
                 VStack(alignment: .leading, spacing: 14) {
                     timerCard
+                    // ViewThatFits (not a size-class branch): iPad portrait's
+                    // detail column is regular-width but only ~500pt, where a
+                    // forced two-up row overflows and the ScrollView clips
+                    // both edges. Measuring actual width fixes every device.
                     ViewThatFits(in: .horizontal) {
                         HStack(alignment: .top, spacing: 14) {
                             peopleCard.frame(minWidth: 320)
@@ -39,8 +44,27 @@ struct TimeView: View {
                 }
             }
         }
+        .toolbarBackground(.hidden, for: .navigationBar)
         .onReceive(clock) { timerTick = $0 }
-        .sheet(isPresented: $showingManual) { ManualEntrySheet() }
+        .onAppear { isVisible = true }
+        .onDisappear { isVisible = false }
+        // Haptic on timer start/stop, keyed off the backend-confirmed state
+        // transition (myRunningEntry) rather than button taps — so it buzzes
+        // exactly once, when the change is real. Visibility-guarded because on
+        // iPhone this view stays alive in the tab hierarchy while ProjectsView
+        // (which watches the same transition) is frontmost; only the visible
+        // screen should fire.
+        .sensoryFeedback(trigger: state.myRunningEntry?.id) { oldValue, newValue in
+            guard isVisible else { return nil }
+            if oldValue == nil, newValue != nil { return .impact }   // started
+            if oldValue != nil, newValue == nil { return .success }  // stopped
+            return nil
+        }
+        .sheet(isPresented: $showingManual) {
+            ManualEntrySheet()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private var weekEntries: [TimeEntry] {
@@ -48,49 +72,59 @@ struct TimeView: View {
         return state.entries.filter { parseISO($0.startedAt) >= start || $0.isRunning }
     }
 
-    // MARK: timer
+    // MARK: timer — the phase-1 must-have interaction
 
     private var timerCard: some View {
         GlassCard {
-            HStack(spacing: 12) {
-                if let running = state.myRunningEntry {
-                    Circle().fill(Brand.green).frame(width: 8, height: 8)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(state.project(running.projectId)?.name ?? "Running")
-                            .font(.system(size: 14, weight: .semibold))
-                        MonoLabel(text: "Timer running")
+            if let running = state.myRunningEntry {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 10) {
+                        Circle().fill(Brand.green).frame(width: 8, height: 8)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(state.project(running.projectId)?.name ?? "Running")
+                                .font(.system(size: 15, weight: .semibold))
+                            MonoLabel(text: "Timer running")
+                        }
+                        Spacer()
+                        Text(formatClock(ms: running.durationMs(now: timerTick)))
+                            .font(.system(size: 30, weight: .medium, design: .monospaced))
+                            .contentTransition(.numericText())
                     }
-                    Spacer()
-                    Text(formatClock(ms: running.durationMs(now: timerTick)))
-                        .font(.system(size: 26, weight: .medium, design: .monospaced))
-                        .contentTransition(.numericText())
                     Button {
                         state.perform { [id = running.id, backend = state.backend] in
                             try await backend?.stopTimer(entryId: id)
                         }
                     } label: {
-                        Label("Stop", systemImage: "stop.fill")
+                        Label("Stop timer", systemImage: "stop.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
                     }
                     .buttonStyle(.glassProminent)
                     .tint(.red)
-                } else {
-                    Image(systemName: "timer")
-                        .foregroundStyle(Brand.mutedText)
-                    Picker("Project", selection: $timerProject) {
-                        Text("Pick a project…").tag("")
-                        ForEach(state.projects.filter { $0.status == .active }) { p in
-                            Text(p.name).tag(p.id)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "timer")
+                            .foregroundStyle(Brand.mutedText)
+                        Picker("Project", selection: $timerProject) {
+                            Text("Pick a project…").tag("")
+                            ForEach(state.projects.filter { $0.status == .active }) { p in
+                                Text(p.name).tag(p.id)
+                            }
                         }
+                        .pickerStyle(.menu)
+                        .tint(Brand.ink)
+                        Spacer()
                     }
-                    .labelsHidden()
-                    .frame(maxWidth: 280)
-                    Spacer()
                     Button {
                         state.perform { [projectId = timerProject, backend = state.backend] in
                             try await backend?.startTimer(projectId: projectId, notes: nil)
                         }
                     } label: {
                         Label("Start timer", systemImage: "play.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
                     }
                     .buttonStyle(.glassProminent)
                     .tint(Brand.inkSolid)
@@ -170,27 +204,33 @@ struct TimeView: View {
         }
     }
 
-    // MARK: entries log
+    // MARK: entries log — two-line rows so they breathe on a phone
 
     private var entriesCard: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 MonoLabel(text: "Entries")
                 let sorted = state.entries.sorted { parseISO($0.startedAt) > parseISO($1.startedAt) }.prefix(30)
                 if sorted.isEmpty {
                     EmptyStateView(symbol: "clock", title: "No entries", message: "Start a timer or log time manually.")
                 }
                 ForEach(Array(sorted)) { entry in
-                    HStack(spacing: 10) {
+                    HStack(alignment: .top, spacing: 10) {
                         AvatarView(profile: state.profile(entry.userId), size: 22,
                                    color: Brand.identity(entry.userId, profiles: state.profiles))
-                        VStack(alignment: .leading, spacing: 1) {
+                        VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 6) {
                                 Text(state.project(entry.projectId)?.name ?? "Unknown")
                                     .font(.system(size: 13, weight: .medium))
+                                    .lineLimit(1)
                                 if entry.isRunning {
                                     StatusPill(label: "running", color: Brand.green)
                                 }
+                            }
+                            HStack(spacing: 6) {
+                                Text(parseISO(entry.startedAt).formatted(date: .abbreviated, time: .shortened))
+                                    .font(.system(size: 11, design: .monospaced))
+                                    .foregroundStyle(Brand.mutedText)
                                 StatusPill(label: entry.source.rawValue, color: Brand.mutedText)
                             }
                             if let notes = entry.notes, !notes.isEmpty {
@@ -198,22 +238,21 @@ struct TimeView: View {
                             }
                         }
                         Spacer()
-                        Text(parseISO(entry.startedAt).formatted(date: .abbreviated, time: .shortened))
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(Brand.mutedText)
                         Text(formatHours(ms: entry.durationMs(now: timerTick)))
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
-                            .frame(width: 48, alignment: .trailing)
-                        Button {
-                            state.perform { [id = entry.id, backend = state.backend] in
-                                try await backend?.deleteTimeEntry(id: id)
+                        Menu {
+                            Button("Delete entry", role: .destructive) {
+                                state.perform { [id = entry.id, backend = state.backend] in
+                                    try await backend?.deleteTimeEntry(id: id)
+                                }
                             }
                         } label: {
-                            Image(systemName: "trash").font(.system(size: 10))
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Brand.mutedText)
+                                .frame(width: 24, height: 24)
+                                .contentShape(.rect)
                         }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Brand.mutedText)
-                        .help("Delete entry")
                     }
                     .padding(.vertical, 2)
                 }
@@ -222,7 +261,7 @@ struct TimeView: View {
     }
 }
 
-// MARK: - Manual entry sheet
+// MARK: - Manual entry sheet (detents + internal scroll)
 
 struct ManualEntrySheet: View {
     @Environment(AppState.self) private var state
@@ -234,32 +273,32 @@ struct ManualEntrySheet: View {
     @State private var notes = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Log time")
-                .font(.system(size: 20, weight: .medium, design: .serif))
-            Picker("Project", selection: $projectId) {
-                Text("Pick a project…").tag("")
-                ForEach(state.projects) { p in Text(p.name).tag(p.id) }
-            }
-            DatePicker("Started", selection: $start)
-            DatePicker("Ended", selection: $end)
-            TextField("Notes (optional)", text: $notes)
-                .textFieldStyle(.roundedBorder)
-            HStack {
-                Spacer()
-                Button("Cancel") { dismiss() }
-                Button("Save") {
-                    state.perform { [projectId, start, end, notes, backend = state.backend] in
-                        try await backend?.addManualEntry(projectId: projectId, start: start, end: end, notes: notes.isEmpty ? nil : notes)
-                    }
-                    dismiss()
+        NavigationStack {
+            Form {
+                Picker("Project", selection: $projectId) {
+                    Text("Pick a project…").tag("")
+                    ForEach(state.projects) { p in Text(p.name).tag(p.id) }
                 }
-                .buttonStyle(.glassProminent)
-                .tint(Brand.inkSolid)
-                .disabled(projectId.isEmpty || end <= start)
+                DatePicker("Started", selection: $start)
+                DatePicker("Ended", selection: $end)
+                TextField("Notes (optional)", text: $notes)
+            }
+            .navigationTitle("Log time")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        state.perform { [projectId, start, end, notes, backend = state.backend] in
+                            try await backend?.addManualEntry(projectId: projectId, start: start, end: end, notes: notes.isEmpty ? nil : notes)
+                        }
+                        dismiss()
+                    }
+                    .disabled(projectId.isEmpty || end <= start)
+                }
             }
         }
-        .padding(22)
-        .frame(width: 420)
     }
 }

@@ -1,7 +1,12 @@
 import SandboxBrainKit
 import SwiftUI
 
-// MARK: - Graph (live force-directed simulation, Obsidian-style)
+// Graph — Phase 2 port of the Mac app's Graph section (live force-directed
+// simulation, Obsidian-style). The Canvas drawing and physics are shared
+// verbatim; interactions are re-mapped for touch:
+//   Mac hover-highlight      → tap a node to highlight (tap again / empty to clear)
+//   Mac floating force panel → bottom sheet with presentation detents
+//   Drag node to rearrange + fling, drag empty space to pan, pinch to zoom.
 
 @MainActor
 @Observable
@@ -20,7 +25,7 @@ final class GraphSim {
     var edges: [(Int, Int)] = []          // indices into nodes
     var alpha: Double = 0                  // simulation "heat"
     var draggedIndex: Int?
-    var size: CGSize = CGSize(width: 800, height: 520)
+    var size: CGSize = CGSize(width: 390, height: 480)
 
     // Tunable forces (the Obsidian-style sliders bind to these).
     var repulsion: Double = 1400           // push between all nodes
@@ -133,13 +138,22 @@ final class GraphSim {
         }
         return best?.0
     }
+
+    func resetForces() {
+        repulsion = 1400
+        linkStrength = 0.06
+        linkDistance = 95
+        centerStrength = 0.012
+        nodeScale = 1
+        reheat(0.5)
+    }
 }
 
 struct GraphView: View {
     @Environment(AppState.self) private var state
     @State private var sim = GraphSim()
-    @State private var hoveredId: String?
-    @State private var showControls = false
+    @State private var highlightedId: String?
+    @State private var showForces = false
 
     // View transform: screen = world * zoom + pan
     @State private var zoom: CGFloat = 1
@@ -148,20 +162,22 @@ struct GraphView: View {
     @State private var zoomAtPinchStart: CGFloat?
     @State private var canvasSize: CGSize = .zero
 
+    // @State so the publisher survives re-renders — a `let` publisher would be
+    // replaced on every parent re-render and the sim would freeze (same
+    // hard-won lesson as RootView/TimeView).
     @State private var clock = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
 
     var body: some View {
         Page(kicker: "Graph", title: "How it all connects", trailing: AnyView(
-            Button { withAnimation(.snappy) { showControls.toggle() } } label: {
+            Button { showForces = true } label: {
                 Label("Forces", systemImage: "slider.horizontal.3")
             }
             .buttonStyle(.glass)
         )) {
             GlassCard(padding: 0) {
                 GeometryReader { geo in
-                    ZStack(alignment: .topTrailing) {
+                    ZStack {
                         canvas
-                        if showControls { controlPanel.padding(10) }
                         zoomControls
                     }
                     .onAppear {
@@ -175,14 +191,22 @@ struct GraphView: View {
                         sim.reheat(0.3)
                     }
                 }
-                .frame(height: 540)
+                .frame(height: 480)
                 .clipShape(.rect(cornerRadius: 16))
             }
             legend
         }
+        .navigationTitle("Graph")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .onReceive(clock) { _ in sim.step() }
         .onChange(of: state.links.count) { rebuild() }
         .onChange(of: state.notes.count) { rebuild() }
+        .sheet(isPresented: $showForces) {
+            ForceControlsSheet(sim: sim)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: transform helpers
@@ -219,15 +243,15 @@ struct GraphView: View {
                 var path = SwiftUI.Path()
                 path.move(to: a)
                 path.addLine(to: b)
-                let active = hoveredId != nil && (sim.nodes[i].id == hoveredId || sim.nodes[j].id == hoveredId)
+                let active = highlightedId != nil && (sim.nodes[i].id == highlightedId || sim.nodes[j].id == highlightedId)
                 context.stroke(path, with: .color(Brand.mutedText.opacity(active ? 0.7 : 0.28)), lineWidth: (active ? 1.5 : 1) / zoom)
             }
             // Nodes + labels
             for node in sim.nodes {
                 let r = sim.radius(of: node)
                 let rect = CGRect(x: node.position.x - r, y: node.position.y - r, width: r * 2, height: r * 2)
-                let isHovered = node.id == hoveredId
-                if isHovered {
+                let isHighlighted = node.id == highlightedId
+                if isHighlighted {
                     context.fill(.init(ellipseIn: rect.insetBy(dx: -4, dy: -4)), with: .color(color(for: node.type).opacity(0.25)))
                 }
                 context.fill(.init(ellipseIn: rect), with: .color(color(for: node.type)))
@@ -235,35 +259,30 @@ struct GraphView: View {
                 // (Obsidian-style); hubs with more links hold theirs longer.
                 let zoomFade = (zoom - 0.55) / 0.4
                 let hubBonus = CGFloat(node.degree) * 0.06
-                let labelOpacity = isHovered ? 1 : min(max(zoomFade + hubBonus, 0), 1) * 0.75
+                let labelOpacity = isHighlighted ? 1 : min(max(zoomFade + hubBonus, 0), 1) * 0.75
                 if labelOpacity > 0.02 {
                     let label = Text(node.label)
-                        .font(.system(size: isHovered ? 11 : 9, weight: isHovered ? .semibold : .medium))
+                        .font(.system(size: isHighlighted ? 11 : 9, weight: isHighlighted ? .semibold : .medium))
                         .foregroundStyle(Brand.ink.opacity(labelOpacity))
                     context.draw(context.resolve(label), at: CGPoint(x: node.position.x, y: node.position.y + r + 9), anchor: .top)
                 }
             }
         }
         .background(Brand.cream.opacity(0.4))
-        .gesture(dragGesture)
+        // High priority so the canvas beats the page ScrollView for touches
+        // that start on it (otherwise vertical node-drags scroll the page).
+        .highPriorityGesture(dragGesture)
         .simultaneousGesture(pinchGesture)
-        .onContinuousHover { phase in
-            switch phase {
-            case .active(let point):
-                hoveredId = sim.nearestNode(to: toWorld(point), within: 26 / zoom).map { sim.nodes[$0].id }
-            case .ended:
-                hoveredId = nil
-            }
-        }
     }
 
-    // MARK: gestures — drag a node, or drag empty space to pan
+    // MARK: gestures — tap to highlight, drag a node, drag empty space to pan
 
     private var dragGesture: some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
                 if sim.draggedIndex == nil && panAtDragStart == nil {
-                    if let hit = sim.nearestNode(to: toWorld(value.startLocation), within: 26 / zoom) {
+                    // 30pt hit slop (vs 26 on Mac) — fingers are blunter than cursors.
+                    if let hit = sim.nearestNode(to: toWorld(value.startLocation), within: 30 / zoom) {
                         sim.draggedIndex = hit
                     } else {
                         panAtDragStart = pan
@@ -278,7 +297,17 @@ struct GraphView: View {
                 }
             }
             .onEnded { value in
-                if let i = sim.draggedIndex {
+                let moved = hypot(value.translation.width, value.translation.height)
+                if moved < 8 {
+                    // Barely moved → it's a tap. Mac's hover-highlight becomes
+                    // tap-to-toggle; tapping empty space clears the highlight.
+                    if let hit = sim.nearestNode(to: toWorld(value.location), within: 30 / zoom) {
+                        let id = sim.nodes[hit].id
+                        highlightedId = highlightedId == id ? nil : id
+                    } else {
+                        highlightedId = nil
+                    }
+                } else if let i = sim.draggedIndex {
                     // Fling: hand the drag velocity to the sim (in world units).
                     sim.nodes[i].velocity = CGVector(
                         dx: (value.predictedEndLocation.x - value.location.x) / zoom,
@@ -309,58 +338,13 @@ struct GraphView: View {
             Button {
                 withAnimation(.snappy) { zoom = 1; pan = .zero }
             } label: { Image(systemName: "scope") }
-                .help("Reset view")
         }
         .buttonStyle(.glass)
         .padding(10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
     }
 
-    private var controlPanel: some View {
-        FlatCard(padding: 14) {
-            VStack(alignment: .leading, spacing: 10) {
-                MonoLabel(text: "Forces")
-                forceSlider("Push", value: Binding(
-                    get: { sim.repulsion },
-                    set: { sim.repulsion = $0; sim.reheat(0.35) }
-                ), range: 100...6000)
-                forceSlider("Pull", value: Binding(
-                    get: { sim.linkStrength },
-                    set: { sim.linkStrength = $0; sim.reheat(0.35) }
-                ), range: 0.005...0.2)
-                forceSlider("Link distance", value: Binding(
-                    get: { sim.linkDistance },
-                    set: { sim.linkDistance = $0; sim.reheat(0.35) }
-                ), range: 30...260)
-                forceSlider("Gravity", value: Binding(
-                    get: { sim.centerStrength },
-                    set: { sim.centerStrength = $0; sim.reheat(0.35) }
-                ), range: 0...0.06)
-                forceSlider("Node size", value: Binding(
-                    get: { sim.nodeScale },
-                    set: { sim.nodeScale = $0 }
-                ), range: 0.4...2.5)
-                Button("Reset forces") {
-                    sim.repulsion = 1400
-                    sim.linkStrength = 0.06
-                    sim.linkDistance = 95
-                    sim.centerStrength = 0.012
-                    sim.nodeScale = 1
-                    sim.reheat(0.5)
-                }
-                .font(.system(size: 11))
-            }
-        }
-        .frame(width: 230)
-    }
-
-    private func forceSlider(_ label: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            MonoLabel(text: label)
-            Slider(value: value, in: range)
-                .controlSize(.mini)
-        }
-    }
+    // MARK: graph building (identical to the Mac view)
 
     private func rebuild() {
         var nodeList: [(id: String, label: String, type: String)] = []
@@ -424,92 +408,81 @@ struct GraphView: View {
         }
     }
 
+    // Legend scrolls horizontally on phone (eight kinds never fit one row).
     private var legend: some View {
-        HStack(spacing: 10) {
-            ForEach(["project", "note", "prompt", "knowledge_item", "profile", "idea", "task", "agent"], id: \.self) { type in
-                HStack(spacing: 4) {
-                    Circle().fill(color(for: type)).frame(width: 7, height: 7)
-                    MonoLabel(text: type.replacingOccurrences(of: "_", with: " "))
+        VStack(alignment: .leading, spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(["project", "note", "prompt", "knowledge_item", "profile", "idea", "task", "agent"], id: \.self) { type in
+                        HStack(spacing: 4) {
+                            Circle().fill(color(for: type)).frame(width: 7, height: 7)
+                            MonoLabel(text: type.replacingOccurrences(of: "_", with: " "))
+                        }
+                    }
                 }
             }
-            Spacer()
-            MonoLabel(text: "drag nodes to rearrange")
+            MonoLabel(text: "tap to highlight · pinch to zoom")
         }
+    }
+}
+
+// MARK: - Force controls (Mac floating panel → bottom sheet)
+
+private struct ForceControlsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    var sim: GraphSim
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                SwiftUI.Section {
+                    forceSlider("Push", value: Binding(
+                        get: { sim.repulsion },
+                        set: { sim.repulsion = $0; sim.reheat(0.35) }
+                    ), range: 100...6000)
+                    forceSlider("Pull", value: Binding(
+                        get: { sim.linkStrength },
+                        set: { sim.linkStrength = $0; sim.reheat(0.35) }
+                    ), range: 0.005...0.2)
+                    forceSlider("Link distance", value: Binding(
+                        get: { sim.linkDistance },
+                        set: { sim.linkDistance = $0; sim.reheat(0.35) }
+                    ), range: 30...260)
+                    forceSlider("Gravity", value: Binding(
+                        get: { sim.centerStrength },
+                        set: { sim.centerStrength = $0; sim.reheat(0.35) }
+                    ), range: 0...0.06)
+                    forceSlider("Node size", value: Binding(
+                        get: { sim.nodeScale },
+                        set: { sim.nodeScale = $0 }
+                    ), range: 0.4...2.5)
+                }
+                SwiftUI.Section {
+                    Button("Reset forces") { sim.resetForces() }
+                        .foregroundStyle(Brand.ink)
+                }
+            }
+            .navigationTitle("Forces")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func forceSlider(_ label: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            MonoLabel(text: label)
+            Slider(value: value, in: range)
+        }
+        .padding(.vertical, 2)
     }
 }
 
 private extension CGVector {
     static func * (lhs: CGVector, rhs: CGFloat) -> CGVector {
         CGVector(dx: lhs.dx * rhs, dy: lhs.dy * rhs)
-    }
-}
-
-// MARK: - Search (across everything, grouped by kind)
-
-struct SearchView: View {
-    @Environment(AppState.self) private var state
-    @State private var query = ""
-    @State private var hits: [SearchHit] = []
-    @State private var searching = false
-    @State private var searchTask: Task<Void, Never>?
-
-    var body: some View {
-        Page(kicker: "Search", title: "Find anything") {
-            GlassCard(padding: 12) {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass").foregroundStyle(Brand.mutedText)
-                    TextField("Search projects, notes, prompts, knowledge, ideas, tasks, agents…", text: $query)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 14))
-                        .onSubmit(runSearch)
-                    if searching { ProgressView().controlSize(.small) }
-                }
-            }
-            .onChange(of: query) {
-                searchTask?.cancel()
-                searchTask = Task {
-                    try? await Task.sleep(for: .milliseconds(350))
-                    guard !Task.isCancelled else { return }
-                    runSearch()
-                }
-            }
-
-            if query.isEmpty {
-                EmptyStateView(symbol: "magnifyingglass", title: "Search the brain", message: "One box across every entity — same scope as the web app's search.")
-            } else if hits.isEmpty && !searching {
-                EmptyStateView(symbol: "questionmark.circle", title: "No matches", message: "Nothing matched \"\(query)\".")
-            } else {
-                ForEach(SearchHitKind.allCases, id: \.self) { kind in
-                    let group = hits.filter { $0.kind == kind }
-                    if !group.isEmpty {
-                        MonoLabel(text: "\(kind.rawValue)s")
-                        ForEach(group) { hit in
-                            FlatCard(padding: 12) {
-                                HStack {
-                                    Text(hit.title)
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(Brand.ink)
-                                    Spacer()
-                                    StatusPill(label: hit.subtitle, color: Brand.mutedText)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func runSearch() {
-        let q = query.trimmingCharacters(in: .whitespaces)
-        guard !q.isEmpty, let backend = state.backend else {
-            hits = []
-            return
-        }
-        searching = true
-        Task {
-            defer { searching = false }
-            hits = (try? await backend.search(q)) ?? []
-        }
     }
 }
