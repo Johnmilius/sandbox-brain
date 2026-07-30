@@ -4,6 +4,8 @@
 /node_modules
 mcp/node_modules
 mcp/dist
+packages/*/node_modules
+packages/*/dist
 /.pnp
 .pnp.*
 .yarn/*
@@ -42,3 +44,20 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# macOS app (Xcode/SwiftPM local state — real source lives on feature/macos-app,
+# but this can show up locally regardless of which branch is checked out)
+macos-app/.swiftpm/
+macos-app/.build/
+macos-app/build/
+*.xcuserstate
+
+# graphify (local dev tool: knowledge graph for AI assistants — not part of the app)
+graphify-out/
+.graphifyignore
+.graphify_version
+/raw/
+# only created if graphify is installed with --project scope
+.claude/skills/graphify/
+.claude/CLAUDE.md
+.claude/settings.json

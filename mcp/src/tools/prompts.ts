@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getActor, resolveProject, supabase } from "../context.js";
-import { fail, guarded, ok, setTagsForEntity } from "../helpers.js";
+import { emitMcpEvent, fail, guarded, ok, setTagsForEntity } from "../helpers.js";
 
 export function registerPromptTools(server: McpServer): void {
   server.registerTool(
@@ -64,6 +64,11 @@ export function registerPromptTools(server: McpServer): void {
       if (error) return fail(error.message);
 
       await setTagsForEntity("prompt", data.id, tags);
+      await emitMcpEvent({
+        verb: "created",
+        object: { type: "prompt", id: data.id, label: title.trim() },
+        projectId: proj?.id ?? null,
+      });
       return ok(
         `Saved prompt **${title.trim()}**${proj ? ` (project: ${proj.name})` : ""}${
           tags.length > 0 ? ` [${tags.join(", ")}]` : ""

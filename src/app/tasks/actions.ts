@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { emitEvent } from "@sandbox-brain/core";
 import { createClient } from "@/lib/supabase/server";
 import { deriveTicketPrefix } from "@/lib/tasks";
 import type {
@@ -66,6 +67,12 @@ export async function createTask(
       .eq("id", input.project_id);
   }
 
+  await emitEvent(supabase, {
+    verb: "created",
+    object: { type: "task", id: data.id, label: input.title.trim() },
+    projectId: input.project_id,
+    metadata: { ticket_num: ticketNum },
+  });
   revalidatePath("/tasks");
   return { id: data.id, error: null };
 }
@@ -75,11 +82,21 @@ export async function updateTaskStatus(
   status: TaskStatus,
 ): Promise<{ error: string | null }> {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("tasks")
     .update({ status })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id, title, project_id")
+    .single();
   if (error) return { error: error.message };
+  // Board moves are constant churn — the timeline only cares about "done".
+  if (status === "done") {
+    await emitEvent(supabase, {
+      verb: "completed",
+      object: { type: "task", id: data.id, label: data.title },
+      projectId: data.project_id,
+    });
+  }
   revalidatePath("/tasks");
   return { error: null };
 }
@@ -102,11 +119,18 @@ export async function claimTask(id: string): Promise<{ error: string | null }> {
     return { error: "Ticket is locked by someone else." };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("tasks")
     .update({ claimed_by: user.id })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id, title, project_id")
+    .single();
   if (error) return { error: error.message };
+  await emitEvent(supabase, {
+    verb: "claimed",
+    object: { type: "task", id: data.id, label: data.title },
+    projectId: data.project_id,
+  });
   revalidatePath("/tasks");
   return { error: null };
 }
@@ -184,16 +208,37 @@ export async function updateTask(
   if (input.area !== undefined) patch.area = input.area;
   if (input.assignee !== undefined) patch.assignee = input.assignee;
 
-  const { error } = await supabase.from("tasks").update(patch).eq("id", id);
+  const { data, error } = await supabase
+    .from("tasks")
+    .update(patch)
+    .eq("id", id)
+    .select("id, title, project_id")
+    .single();
   if (error) return { error: error.message };
+  await emitEvent(supabase, {
+    verb: "updated",
+    object: { type: "task", id: data.id, label: data.title },
+    projectId: data.project_id,
+  });
   revalidatePath("/tasks");
   return { error: null };
 }
 
 export async function deleteTask(id: string): Promise<{ error: string | null }> {
   const supabase = await createClient();
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("title, project_id")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("tasks").delete().eq("id", id);
   if (error) return { error: error.message };
+
+  await emitEvent(supabase, {
+    verb: "deleted",
+    object: { type: "task", id, label: task?.title },
+    projectId: task?.project_id ?? null,
+  });
 
   await supabase.from("links").delete().eq("source_type", "task").eq("source_id", id);
   await supabase.from("links").delete().eq("target_type", "task").eq("target_id", id);

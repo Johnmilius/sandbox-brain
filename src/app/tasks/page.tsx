@@ -133,11 +133,13 @@ export default async function TasksPage({
 
   let tasks: TaskVM[] = [];
   let projects: ProjectOption[] = [];
+  let allProjects: ProjectOption[] = [];
   let people: PersonOption[] = [];
   let migrationMissing = false;
 
   if (isDemo) {
     ({ tasks, projects, people } = demoData(user.id, currentUserName));
+    allProjects = projects;
   } else {
     const [tasksRes, projectsRes, profilesRes] = await Promise.all([
       supabase
@@ -179,14 +181,11 @@ export default async function TasksPage({
           name: p.name,
           prefix: p.ticket_prefix ?? deriveTicketPrefix(p.name),
         }));
-      const allProjects: ProjectOption[] = projectRows.map((p) => ({
+      allProjects = projectRows.map((p) => ({
         id: p.id,
         name: p.name,
         prefix: p.ticket_prefix ?? deriveTicketPrefix(p.name),
       }));
-      // The dialog needs every project, the pills only active ones — pass the
-      // full list when nothing has tickets yet so creation still works.
-      if (projects.length === 0) projects = allProjects;
 
       // Links out of tickets → "LINKED IN THE BRAIN" rows.
       const taskIds = taskRows.map((t) => t.id);
@@ -332,12 +331,13 @@ export default async function TasksPage({
         <TasksView
           tasks={tasks}
           projects={projects}
+          allProjects={allProjects}
           people={people}
           currentUserId={user.id}
           currentUserName={currentUserName}
           demo={isDemo}
           initialProjectId={
-            projects.some((p) => p.id === projectParam)
+            allProjects.some((p) => p.id === projectParam)
               ? (projectParam ?? null)
               : null
           }

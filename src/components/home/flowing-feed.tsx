@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { fetchFeedPage, type FeedCursor } from "@/app/feed-actions";
 import type { FeedItem } from "@/lib/home-digest";
 
 /**
@@ -21,6 +22,11 @@ const KIND_CHIP: Record<FeedItem["kind"], { bg: string; fg: string }> = {
   prompt: { bg: "#f6edd8", fg: "#8a6a2a" },
   time: { bg: "#e3efe7", fg: "#3f7a56" },
   idea: { bg: "#efe9ff", fg: "#5b3fd6" },
+  task: { bg: "#fbe9e0", fg: "#a24e2b" },
+  project: { bg: "#e9e7e2", fg: "#57534e" },
+  knowledge: { bg: "#e2f0f2", fg: "#2f6d77" },
+  agent: { bg: "#f0e6f2", fg: "#7a3f85" },
+  academy: { bg: "#f6f0d8", fg: "#77662a" },
 };
 
 /** Neutral tint for the context (chipB) side of the arrow. */
@@ -38,6 +44,8 @@ type FlowingFeedProps = {
   currentUserId: string;
   /** Name of the busiest project this week — becomes the third pill. */
   topProject: string | null;
+  /** Keyset cursor after the last item; null/absent = no more history. */
+  initialCursor?: FeedCursor | null;
 };
 
 type FilterId = "all" | "mine" | "project";
@@ -46,8 +54,21 @@ export function FlowingFeed({
   items,
   currentUserId,
   topProject,
+  initialCursor = null,
 }: FlowingFeedProps) {
   const [filter, setFilter] = useState<FilterId>("all");
+  const [loaded, setLoaded] = useState<FlowFeedItem[]>([]);
+  const [cursor, setCursor] = useState<FeedCursor | null>(initialCursor);
+  const [isLoading, startLoading] = useTransition();
+
+  const loadMore = () => {
+    if (!cursor) return;
+    startLoading(async () => {
+      const page = await fetchFeedPage(cursor);
+      setLoaded((prev) => [...prev, ...page.items]);
+      setCursor(page.nextCursor);
+    });
+  };
 
   const pills: { id: FilterId; label: string }[] = [
     { id: "all", label: "All" },
@@ -55,7 +76,7 @@ export function FlowingFeed({
     ...(topProject ? [{ id: "project" as const, label: topProject }] : []),
   ];
 
-  const visible = items.filter((item) => {
+  const visible = [...items, ...loaded].filter((item) => {
     if (filter === "mine") return item.actorId === currentUserId;
     if (filter === "project") return item.context === topProject;
     return true;
@@ -153,6 +174,17 @@ export function FlowingFeed({
           })
         )}
       </div>
+
+      {cursor && (
+        <button
+          type="button"
+          onClick={loadMore}
+          disabled={isLoading}
+          className="font-mono mt-2 cursor-pointer pl-8 text-[11px] tracking-[0.08em] text-[var(--v2-ink-3)] uppercase transition-colors hover:text-[var(--v2-ink-1)] disabled:opacity-50"
+        >
+          {isLoading ? "Loading…" : "Load more ↓"}
+        </button>
+      )}
     </>
   );
 }

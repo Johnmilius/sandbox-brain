@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getActor, supabase } from "../context.js";
-import { fail, guarded, ok } from "../helpers.js";
+import { emitMcpEvent, fail, guarded, ok } from "../helpers.js";
 
 export function registerProjectTools(server: McpServer): void {
   server.registerTool(
@@ -77,13 +77,22 @@ export function registerProjectTools(server: McpServer): void {
         );
       }
 
-      const { error } = await db.from("projects").insert({
-        name: name.trim(),
-        description: description?.trim() || null,
-        status,
-        created_by: actor.id,
-      });
+      const { data, error } = await db
+        .from("projects")
+        .insert({
+          name: name.trim(),
+          description: description?.trim() || null,
+          status,
+          created_by: actor.id,
+        })
+        .select("id")
+        .single();
       if (error) return fail(error.message);
+      await emitMcpEvent({
+        verb: "created",
+        object: { type: "project", id: data.id, label: name.trim() },
+        projectId: data.id,
+      });
       return ok(`Created project **${name.trim()}** (${status}).`);
     }),
   );
