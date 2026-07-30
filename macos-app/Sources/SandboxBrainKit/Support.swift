@@ -72,6 +72,21 @@ public func formatHours(ms: Double) -> String {
     return String(format: "%.1fh", hours)
 }
 
+/// One entry's length, at the precision a person would say it out loud: minutes
+/// below an hour, hours above. `formatHours` is for aggregates ("121.8h across
+/// the team"), where decimal hours are the right unit — but it renders a
+/// six-minute timer as "0.0h", which reads as a bug in a feed row.
+public func formatSpan(ms: Double) -> String {
+    let minutes = ms / 60_000
+    if minutes < 1 { return "<1m" }
+    if minutes < 60 { return "\(Int(minutes.rounded()))m" }
+    let hours = ms / 3_600_000
+    // Whole hours lose the decimal: "2h", not "2.0h".
+    return hours == hours.rounded()
+        ? "\(Int(hours))h"
+        : String(format: "%.1fh", hours)
+}
+
 public func formatClock(ms: Double) -> String {
     let total = Int(ms / 1000)
     let h = total / 3600, m = (total % 3600) / 60, s = total % 60

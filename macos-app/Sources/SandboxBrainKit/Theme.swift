@@ -110,7 +110,15 @@ public struct GlassCard<Content: View>: View {
         content
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(.regular, in: .rect(cornerRadius: 16))
+            // Tinted, not bare: Liquid Glass samples the backdrop *behind the
+            // window*, so an untinted card transmits whatever is on the user's
+            // desktop — two cards side by side pick up different wallpaper
+            // colors and read as stray gradients. The surface tint keeps the
+            // glass depth and highlights while holding the card's own color.
+            .glassEffect(
+                .regular.tint(Brand.surface.opacity(0.72)),
+                in: .rect(cornerRadius: 16)
+            )
     }
 }
 
@@ -228,31 +236,71 @@ public struct Page<Content: View>: View {
     let kicker: String
     let title: String
     var trailing: AnyView? = nil
+    /// Dashboard mode: content is at least as tall as the window, so it fills a
+    /// large display instead of stranding dead space below — but it still lives
+    /// in a ScrollView, so a short or resized window scrolls rather than
+    /// clipping. Reading-length sections (a note, a form) keep the default.
+    var fills: Bool = false
+    /// Wider clamp for two-column dashboards; reading content stays at 980.
+    var maxContentWidth: CGFloat = 980
     @ViewBuilder var content: Content
 
-    public init(kicker: String, title: String, trailing: AnyView? = nil, @ViewBuilder content: () -> Content) {
+    public init(
+        kicker: String,
+        title: String,
+        trailing: AnyView? = nil,
+        fills: Bool = false,
+        maxContentWidth: CGFloat = 980,
+        @ViewBuilder content: () -> Content
+    ) {
         self.kicker = kicker
         self.title = title
         self.trailing = trailing
+        self.fills = fills
+        self.maxContentWidth = maxContentWidth
         self.content = content()
     }
 
-    public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        MonoLabel(text: kicker)
-                        PageTitle(text: title)
-                    }
-                    Spacer()
-                    trailing
-                }
-                content
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 4) {
+                MonoLabel(text: kicker)
+                PageTitle(text: title)
             }
-            .padding(24)
-            .frame(maxWidth: 980, alignment: .leading)
-            .frame(maxWidth: .infinity)
+            Spacer()
+            trailing
+        }
+    }
+
+    public var body: some View {
+        Group {
+            if fills {
+                // minHeight (not maxHeight) is the whole trick: the content
+                // stretches to fill a tall window, and anything taller than the
+                // window scrolls instead of being cut off. Works at any size the
+                // user drags the window to, in both directions.
+                GeometryReader { geo in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 22) {
+                            header
+                            content
+                        }
+                        .padding(24)
+                        .frame(maxWidth: maxContentWidth, alignment: .leading)
+                        .frame(maxWidth: .infinity, minHeight: geo.size.height, alignment: .top)
+                    }
+                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        header
+                        content
+                    }
+                    .padding(24)
+                    .frame(maxWidth: maxContentWidth, alignment: .leading)
+                    .frame(maxWidth: .infinity)
+                }
+            }
         }
         .background(Brand.cream)
     }

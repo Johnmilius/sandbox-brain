@@ -132,18 +132,47 @@ struct HomeView: View {
             FeedItem(id: "prompt-\($0.id)", actorId: $0.userId, verb: "saved", object: $0.title, context: $0.aiTool ?? "prompts", kind: .prompts, at: $0.updatedAt)
         }
         items += state.entries.filter { !$0.isRunning }.map {
-            FeedItem(id: "time-\($0.id)", actorId: $0.userId, verb: "logged \(formatHours(ms: $0.durationMs()))", object: state.project($0.projectId)?.name ?? "a project", context: "time", kind: .time, at: $0.endedAt ?? $0.startedAt)
+            // formatSpan, not formatHours: a six-minute timer read "0.0h" here,
+            // which looks like a bug rather than a short session.
+            FeedItem(id: "time-\($0.id)", actorId: $0.userId, verb: "logged \(formatSpan(ms: $0.durationMs()))", object: state.project($0.projectId)?.name ?? "a project", context: "time", kind: .time, at: $0.endedAt ?? $0.startedAt)
         }
         items += state.ideas.map {
             FeedItem(id: "idea-\($0.id)", actorId: $0.createdBy, verb: "captured", object: $0.title, context: "ideas", kind: .ideas, at: $0.updatedAt)
         }
-        let filtered = mineOnly ? items.filter { $0.actorId == state.currentUserId } : items
-        return filtered.sorted { parseISO($0.at) > parseISO($1.at) }.prefix(12).map { $0 }
+        return mineOnly ? items.filter { $0.actorId == state.currentUserId } : items
     }
 
+    /// What the list actually renders. `feed` stays whole so the 24h count below
+    /// can be counted from all of it.
+    private var visibleFeed: [FeedItem] {
+        feed.sorted { parseISO($0.at) > parseISO($1.at) }.prefix(24).map { $0 }
+    }
+
+    /// Counted from the full union, not the truncated list — the old version
+    /// counted only what fit on screen, so it under-reported a busy day.
     private var sinceCount: Int {
         let cutoff = Date().addingTimeInterval(-24 * 3600)
         return feed.filter { parseISO($0.at) >= cutoff }.count
+    }
+
+    /// Feed split into day runs, newest first. On a phone the timestamps alone
+    /// ("1d", "1d", "1d") don't tell you where one day ends and the next begins.
+    private var feedByDay: [(label: String, items: [FeedItem])] {
+        let calendar = Calendar.current
+        var order: [Date] = []
+        var groups: [Date: [FeedItem]] = [:]
+        for item in visibleFeed {
+            let day = calendar.startOfDay(for: parseISO(item.at))
+            if groups[day] == nil { order.append(day) }
+            groups[day, default: []].append(item)
+        }
+        return order.map { (dayLabel($0, calendar: calendar), groups[$0] ?? []) }
+    }
+
+    private func dayLabel(_ day: Date, calendar: Calendar) -> String {
+        if calendar.isDateInToday(day) { return "Today" }
+        if calendar.isDateInYesterday(day) { return "Yesterday" }
+        return day.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
     }
 
     private var feedCard: some View {
@@ -159,35 +188,41 @@ struct HomeView: View {
                     .pickerStyle(.segmented)
                     .frame(width: 140)
                 }
-                if feed.isEmpty {
+                if visibleFeed.isEmpty {
                     EmptyStateView(symbol: "sparkles", title: "All quiet", message: "Team activity shows up here.")
                 } else {
-                    ForEach(feed) { item in
-                        Button { openSection(item.kind) } label: {
-                            HStack(spacing: 8) {
-                                AvatarView(profile: state.profile(item.actorId), size: 22,
-                                           color: Brand.identity(item.actorId, profiles: state.profiles))
-                                Group {
-                                    Text(state.profile(item.actorId)?.displayName.split(separator: " ").first.map(String.init) ?? "Someone")
-                                        .fontWeight(.medium)
-                                    + Text(" \(item.verb) ")
-                                        .foregroundStyle(Brand.mutedText)
-                                    + Text(item.object)
-                                        .fontWeight(.medium)
+                    ForEach(feedByDay, id: \.label) { group in
+                        VStack(alignment: .leading, spacing: 7) {
+                            MonoLabel(text: group.label)
+                            ForEach(group.items) { item in
+                                Button { openSection(item.kind) } label: {
+                                    HStack(spacing: 8) {
+                                        AvatarView(profile: state.profile(item.actorId), size: 22,
+                                                   color: Brand.identity(item.actorId, profiles: state.profiles))
+                                        Group {
+                                            Text(state.profile(item.actorId)?.displayName.split(separator: " ").first.map(String.init) ?? "Someone")
+                                                .fontWeight(.medium)
+                                            + Text(" \(item.verb) ")
+                                                .foregroundStyle(Brand.mutedText)
+                                            + Text(item.object)
+                                                .fontWeight(.medium)
+                                        }
+                                        .font(.system(size: 12.5))
+                                        .lineLimit(1)
+                                        Spacer(minLength: 8)
+                                        if !isCompact {
+                                            MonoLabel(text: item.context)
+                                        }
+                                        Text(relativeTime(item.at))
+                                            .font(.system(size: 11, design: .monospaced))
+                                            .foregroundStyle(Brand.mutedText)
+                                    }
+                                    .contentShape(.rect)
                                 }
-                                .font(.system(size: 12.5))
-                                .lineLimit(1)
-                                Spacer()
-                                if !isCompact {
-                                    MonoLabel(text: item.context)
-                                }
-                                Text(relativeTime(item.at))
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .foregroundStyle(Brand.mutedText)
+                                .buttonStyle(.plain)
                             }
-                            .contentShape(.rect)
                         }
-                        .buttonStyle(.plain)
+                        .padding(.top, group.label == feedByDay.first?.label ? 0 : 5)
                     }
                 }
             }
@@ -210,17 +245,32 @@ struct HomeView: View {
                 HStack(alignment: .bottom, spacing: 8) {
                     ForEach(Array(buckets.enumerated()), id: \.offset) { i, bucket in
                         VStack(spacing: 5) {
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(bucket.isToday ? Brand.purple : Brand.ink.opacity(0.75))
-                                .frame(height: max(4, 80 * totals[i] / maxMs))
-                                .frame(maxWidth: .infinity)
+                            // No track behind the bars: a full-height well turns
+                            // each column into a percentage gauge, which is the
+                            // wrong read for a bar chart. Clear space reserves the
+                            // height so the day letters stay aligned, and a day
+                            // with no time gets a baseline rule — unmistakably
+                            // nothing, rather than a small bar meaning "a little".
+                            ZStack(alignment: .bottom) {
+                                Color.clear
+                                if totals[i] > 0 {
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .fill(bucket.isToday ? Brand.purple : Brand.ink.opacity(0.75))
+                                        .frame(height: max(5, 80 * totals[i] / maxMs))
+                                } else {
+                                    RoundedRectangle(cornerRadius: 1)
+                                        .fill(Brand.border)
+                                        .frame(height: 2)
+                                }
+                            }
+                            .frame(height: 80)
+                            .frame(maxWidth: .infinity)
                             Text(bucket.letter)
                                 .font(.system(size: 9, weight: bucket.isToday ? .bold : .regular, design: .monospaced))
                                 .foregroundStyle(bucket.isToday ? Brand.purple : Brand.mutedText)
                         }
                     }
                 }
-                .frame(height: 100, alignment: .bottom)
                 Text("\(formatHours(ms: totals.reduce(0, +))) across the team")
                     .font(.system(size: 11))
                     .foregroundStyle(Brand.mutedText)
