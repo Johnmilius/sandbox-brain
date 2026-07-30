@@ -15,7 +15,10 @@ import type {
 
 type TasksViewProps = {
   tasks: TaskVM[];
+  /** Only projects with at least one ticket — drives the filter pills. */
   projects: ProjectOption[];
+  /** Every project, including ones with zero tickets — drives the New ticket dialog. */
+  allProjects: ProjectOption[];
   people: PersonOption[];
   currentUserId: string;
   currentUserName: string;
@@ -27,6 +30,7 @@ type TasksViewProps = {
 export function TasksView({
   tasks,
   projects,
+  allProjects,
   people,
   currentUserId,
   currentUserName,
@@ -109,7 +113,7 @@ export function TasksView({
           </div>
           {!demo && (
             <NewTaskDialog
-              projects={projects}
+              projects={allProjects}
               people={people}
               trigger={
                 <button
