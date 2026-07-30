@@ -1,0 +1,53 @@
+name: macOS app
+
+# Builds and tests the native macOS app (macos-app/). Path-filtered so it only
+# runs when the Swift app or this workflow changes — the web app has its own
+# (currently manual) verification flow.
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'macos-app/**'
+      - '.github/workflows/macos-app.yml'
+  pull_request:
+    paths:
+      - 'macos-app/**'
+      - '.github/workflows/macos-app.yml'
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: macos-app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    # Needs the macOS 26 SDK / Xcode 26 to satisfy Package.swift's
+    # platforms: [.macOS("26.0")]. If a macos-26 image isn't available yet,
+    # switch to a self-hosted macOS 26 runner.
+    runs-on: macos-26
+    defaults:
+      run:
+        working-directory: macos-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            macos-app/.build
+            ~/Library/Caches/org.swift.swiftpm
+          key: swiftpm-${{ runner.os }}-${{ hashFiles('macos-app/Package.resolved') }}
+          restore-keys: |
+            swiftpm-${{ runner.os }}-
+
+      - name: Build
+        run: swift build -c release
+
+      - name: Test
+        run: swift test
