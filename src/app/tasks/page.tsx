@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import { deriveTicketPrefix, findConflicts, formatTicketId } from "@/lib/tasks";
 import { TasksView } from "@/components/tasks/tasks-view";
 import type {
@@ -117,10 +117,7 @@ export default async function TasksPage({
 }) {
   const { demo, project: projectParam } = await searchParams;
   const isDemo = demo === "1";
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const { data: selfProfile } = await supabase

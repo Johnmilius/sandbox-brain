@@ -1,3 +1,4 @@
+import SandboxBrainKit
 import SwiftUI
 
 // MARK: - Notes (list + markdown editor with [[wiki-links]])

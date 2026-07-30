@@ -1,4 +1,8 @@
+#if os(macOS)
 import AppKit
+#elseif os(iOS)
+import UIKit
+#endif
 import Foundation
 import Network
 
@@ -69,7 +73,11 @@ enum LoopbackCallbackServer {
             }
 
             listener.start(queue: .main)
+            #if os(macOS)
             NSWorkspace.shared.open(authURL)
+            #else
+            UIApplication.shared.open(authURL)
+            #endif
 
             // Give up after 5 minutes so an abandoned attempt doesn't hold
             // the port (and the button) forever.

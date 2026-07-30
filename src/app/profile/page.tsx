@@ -10,13 +10,10 @@ import {
 } from "@/components/ui/card";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { McpAccess } from "@/components/profile/mcp-access";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase

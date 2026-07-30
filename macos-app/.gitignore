@@ -6,3 +6,7 @@ build/
 .swiftpm/
 *.xcuserstate
 DerivedData/
+
+# iOS project is generated from ios/project.yml (xcodegen) — never commit it
+ios/SandboxBrainiOS.xcodeproj/
+ios/Info.plist

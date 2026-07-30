@@ -1,0 +1,67 @@
+# XcodeGen spec for the iOS app. The .xcodeproj is generated — never edit it
+# by hand; edit this file and rerun:
+#   DEVELOPER_DIR=/Applications/Xcode.app xcrun xcodegen
+# All app logic lives in the shared SandboxBrainKit package one level up.
+
+name: SandboxBrainiOS
+
+options:
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  SandboxBrain:
+    path: ../
+
+targets:
+  SandboxBrainiOS:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+      # Icon Composer bundle shared with the Mac app. `type: file` keeps the
+      # .icon directory as a single file reference (not a group) so Xcode 26's
+      # build system compiles it natively via actool — Liquid Glass treatment
+      # comes free. Pairs with ASSETCATALOG_COMPILER_APPICON_NAME below.
+      - path: ../SandboxBrain.icon
+        type: file
+        buildPhase: resources
+    dependencies:
+      - package: SandboxBrain
+        product: SandboxBrainKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sandboxbrain.ios
+        PRODUCT_NAME: Sandbox Brain
+        # Free "Personal Team" signing, baked in so it survives xcodegen regens
+        # (Luke's Apple ID team). Automatic signing lets Xcode mint/refresh the
+        # provisioning profile and register the device on first device build.
+        DEVELOPMENT_TEAM: 2NHC34VHN3
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"        # iPhone + iPad (split view on pad)
+        GENERATE_INFOPLIST_FILE: NO
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
+        # Matches the SandboxBrain.icon bundle name (minus extension); actool
+        # emits the compiled icon + CFBundleIconName into the merged Info.plist.
+        ASSETCATALOG_COMPILER_APPICON_NAME: SandboxBrain
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: Sandbox Brain
+        # SwiftUI-generated launch screen (blank system background).
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # Register the sandboxbrain:// scheme so the Google OAuth redirect
+        # (sandboxbrain://auth-callback) resolves to this app. The kit's
+        # ASWebAuthenticationSession consumes the callback internally; this
+        # registration is belt-and-braces for the browser-fallback path.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.sandboxbrain.ios.auth
+            CFBundleURLSchemes:
+              - sandboxbrain

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { HistoryPanel } from "@/components/history-panel";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import { relativeTime } from "@/lib/home-digest";
 import { noteSnippet, noteTagColor } from "@/lib/note-tags";
 import { rewriteWikiLinks } from "@/lib/wiki-links";
@@ -15,10 +15,7 @@ export default async function NotePage({
   searchParams: Promise<{ edit?: string }>;
 }) {
   const [{ id }, { edit }] = await Promise.all([params, searchParams]);
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const [noteRes, allNotesRes, backlinksRes, outboundRes, tagRes] =

@@ -103,3 +103,17 @@ export function eventToFeedItem(
     at: e.occurred_at,
   };
 }
+
+/**
+ * Object identities ("<type>:<id>") the timeline already covers.
+ *
+ * The home feed unions the timeline with the legacy per-table query so history
+ * predating migration 0009 (and rows from any client that writes without
+ * emitting) still shows. This set is what lets the legacy side skip objects the
+ * timeline already reports, instead of listing the same action twice.
+ */
+export function eventedObjectKeys(
+  rows: Pick<EventRow, "object_type" | "object_id">[],
+): Set<string> {
+  return new Set(rows.map((e) => `${e.object_type}:${e.object_id}`));
+}

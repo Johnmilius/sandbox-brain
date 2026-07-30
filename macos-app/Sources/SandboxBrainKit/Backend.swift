@@ -7,7 +7,7 @@ import Supabase
 // tables + RLS as the web app); `DemoBackend` serves seeded in-memory data so
 // anyone can explore the app before wiring up credentials.
 
-protocol BrainBackend: Sendable {
+public protocol BrainBackend: Sendable {
     func currentUserId() async -> String?
     func isTeamMember() async throws -> Bool
     func signOut() async
@@ -75,7 +75,9 @@ final class LiveBackend: BrainBackend {
         client = SupabaseClient(supabaseURL: url, supabaseKey: anonKey)
     }
 
-    private var db: PostgrestClient { client.schema("public") }
+    // Internal (not private) so Events.swift can append to `events` on the same
+    // client the mutation used.
+    var db: PostgrestClient { client.schema("public") }
 
     func currentUserId() async -> String? {
         try? await client.auth.session.user.id.uuidString.lowercased()
@@ -156,6 +158,12 @@ final class LiveBackend: BrainBackend {
     }
 
     // MARK: mutations
+    //
+    // Every mutation below appends one row to `events` (Events.swift) so the
+    // web app's activity feed and History panels see Mac/iOS writes. Verb,
+    // object type, label, project scope, and metadata are matched action-for-
+    // action against src/app/*/actions.ts. `emit` never throws, so it can't
+    // undo or mask the write it follows.
 
     private struct ProjectPayload: Encodable {
         var name: String
@@ -165,9 +173,12 @@ final class LiveBackend: BrainBackend {
     }
 
     func createProject(name: String, description: String?, status: ProjectStatus) async throws {
-        try await db.from("projects")
+        let created: [InsertedProject] = try await db.from("projects")
             .insert(ProjectPayload(name: name, description: description, status: status.rawValue, ticket_prefix: nil))
-            .execute()
+            .select("id, name")
+            .execute().value
+        guard let project = created.first else { return }
+        await emit(.created, EventObject(.project, project.id, label: project.name), projectId: project.id)
     }
 
     func updateProject(_ p: Project) async throws {
@@ -175,10 +186,19 @@ final class LiveBackend: BrainBackend {
             .update(ProjectPayload(name: p.name, description: p.description, status: p.status.rawValue, ticket_prefix: p.ticketPrefix))
             .eq("id", value: p.id)
             .execute()
+        await emit(
+            EventRules.projectUpdateVerb(status: p.status),
+            EventObject(.project, p.id, label: p.name),
+            projectId: p.id
+        )
     }
 
     func deleteProject(id: String) async throws {
+        // Label first — it's gone after the delete.
+        let name = await eventLabel(table: "projects", id: id, column: "name")
         try await db.from("projects").delete().eq("id", value: id).execute()
+        // Deliberately unscoped — see EventRules.projectDeleted.
+        await emit(EventRules.projectDeleted(id: id, name: name))
     }
 
     private struct TimeEntryPayload: Encodable {
@@ -190,26 +210,59 @@ final class LiveBackend: BrainBackend {
     }
 
     func startTimer(projectId: String, notes: String?) async throws {
-        try await db.from("time_entries")
+        let created: [InsertedId] = try await db.from("time_entries")
             .insert(TimeEntryPayload(project_id: projectId, started_at: isoNow(), ended_at: nil, notes: notes, source: "timer"))
-            .execute()
+            .select("id")
+            .execute().value
+        guard let entry = created.first else { return }
+        await emit(
+            .started,
+            EventObject(.timeEntry, entry.id),
+            target: await projectTarget(projectId),
+            projectId: projectId
+        )
     }
 
     func stopTimer(entryId: String) async throws {
-        try await db.from("time_entries")
+        let stopped: [StoppedTimer] = try await db.from("time_entries")
             .update(["ended_at": isoNow()])
             .eq("id", value: entryId)
-            .execute()
+            .select("id, project_id, started_at, ended_at")
+            .execute().value
+        guard let entry = stopped.first else { return }
+        var metadata: [String: EventMetaValue] = ["started_at": .text(entry.started_at)]
+        if let endedAt = entry.ended_at { metadata["ended_at"] = .text(endedAt) }
+        await emit(
+            .loggedTime,
+            EventObject(.timeEntry, entry.id),
+            target: await projectTarget(entry.project_id),
+            projectId: entry.project_id,
+            metadata: metadata
+        )
     }
 
     func addManualEntry(projectId: String, start: Date, end: Date, notes: String?) async throws {
-        try await db.from("time_entries")
+        let created: [InsertedId] = try await db.from("time_entries")
             .insert(TimeEntryPayload(project_id: projectId, started_at: iso(start), ended_at: iso(end), notes: notes, source: "manual"))
-            .execute()
+            .select("id")
+            .execute().value
+        guard let entry = created.first else { return }
+        await emit(
+            .loggedTime,
+            EventObject(.timeEntry, entry.id),
+            target: await projectTarget(projectId),
+            projectId: projectId,
+            metadata: ["started_at": .text(iso(start)), "ended_at": .text(iso(end))]
+        )
     }
 
     func deleteTimeEntry(id: String) async throws {
+        struct Row: Decodable, Sendable { let project_id: String }
+        let entry: Row? = await eventLookup(table: "time_entries", id: id, columns: "project_id")
         try await db.from("time_entries").delete().eq("id", value: id).execute()
+        var target: EventObject?
+        if let entry { target = await projectTarget(entry.project_id) }
+        await emit(.deleted, EventObject(.timeEntry, id), target: target, projectId: entry?.project_id)
     }
 
     private struct TaskInsertPayload: Encodable {
@@ -231,9 +284,17 @@ final class LiveBackend: BrainBackend {
             .limit(1)
             .execute().value
         let next = (existing.first?.ticket_num ?? 0) + 1
-        try await db.from("tasks")
+        let created: [InsertedId] = try await db.from("tasks")
             .insert(TaskInsertPayload(project_id: projectId, ticket_num: next, title: title, description: description, priority: priority.rawValue, area: area.rawValue))
-            .execute()
+            .select("id")
+            .execute().value
+        guard let task = created.first else { return }
+        await emit(
+            .created,
+            EventObject(.task, task.id, label: title),
+            projectId: projectId,
+            metadata: ["ticket_num": .number(next)]
+        )
     }
 
     private struct TaskUpdatePayload: Encodable {
@@ -248,14 +309,28 @@ final class LiveBackend: BrainBackend {
     }
 
     func updateTask(_ t: TaskItem) async throws {
+        // Before-state, so a board move to "done" reads as `completed` and a
+        // claim reads as `claimed` — see EventRules.taskUpdateVerb.
+        let before: EventRules.TaskSnapshot? = await eventLookup(
+            table: "tasks", id: t.id, columns: EventRules.TaskSnapshot.columns
+        )
         try await db.from("tasks")
             .update(TaskUpdatePayload(title: t.title, description: t.description, priority: t.priority.rawValue, area: t.area.rawValue, status: t.status.rawValue, assignee: t.assignee, claimed_by: t.claimedBy, checklist: t.checklist))
             .eq("id", value: t.id)
             .execute()
+        if let verb = EventRules.taskUpdateVerb(old: before, new: t) {
+            await emit(verb, EventObject(.task, t.id, label: t.title), projectId: t.projectId)
+        }
     }
 
     func deleteTask(id: String) async throws {
+        struct Row: Decodable, Sendable {
+            let title: String
+            let project_id: String
+        }
+        let task: Row? = await eventLookup(table: "tasks", id: id, columns: "title, project_id")
         try await db.from("tasks").delete().eq("id", value: id).execute()
+        await emit(.deleted, EventObject(.task, id, label: task?.title), projectId: task?.project_id)
     }
 
     private struct NotePayload: Encodable {
@@ -264,7 +339,13 @@ final class LiveBackend: BrainBackend {
     }
 
     func createNote(title: String, body: String) async throws {
-        try await db.from("notes").insert(NotePayload(title: title, body: body)).execute()
+        let created: [InsertedId] = try await db.from("notes")
+            .insert(NotePayload(title: title, body: body))
+            .select("id")
+            .execute().value
+        guard let note = created.first else { return }
+        // Notes have no project column — the web app emits no project scope here.
+        await emit(.created, EventObject(.note, note.id, label: title))
     }
 
     func updateNote(_ n: Note) async throws {
@@ -272,10 +353,13 @@ final class LiveBackend: BrainBackend {
             .update(NotePayload(title: n.title, body: n.body))
             .eq("id", value: n.id)
             .execute()
+        await emit(.updated, EventObject(.note, n.id, label: n.title))
     }
 
     func deleteNote(id: String) async throws {
+        let title = await eventLabel(table: "notes", id: id, column: "title")
         try await db.from("notes").delete().eq("id", value: id).execute()
+        await emit(.deleted, EventObject(.note, id, label: title))
     }
 
     private struct PromptPayload: Encodable {
@@ -289,20 +373,34 @@ final class LiveBackend: BrainBackend {
     }
 
     func createPrompt(title: String, text: String, responseNotes: String?, aiTool: String?, rating: Int?, projectId: String?) async throws {
-        try await db.from("prompts")
+        let created: [InsertedId] = try await db.from("prompts")
             .insert(PromptPayload(title: title, prompt_text: text, response_notes: responseNotes, ai_tool: aiTool, rating: rating, project_id: projectId, is_favorite: false))
-            .execute()
+            .select("id")
+            .execute().value
+        guard let prompt = created.first else { return }
+        await emit(.created, EventObject(.prompt, prompt.id, label: title), projectId: projectId)
     }
 
     func updatePrompt(_ p: Prompt) async throws {
+        // The star button and the edit form both land here; the before-state
+        // tells them apart (`favorited` vs `updated`).
+        let before: EventRules.PromptSnapshot? = await eventLookup(
+            table: "prompts", id: p.id, columns: EventRules.PromptSnapshot.columns
+        )
         try await db.from("prompts")
             .update(PromptPayload(title: p.title, prompt_text: p.promptText, response_notes: p.responseNotes, ai_tool: p.aiTool, rating: p.rating, project_id: p.projectId, is_favorite: p.isFavorite))
             .eq("id", value: p.id)
             .execute()
+        if let verb = EventRules.promptUpdateVerb(old: before, new: p) {
+            await emit(verb, EventObject(.prompt, p.id, label: p.title), projectId: p.projectId)
+        }
     }
 
     func deletePrompt(id: String) async throws {
+        let title = await eventLabel(table: "prompts", id: id, column: "title")
         try await db.from("prompts").delete().eq("id", value: id).execute()
+        // No project scope: matches src/app/prompts/actions.ts deletePrompt.
+        await emit(.deleted, EventObject(.prompt, id, label: title))
     }
 
     private struct KnowledgePayload: Encodable {
@@ -315,9 +413,17 @@ final class LiveBackend: BrainBackend {
     }
 
     func createKnowledgeItem(kind: KnowledgeKind, title: String, description: String?, content: String?, url: String?, projectId: String?) async throws {
-        try await db.from("knowledge_items")
+        let created: [InsertedId] = try await db.from("knowledge_items")
             .insert(KnowledgePayload(kind: kind.rawValue, title: title, description: description, content: content, url: url, project_id: projectId))
-            .execute()
+            .select("id")
+            .execute().value
+        guard let item = created.first else { return }
+        await emit(
+            .created,
+            EventObject(.knowledgeItem, item.id, label: title),
+            projectId: projectId,
+            metadata: ["kind": .text(kind.rawValue)]
+        )
     }
 
     func updateKnowledgeItem(_ k: KnowledgeItem) async throws {
@@ -325,10 +431,28 @@ final class LiveBackend: BrainBackend {
             .update(KnowledgePayload(kind: k.kind.rawValue, title: k.title, description: k.description, content: k.content, url: k.url, project_id: k.projectId))
             .eq("id", value: k.id)
             .execute()
+        await emit(
+            .updated,
+            EventObject(.knowledgeItem, k.id, label: k.title),
+            projectId: k.projectId,
+            metadata: ["kind": .text(k.kind.rawValue)]
+        )
     }
 
     func deleteKnowledgeItem(id: String) async throws {
+        struct Row: Decodable, Sendable {
+            let title: String
+            let kind: String
+            let project_id: String?
+        }
+        let item: Row? = await eventLookup(table: "knowledge_items", id: id, columns: "title, kind, project_id")
         try await db.from("knowledge_items").delete().eq("id", value: id).execute()
+        await emit(
+            .deleted,
+            EventObject(.knowledgeItem, id, label: item?.title),
+            projectId: item?.project_id,
+            metadata: item.map { ["kind": EventMetaValue.text($0.kind)] } ?? [:]
+        )
     }
 
     private struct AgentPayload: Encodable {
@@ -342,9 +466,12 @@ final class LiveBackend: BrainBackend {
     }
 
     func createAgent(name: String, description: String?, systemPrompt: String?, model: String?, tools: [String], projectId: String?) async throws {
-        try await db.from("agents")
+        let created: [InsertedId] = try await db.from("agents")
             .insert(AgentPayload(name: name, description: description, system_prompt: systemPrompt, model: model, tools: tools, status: "active", project_id: projectId))
-            .execute()
+            .select("id")
+            .execute().value
+        guard let agent = created.first else { return }
+        await emit(.created, EventObject(.agent, agent.id, label: name), projectId: projectId)
     }
 
     func updateAgent(_ a: Agent) async throws {
@@ -352,10 +479,14 @@ final class LiveBackend: BrainBackend {
             .update(AgentPayload(name: a.name, description: a.description, system_prompt: a.systemPrompt, model: a.model, tools: a.tools, status: a.status.rawValue, project_id: a.projectId))
             .eq("id", value: a.id)
             .execute()
+        await emit(.updated, EventObject(.agent, a.id, label: a.name), projectId: a.projectId)
     }
 
     func deleteAgent(id: String) async throws {
+        let name = await eventLabel(table: "agents", id: id, column: "name")
         try await db.from("agents").delete().eq("id", value: id).execute()
+        // No project scope: matches src/app/agents/actions.ts deleteAgent.
+        await emit(.deleted, EventObject(.agent, id, label: name))
     }
 
     private struct IdeaPayload: Encodable {
@@ -373,34 +504,70 @@ final class LiveBackend: BrainBackend {
     }
 
     func createIdea(title: String, tagline: String?) async throws {
-        try await db.from("ideas")
+        let created: [InsertedId] = try await db.from("ideas")
             .insert(IdeaPayload(title: title, tagline: tagline, problem: nil, customer: nil, solution: nil, revenue_model: nil, stack_notes: nil, verdict: nil, status: "draft", scores: [:], source_url: nil))
-            .execute()
+            .select("id")
+            .execute().value
+        guard let idea = created.first else { return }
+        await emit(.created, EventObject(.idea, idea.id, label: title))
     }
 
     func updateIdea(_ i: Idea) async throws {
+        // Content edits are `updated`; inline verdict/status/score changes are
+        // the web app's patchIdea, which emits nothing.
+        let before: EventRules.IdeaSnapshot? = await eventLookup(
+            table: "ideas", id: i.id, columns: EventRules.IdeaSnapshot.columns
+        )
         try await db.from("ideas")
             .update(IdeaPayload(title: i.title, tagline: i.tagline, problem: i.problem, customer: i.customer, solution: i.solution, revenue_model: i.revenueModel, stack_notes: i.stackNotes, verdict: i.verdict?.rawValue, status: i.status.rawValue, scores: i.scores, source_url: i.sourceUrl))
             .eq("id", value: i.id)
             .execute()
+        if let verb = EventRules.ideaUpdateVerb(old: before, new: i) {
+            await emit(verb, EventObject(.idea, i.id, label: i.title))
+        }
     }
 
     func deleteIdea(id: String) async throws {
+        let title = await eventLabel(table: "ideas", id: id, column: "title")
         try await db.from("ideas").delete().eq("id", value: id).execute()
+        await emit(.deleted, EventObject(.idea, id, label: title))
     }
 
     func setStep(stepId: String, complete: Bool) async throws {
         guard let uid = await currentUserId() else { return }
         if complete {
-            try await db.from("academy_step_progress")
-                .upsert(["step_id": stepId, "user_id": uid], onConflict: "user_id,step_id")
-                .execute()
+            // Plain insert rather than upsert, matching the web app: the
+            // `unique (user_id, step_id)` index (0005_academy.sql) is then the
+            // sole arbiter of "was this already ticked", so two fast taps can't
+            // both decide it's new and append two `completed` rows to a log with
+            // no delete policy. 23505 is swallowed exactly as the web does, so
+            // completing stays idempotent for the user — only the event is
+            // skipped. Any other error propagates, as before.
+            do {
+                try await db.from("academy_step_progress")
+                    .insert(["step_id": stepId, "user_id": uid])
+                    .execute()
+            } catch let error as PostgrestError where error.code == "23505" {
+                return
+            }
+            // The feed tracks module progress, not individual steps — the step
+            // rides along in metadata (src/app/academy/actions.ts).
+            struct StepRow: Decodable, Sendable { let module_id: String }
+            if let step: StepRow = await eventLookup(table: "academy_steps", id: stepId, columns: "module_id") {
+                let title = await eventLabel(table: "academy_modules", id: step.module_id, column: "title")
+                await emit(
+                    .completed,
+                    EventObject(.academyModule, step.module_id, label: title),
+                    metadata: ["step_id": .text(stepId)]
+                )
+            }
         } else {
             try await db.from("academy_step_progress")
                 .delete()
                 .eq("step_id", value: stepId)
                 .eq("user_id", value: uid)
                 .execute()
+            // Un-completing is silent, same as the web app.
         }
     }
 
@@ -417,6 +584,12 @@ final class LiveBackend: BrainBackend {
         try await db.from("academy_outcome_assessments")
             .upsert(AssessmentPayload(user_id: uid, outcome_id: outcomeId, rating: rating, confidence: confidence, note: note), onConflict: "user_id,outcome_id")
             .execute()
+        let name = await eventLabel(table: "academy_outcomes", id: outcomeId, column: "name")
+        await emit(
+            .rated,
+            EventObject(.academyOutcome, outcomeId, label: name),
+            metadata: ["rating": .number(rating)]
+        )
     }
 
     // MARK: search (ilike across the same fields the web app's tsvector covers)

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { TrendingUp } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import {
   bucketMsByWeek,
   buildWeekBuckets,
@@ -18,10 +18,7 @@ function hoursLabel(ms: number): string {
 }
 
 export default async function GrowthPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const now = new Date();
