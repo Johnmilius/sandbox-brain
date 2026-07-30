@@ -7,6 +7,7 @@ import { IdeaScoring } from "@/components/ideas/idea-scoring";
 import { PromoteBanner } from "@/components/ideas/promote-banner";
 import { RelatedIdeas } from "@/components/ideas/related-ideas";
 import { verdictMeta } from "@/components/ideas/idea-meta";
+import { HistoryPanel } from "@/components/history-panel";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function IdeaPage({
@@ -199,6 +200,8 @@ export default async function IdeaPage({
             Open this idea in the graph →
           </Link>
         </div>
+
+        <HistoryPanel objectType="idea" objectId={id} />
       </aside>
     </div>
   );

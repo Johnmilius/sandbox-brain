@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { emitEvent } from "@sandbox-brain/core";
 import { createClient } from "@/lib/supabase/server";
 import { setTagsForEntity } from "@/lib/tags";
 import type { AgentStatus, Database } from "@/lib/database.types";
@@ -75,6 +76,11 @@ export async function createAgent(
   const linkResult = await setAgentPrompts(supabase, data.id, promptIds);
   if (linkResult.error) return linkResult;
 
+  await emitEvent(supabase, {
+    verb: "created",
+    object: { type: "agent", id: data.id, label: input.name.trim() },
+    projectId: input.projectId || null,
+  });
   revalidatePath("/agents");
   revalidatePath("/graph");
   return { error: null };
@@ -95,6 +101,11 @@ export async function updateAgent(
   const linkResult = await setAgentPrompts(supabase, id, promptIds);
   if (linkResult.error) return linkResult;
 
+  await emitEvent(supabase, {
+    verb: "updated",
+    object: { type: "agent", id, label: input.name.trim() },
+    projectId: input.projectId || null,
+  });
   revalidatePath("/agents");
   revalidatePath("/graph");
   return { error: null };
@@ -102,8 +113,18 @@ export async function updateAgent(
 
 export async function deleteAgent(id: string): Promise<{ error: string | null }> {
   const supabase = await createClient();
+  const { data: agent } = await supabase
+    .from("agents")
+    .select("name")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("agents").delete().eq("id", id);
   if (error) return { error: error.message };
+
+  await emitEvent(supabase, {
+    verb: "deleted",
+    object: { type: "agent", id, label: agent?.name },
+  });
 
   await supabase
     .from("taggables")

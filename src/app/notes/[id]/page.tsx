@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { NoteEditor } from "@/components/notes/note-editor";
+import { HistoryPanel } from "@/components/history-panel";
 import { createClient } from "@/lib/supabase/server";
 import { relativeTime } from "@/lib/home-digest";
 import { noteSnippet, noteTagColor } from "@/lib/note-tags";
@@ -148,6 +149,8 @@ export default async function NotePage({
         >
           Open this note in the graph →
         </Link>
+
+        <HistoryPanel objectType="note" objectId={id} />
       </aside>
     </>
   );

@@ -20,6 +20,7 @@ import { registerNoteTools } from "./tools/notes.js";
 import { registerKnowledgeTools } from "./tools/knowledge.js";
 import { registerSearchTools } from "./tools/search.js";
 import { registerAcademyTools } from "./tools/academy.js";
+import { registerTimelineTools } from "./tools/timeline.js";
 
 const server = new McpServer({
   name: "sandbox-brain-mcp-server",
@@ -33,6 +34,7 @@ registerNoteTools(server);
 registerKnowledgeTools(server);
 registerSearchTools(server);
 registerAcademyTools(server);
+registerTimelineTools(server);
 
 async function main(): Promise<void> {
   const configError = assertConfigured();

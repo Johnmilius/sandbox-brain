@@ -7,13 +7,13 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
-    "prepare": "npm run build"
+    "dev": "tsx src/index.ts"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
+    "@sandbox-brain/core": "file:../packages/core",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "@supabase/supabase-js": "^2.110.0",
     "zod": "^3.23.8"
