@@ -4,6 +4,8 @@
 /node_modules
 mcp/node_modules
 mcp/dist
+packages/*/node_modules
+packages/*/dist
 /.pnp
 .pnp.*
 .yarn/*
@@ -42,3 +44,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# graphify (local dev tool: knowledge graph for AI assistants — not part of the app)
+graphify-out/
+.graphifyignore
+.graphify_version
+/raw/
+# only created if graphify is installed with --project scope
+.claude/skills/graphify/
+.claude/CLAUDE.md
+.claude/settings.json

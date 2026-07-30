@@ -17,6 +17,7 @@ function localISO(y: number, m: number, d: number, h = 12, min = 0): string {
 
 const feedItem = (key: string, at: string): FeedItem => ({
   key,
+  actorId: "user-1",
   actor: "John",
   verb: "updated",
   object: "Thing",

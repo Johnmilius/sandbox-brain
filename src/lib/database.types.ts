@@ -28,11 +28,14 @@ export type EntityType =
   | "note"
   | "knowledge_item"
   | "profile"
+  | "time_entry"
   | "agent"
   | "academy_module"
   | "academy_outcome"
   | "idea"
   | "task";
+
+export type EventSource = "app" | "mcp" | "connector";
 
 export type TaskPriority = "high" | "med" | "low";
 export type TaskArea = "frontend" | "backend" | "design" | "copy";
@@ -546,17 +549,17 @@ export type Database = {
       taggables: {
         Row: {
           tag_id: string;
-          entity_type: string;
+          entity_type: EntityType;
           entity_id: string;
         };
         Insert: {
           tag_id: string;
-          entity_type: string;
+          entity_type: EntityType;
           entity_id: string;
         };
         Update: {
           tag_id?: string;
-          entity_type?: string;
+          entity_type?: EntityType;
           entity_id?: string;
         };
         Relationships: [];
@@ -618,6 +621,81 @@ export type Database = {
         };
         Relationships: [];
       };
+      object_types: {
+        Row: {
+          name: string;
+          label: string;
+          url_pattern: string | null;
+          table_name: string | null;
+          created_at: string;
+        };
+        Insert: {
+          name: string;
+          label: string;
+          url_pattern?: string | null;
+          table_name?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          name?: string;
+          label?: string;
+          url_pattern?: string | null;
+          table_name?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      events: {
+        Row: {
+          id: string;
+          actor_id: string | null;
+          verb: string;
+          object_type: EntityType;
+          object_id: string;
+          object_label: string | null;
+          target_type: EntityType | null;
+          target_id: string | null;
+          target_label: string | null;
+          project_id: string | null;
+          source: EventSource;
+          metadata: Json;
+          occurred_at: string;
+          processed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          actor_id?: string | null;
+          verb: string;
+          object_type: EntityType;
+          object_id: string;
+          object_label?: string | null;
+          target_type?: EntityType | null;
+          target_id?: string | null;
+          target_label?: string | null;
+          project_id?: string | null;
+          source?: EventSource;
+          metadata?: Json;
+          occurred_at?: string;
+          processed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          actor_id?: string | null;
+          verb?: string;
+          object_type?: EntityType;
+          object_id?: string;
+          object_label?: string | null;
+          target_type?: EntityType | null;
+          target_id?: string | null;
+          target_label?: string | null;
+          project_id?: string | null;
+          source?: EventSource;
+          metadata?: Json;
+          occurred_at?: string;
+          processed_at?: string | null;
+        };
+        Relationships: [];
+      };
       links: {
         Row: {
           id: string;
@@ -652,7 +730,18 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      objects: {
+        Row: {
+          object_type: EntityType;
+          object_id: string;
+          title: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       is_team_member: {
         Args: Record<string, never>;
@@ -687,6 +776,8 @@ export type Agent = Database["public"]["Tables"]["agents"]["Row"];
 export type Idea = Database["public"]["Tables"]["ideas"]["Row"];
 export type Tag = Database["public"]["Tables"]["tags"]["Row"];
 export type LinkRow = Database["public"]["Tables"]["links"]["Row"];
+export type EventRow = Database["public"]["Tables"]["events"]["Row"];
+export type ObjectsRow = Database["public"]["Views"]["objects"]["Row"];
 export type AcademyModule = Database["public"]["Tables"]["academy_modules"]["Row"];
 export type AcademyStep = Database["public"]["Tables"]["academy_steps"]["Row"];
 export type AcademyStepProgress =

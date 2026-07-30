@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/database.types";
+import type { Database, EntityType } from "@/lib/database.types";
 
 type Client = SupabaseClient<Database>;
 
@@ -15,7 +15,7 @@ export function normalizeTagNames(names: string[]): string[] {
  */
 export async function setTagsForEntity(
   supabase: Client,
-  entityType: string,
+  entityType: EntityType,
   entityId: string,
   tagNames: string[],
 ): Promise<{ error: string | null }> {
@@ -73,7 +73,7 @@ export async function setTagsForEntity(
 /** Map of entity_id -> tag names for one entity type. */
 export async function getTagsByEntity(
   supabase: Client,
-  entityType: string,
+  entityType: EntityType,
 ): Promise<Map<string, string[]>> {
   const { data } = await supabase
     .from("taggables")
