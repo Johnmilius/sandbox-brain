@@ -14,6 +14,14 @@ import Network
 //
 // The port lives in the private range (49152–65535) specifically so it won't
 // collide with a running dev server (e.g. Next.js on :3000).
+//
+// "Locally" is enforced, not assumed. `NWListener(using:on:)` would bind every
+// interface, which puts the sign-in window on the LAN: the first caller to
+// reach /auth/callback wins the continuation, so anything that could reach the
+// port could drop a real sign-in on the floor. Three narrowings, cheapest
+// first: bind the loopback address only, drop connections whose peer isn't
+// loopback, and require the request to actually look like an OAuth result
+// rather than resuming on any GET.
 
 enum AuthLoopback {
     static let port: UInt16 = 52847
@@ -37,7 +45,19 @@ enum LoopbackCallbackServer {
     static func run(port: UInt16, openURL authURL: URL) async throws -> URL {
         let listener: NWListener
         do {
-            listener = try NWListener(using: .tcp, on: NWEndpoint.Port(rawValue: port)!)
+            let parameters = NWParameters.tcp
+            // Bind 127.0.0.1 rather than every interface. The browser resolves
+            // `localhost` to ::1 first on a dual-stack Mac, gets refused, and
+            // falls back to 127.0.0.1 immediately — the usual native-app OAuth
+            // arrangement (RFC 8252 §7.3).
+            parameters.requiredLocalEndpoint = .hostPort(
+                host: .ipv4(.loopback),
+                port: NWEndpoint.Port(rawValue: port)!
+            )
+            // A previous attempt's socket may still be in TIME_WAIT; without
+            // this, retrying sign-in inside two minutes fails to bind.
+            parameters.allowLocalEndpointReuse = true
+            listener = try NWListener(using: parameters)
         } catch {
             throw NSError(domain: "SandboxBrain", code: 1, userInfo: [
                 NSLocalizedDescriptionKey: "Couldn't open the local sign-in port (\(port)). Something else is using it — quit that app and try signing in again."
@@ -48,18 +68,22 @@ enum LoopbackCallbackServer {
             let flag = Flag()
 
             listener.newConnectionHandler = { connection in
+                // Belt-and-braces behind requiredLocalEndpoint: if the bind is
+                // ever loosened, this still refuses anything off-machine.
+                guard isLoopback(connection.endpoint) else {
+                    connection.cancel()
+                    return
+                }
                 connection.start(queue: .main)
                 connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { data, _, _, _ in
                     let request = data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
-                    let path = request.split(separator: "\r\n").first?
-                        .split(separator: " ").dropFirst().first.map(String.init) ?? ""
 
-                    guard path.hasPrefix("/auth/callback") else {
+                    guard let target = requestTarget(request), isCallbackTarget(target) else {
                         respond(connection, status: "404 Not Found", body: "Not found")
                         return
                     }
                     respond(connection, status: "200 OK", body: successPage)
-                    if flag.tryResume(), let url = URL(string: "http://localhost:\(port)\(path)") {
+                    if flag.tryResume(), let url = URL(string: "http://localhost:\(port)\(target)") {
                         listener.cancel()
                         continuation.resume(returning: url)
                     }
@@ -88,6 +112,43 @@ enum LoopbackCallbackServer {
                 }
             }
         }
+    }
+
+    // MARK: - Request vetting
+    //
+    // Pure and internal (not private) so LoopbackTests can exercise them
+    // without opening a socket — same arrangement as EventRules.
+
+    /// True when `endpoint` is this machine talking to itself.
+    static func isLoopback(_ endpoint: NWEndpoint?) -> Bool {
+        guard case .hostPort(let host, _) = endpoint else { return false }
+        switch host {
+        case .ipv4(let address): return address.isLoopback
+        case .ipv6(let address): return address.isLoopback
+        case .name(let name, _): return name == "localhost"
+        @unknown default: return false
+        }
+    }
+
+    /// The request target from an HTTP request line ("GET /a?b=c HTTP/1.1").
+    /// nil for anything that isn't a well-formed GET — the callback only ever
+    /// arrives as a browser navigation.
+    static func requestTarget(_ raw: String) -> String? {
+        guard let line = raw.split(separator: "\r\n").first else { return nil }
+        let parts = line.split(separator: " ")
+        guard parts.count >= 2, parts[0] == "GET" else { return nil }
+        return String(parts[1])
+    }
+
+    /// True only for the callback path carrying an OAuth result. Requiring
+    /// `code`/`error` means a bare probe of the port can't consume the
+    /// one-shot continuation and strand a sign-in that is still in flight.
+    static func isCallbackTarget(_ target: String) -> Bool {
+        guard let parsed = URLComponents(string: target), parsed.path == "/auth/callback" else {
+            return false
+        }
+        let names = Set((parsed.queryItems ?? []).map(\.name))
+        return names.contains("code") || names.contains("error")
     }
 
     private static func respond(_ connection: NWConnection, status: String, body: String) {

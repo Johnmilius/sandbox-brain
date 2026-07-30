@@ -65,6 +65,12 @@ redirect allowlist (Auth → URL Configuration).
 - The anon key is the *public* client key; data access is enforced substantially
   by Row Level Security (`is_team_member()`) — identical to the web app.
 - The service-role key is never used or asked for. Nothing secret is committed.
+- The loopback listener binds `127.0.0.1` only, refuses connections from any
+  non-loopback peer, and ignores requests that don't carry an OAuth `code` or
+  `error` — so a stray probe of the port can't consume the sign-in that's in
+  flight. To confirm the bind after a change, start a sign-in and run
+  `lsof -iTCP:52847 -sTCP:LISTEN` in another terminal: the NAME column must read
+  `127.0.0.1:52847`, never `*:52847`.
 
 ## Dev tools
 
