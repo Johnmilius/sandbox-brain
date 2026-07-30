@@ -3,7 +3,9 @@ import SwiftUI
 
 // First-run flow, written for the least technical teammate: paste one invite
 // code, sign in with Google, done. Manual URL/key entry hides under Advanced.
-// Credentials land in the macOS Keychain — never on disk, never in the repo.
+// The invite code carries only the project URL and anon key — both public —
+// and ConfigStore keeps them in Application Support (see Support.swift for
+// why not Keychain). The session itself is stored by supabase-swift.
 
 struct OnboardingView: View {
     @Environment(AppState.self) private var state
