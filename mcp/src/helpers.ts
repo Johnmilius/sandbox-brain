@@ -1,10 +1,30 @@
 /**
  * Shared helpers for tools: tagging, wiki-link sync, and formatting.
- * Tag + wiki-link logic mirrors the web app (src/lib/tags.ts and
- * src/lib/wiki-links.ts) — keep them in sync if either changes.
+ * Wiki-link logic lives in @sandbox-brain/core (shared with the web app).
+ * Tag logic still mirrors src/lib/tags.ts — keep in sync until it moves
+ * to core too.
  */
 
+import {
+  emitEvent,
+  extractWikiLinkTitles,
+  syncWikiLinks as coreSyncWikiLinks,
+  type EventInput,
+} from "@sandbox-brain/core";
 import { getActor, supabase } from "./context.js";
+
+export { extractWikiLinkTitles };
+
+/**
+ * Emit a timeline event attributed to the configured actor with
+ * source='mcp'. Never throws (see @sandbox-brain/core emitEvent).
+ */
+export async function emitMcpEvent(
+  input: Omit<EventInput, "source" | "actorId">,
+): Promise<void> {
+  const actor = await getActor();
+  await emitEvent(supabase(), { ...input, source: "mcp", actorId: actor.id });
+}
 
 export const CHARACTER_LIMIT = 25000;
 
@@ -71,60 +91,13 @@ export async function setTagsForEntity(
 }
 
 // ---------------------------------------------------------------------------
-// Wiki-links (mirrors src/lib/wiki-links.ts in the web app)
+// Wiki-links (implementation in @sandbox-brain/core, shared with the web app)
 // ---------------------------------------------------------------------------
-
-const WIKI_LINK_RE = /\[\[([^\[\]|]+)(?:\|([^\[\]]+))?\]\]/g;
-
-export function extractWikiLinkTitles(body: string): string[] {
-  const titles = new Set<string>();
-  for (const match of body.matchAll(WIKI_LINK_RE)) {
-    const title = match[1].trim();
-    if (title) titles.add(title);
-  }
-  return [...titles];
-}
 
 /** Rebuild a note's outgoing wiki edges in the links table. */
 export async function syncWikiLinks(noteId: string, body: string): Promise<void> {
-  const db = supabase();
-  await db
-    .from("links")
-    .delete()
-    .eq("source_type", "note")
-    .eq("source_id", noteId)
-    .eq("relationship", "wiki");
-
-  const titles = extractWikiLinkTitles(body);
-  if (titles.length === 0) return;
-
-  const { data: targets } = await db
-    .from("notes")
-    .select("id, title")
-    .neq("id", noteId);
-  const idByLower = new Map(
-    (targets ?? []).map((n: { id: string; title: string }) => [
-      n.title.toLowerCase(),
-      n.id,
-    ]),
-  );
-
   const actor = await getActor();
-  const rows = titles
-    .map((t) => idByLower.get(t.toLowerCase()))
-    .filter((id): id is string => Boolean(id))
-    .map((targetId) => ({
-      source_type: "note",
-      source_id: noteId,
-      target_type: "note",
-      target_id: targetId,
-      relationship: "wiki",
-      created_by: actor.id,
-    }));
-  if (rows.length > 0) {
-    const { error } = await db.from("links").insert(rows);
-    if (error) throw new Error(`Couldn't save wiki links: ${error.message}`);
-  }
+  await coreSyncWikiLinks(supabase(), noteId, body, { createdBy: actor.id });
 }
 
 // ---------------------------------------------------------------------------

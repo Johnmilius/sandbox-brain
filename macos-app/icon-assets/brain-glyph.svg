@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Layer: foreground glyph — ORIGINAL side-profile brain (faces right),
+       in the spirit of the SF Symbol but hand-drawn (Apple's symbol license
+       doesn't cover app icons). White silhouette from overlapping lobes;
+       grooves are bold ink strokes flowing in from the edges. -->
+  <g id="brain-side">
+    <g id="silhouette" fill="#ffffff">
+      <!-- cerebrum -->
+      <circle cx="620" cy="420" r="150"/>   <!-- frontal upper -->
+      <circle cx="480" cy="360" r="150"/>   <!-- crown -->
+      <circle cx="340" cy="430" r="140"/>   <!-- parietal rear -->
+      <circle cx="300" cy="540" r="110"/>   <!-- occipital -->
+      <circle cx="560" cy="540" r="140"/>   <!-- temporal center -->
+      <circle cx="680" cy="550" r="110"/>   <!-- frontal lower -->
+      <circle cx="420" cy="560" r="90"/>    <!-- filler: closes inner gap -->
+      <!-- cerebellum (rear-bottom) -->
+      <circle cx="380" cy="660" r="90"/>
+    </g>
+    <g id="stem" stroke="#ffffff" stroke-width="70" stroke-linecap="round" fill="none">
+      <path d="M340 668 q-28 42 -34 88"/>
+    </g>
+    <g id="grooves" fill="none" stroke="#1c1c1f" stroke-width="26" stroke-linecap="round">
+      <!-- notch from the top edge between crown and frontal lobe -->
+      <path d="M602 284 q-16 56 -84 54"/>
+      <!-- front groove sweeping in from the right edge -->
+      <path d="M758 478 q-92 -12 -122 58"/>
+      <!-- central S-fold (floats, like the symbol's) -->
+      <path d="M470 320 C 540 342, 498 428, 452 450 C 392 478, 432 542, 496 556"/>
+      <!-- rear groove entering from the left edge -->
+      <path d="M258 416 q62 42 44 108"/>
+      <!-- cerebellum divider (short, tucked) -->
+      <path d="M312 622 q56 30 118 22"/>
+      <!-- cerebellum striation -->
+      <path d="M338 670 q32 16 66 10"/>
+    </g>
+  </g>
+</svg>

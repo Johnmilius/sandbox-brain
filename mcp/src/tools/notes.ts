@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getActor, supabase } from "../context.js";
-import { fail, guarded, ok, syncWikiLinks } from "../helpers.js";
+import { emitMcpEvent, fail, guarded, ok, syncWikiLinks } from "../helpers.js";
 
 async function findNoteByTitle(
   title: string,
@@ -66,6 +66,10 @@ export function registerNoteTools(server: McpServer): void {
         return fail(error.message);
       }
       await syncWikiLinks(data.id, body);
+      await emitMcpEvent({
+        verb: "created",
+        object: { type: "note", id: data.id, label: title.trim() },
+      });
       return ok(`Created note **${title.trim()}**.`);
     }),
   );
@@ -98,6 +102,10 @@ export function registerNoteTools(server: McpServer): void {
         .eq("id", note.id);
       if (error) return fail(error.message);
       await syncWikiLinks(note.id, newBody);
+      await emitMcpEvent({
+        verb: "updated",
+        object: { type: "note", id: note.id, label: note.title },
+      });
       return ok(`Appended to **${note.title}**.`);
     }),
   );

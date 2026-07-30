@@ -1,9 +1,15 @@
 import { redirect } from "next/navigation";
 import { Waypoints } from "lucide-react";
+import { nodeKey, urlFor, type ObjectRef } from "@sandbox-brain/core";
 import { EmptyState } from "@/components/empty-state";
 import { GraphExplorer } from "@/components/graph/graph-explorer";
 import type { GraphEdge, GraphNode } from "@/components/graph/graph-view";
 import { createClient } from "@/lib/supabase/server";
+
+/** nodeKey + urlFor from the shared object contract (@sandbox-brain/core). */
+function node(ref: ObjectRef): { id: string; url: string | null } {
+  return { id: nodeKey(ref), url: urlFor(ref) };
+}
 
 export default async function GraphPage() {
   const supabase = await createClient();
@@ -49,7 +55,7 @@ export default async function GraphPage() {
   const tagsByNode = new Map<string, string[]>();
   const nodesByTag = new Map<string, string[]>();
   for (const t of taggables.data ?? []) {
-    const nodeId = `${t.entity_type}:${t.entity_id}`;
+    const nodeId = nodeKey({ type: t.entity_type, id: t.entity_id });
     const name = tagNameById.get(t.tag_id);
     if (!name) continue;
     (tagsByNode.get(nodeId) ?? tagsByNode.set(nodeId, []).get(nodeId)!).push(name);
@@ -58,60 +64,52 @@ export default async function GraphPage() {
 
   const nodes: GraphNode[] = [
     ...(projects.data ?? []).map((p) => ({
-      id: `project:${p.id}`,
+      ...node({ type: "project", id: p.id }),
       label: p.name,
       type: "project" as const,
-      url: "/projects",
       projectId: p.id,
     })),
     ...(notes.data ?? []).map((n) => ({
-      id: `note:${n.id}`,
+      ...node({ type: "note", id: n.id }),
       label: n.title,
       type: "note" as const,
-      url: `/notes/${n.id}`,
       authorId: n.author_id,
     })),
     ...(prompts.data ?? []).map((p) => ({
-      id: `prompt:${p.id}`,
+      ...node({ type: "prompt", id: p.id }),
       label: p.title,
       type: "prompt" as const,
-      url: "/prompts",
       authorId: p.user_id,
       projectId: p.project_id ?? undefined,
     })),
     ...(knowledge.data ?? []).map((k) => ({
-      id: `knowledge_item:${k.id}`,
+      ...node({ type: "knowledge_item", id: k.id }),
       label: k.title,
       type: "knowledge_item" as const,
-      url: "/brain",
       authorId: k.created_by,
       projectId: k.project_id ?? undefined,
     })),
     ...(profiles.data ?? []).map((p) => ({
-      id: `profile:${p.id}`,
+      ...node({ type: "profile", id: p.id }),
       label: p.full_name ?? p.email,
       type: "profile" as const,
-      url: null,
     })),
     ...(agents.data ?? []).map((a) => ({
-      id: `agent:${a.id}`,
+      ...node({ type: "agent", id: a.id }),
       label: a.name,
       type: "agent" as const,
-      url: "/agents",
       authorId: a.created_by,
       projectId: a.project_id ?? undefined,
     })),
     ...(academyModules.data ?? []).map((m) => ({
-      id: `academy_module:${m.id}`,
+      ...node({ type: "academy_module", id: m.id }),
       label: m.title,
       type: "academy_module" as const,
-      url: `/academy/${m.id}`,
     })),
     ...(ideas.data ?? []).map((i) => ({
-      id: `idea:${i.id}`,
+      ...node({ type: "idea", id: i.id }),
       label: i.title,
       type: "idea" as const,
-      url: `/ideas/${i.id}`,
       authorId: i.created_by,
     })),
   ];
@@ -141,32 +139,44 @@ export default async function GraphPage() {
 
   // Explicit edges (wiki-links and future manual links).
   for (const l of links.data ?? []) {
-    addEdge(`${l.source_type}:${l.source_id}`, `${l.target_type}:${l.target_id}`);
+    addEdge(
+      nodeKey({ type: l.source_type, id: l.source_id }),
+      nodeKey({ type: l.target_type, id: l.target_id }),
+    );
   }
   // Implicit edges from structured relations.
   for (const p of prompts.data ?? []) {
-    if (p.project_id) addEdge(`prompt:${p.id}`, `project:${p.project_id}`);
+    if (p.project_id)
+      addEdge(nodeKey({ type: "prompt", id: p.id }), nodeKey({ type: "project", id: p.project_id }));
   }
   for (const k of knowledge.data ?? []) {
-    if (k.project_id) addEdge(`knowledge_item:${k.id}`, `project:${k.project_id}`);
+    if (k.project_id)
+      addEdge(nodeKey({ type: "knowledge_item", id: k.id }), nodeKey({ type: "project", id: k.project_id }));
   }
   // Authorship: connect people to what they recorded, so "filter by person" works.
   for (const n of notes.data ?? []) {
-    if (n.author_id) addEdge(`profile:${n.author_id}`, `note:${n.id}`);
+    if (n.author_id)
+      addEdge(nodeKey({ type: "profile", id: n.author_id }), nodeKey({ type: "note", id: n.id }));
   }
   for (const p of prompts.data ?? []) {
-    if (p.user_id) addEdge(`profile:${p.user_id}`, `prompt:${p.id}`);
+    if (p.user_id)
+      addEdge(nodeKey({ type: "profile", id: p.user_id }), nodeKey({ type: "prompt", id: p.id }));
   }
   for (const k of knowledge.data ?? []) {
-    if (k.created_by) addEdge(`profile:${k.created_by}`, `knowledge_item:${k.id}`);
+    if (k.created_by)
+      addEdge(nodeKey({ type: "profile", id: k.created_by }), nodeKey({ type: "knowledge_item", id: k.id }));
   }
   for (const a of agents.data ?? []) {
-    if (a.project_id) addEdge(`agent:${a.id}`, `project:${a.project_id}`);
-    if (a.created_by) addEdge(`profile:${a.created_by}`, `agent:${a.id}`);
+    if (a.project_id)
+      addEdge(nodeKey({ type: "agent", id: a.id }), nodeKey({ type: "project", id: a.project_id }));
+    if (a.created_by)
+      addEdge(nodeKey({ type: "profile", id: a.created_by }), nodeKey({ type: "agent", id: a.id }));
   }
   for (const i of ideas.data ?? []) {
-    if (i.created_by) addEdge(`profile:${i.created_by}`, `idea:${i.id}`);
-    if (i.promoted_project_id) addEdge(`idea:${i.id}`, `project:${i.promoted_project_id}`);
+    if (i.created_by)
+      addEdge(nodeKey({ type: "profile", id: i.created_by }), nodeKey({ type: "idea", id: i.id }));
+    if (i.promoted_project_id)
+      addEdge(nodeKey({ type: "idea", id: i.id }), nodeKey({ type: "project", id: i.promoted_project_id }));
   }
   // People connect to projects they've logged time on.
   const worked = new Set(
@@ -174,7 +184,7 @@ export default async function GraphPage() {
   );
   for (const pair of worked) {
     const [userId, projectId] = pair.split("|");
-    addEdge(`profile:${userId}`, `project:${projectId}`);
+    addEdge(nodeKey({ type: "profile", id: userId }), nodeKey({ type: "project", id: projectId }));
   }
   // People connect to academy modules they've completed steps in.
   const moduleByStep = new Map(
@@ -190,7 +200,7 @@ export default async function GraphPage() {
   );
   for (const pair of studied) {
     const [userId, moduleId] = pair.split("|");
-    addEdge(`profile:${userId}`, `academy_module:${moduleId}`);
+    addEdge(nodeKey({ type: "profile", id: userId }), nodeKey({ type: "academy_module", id: moduleId }));
   }
 
   // Suggested (soft) edges: items that share a tag. Skip tags used so widely

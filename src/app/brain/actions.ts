@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { emitEvent } from "@sandbox-brain/core";
 import { createClient } from "@/lib/supabase/server";
 import { setTagsForEntity } from "@/lib/tags";
 import { readManifest } from "@/lib/knowledge-files";
@@ -50,6 +51,12 @@ export async function createKnowledgeItem(
   );
   if (tagResult.error) return tagResult;
 
+  await emitEvent(supabase, {
+    verb: "created",
+    object: { type: "knowledge_item", id: data.id, label: input.title.trim() },
+    projectId: input.projectId || null,
+    metadata: { kind: input.kind },
+  });
   revalidatePath("/brain");
   revalidatePath("/graph");
   return { error: null };
@@ -70,6 +77,12 @@ export async function updateKnowledgeItem(
   const tagResult = await setTagsForEntity(supabase, "knowledge_item", id, tagNames);
   if (tagResult.error) return tagResult;
 
+  await emitEvent(supabase, {
+    verb: "updated",
+    object: { type: "knowledge_item", id, label: input.title.trim() },
+    projectId: input.projectId || null,
+    metadata: { kind: input.kind },
+  });
   revalidatePath("/brain");
   revalidatePath("/graph");
   return { error: null };
@@ -82,12 +95,19 @@ export async function deleteKnowledgeItem(
 
   const { data: item } = await supabase
     .from("knowledge_items")
-    .select("file_path, data")
+    .select("title, kind, project_id, file_path, data")
     .eq("id", id)
     .maybeSingle();
 
   const { error } = await supabase.from("knowledge_items").delete().eq("id", id);
   if (error) return { error: error.message };
+
+  await emitEvent(supabase, {
+    verb: "deleted",
+    object: { type: "knowledge_item", id, label: item?.title },
+    projectId: item?.project_id ?? null,
+    metadata: item?.kind ? { kind: item.kind } : undefined,
+  });
 
   // Clean up storage: the legacy single file and every manifest file.
   const paths = [
