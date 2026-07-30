@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/empty-state";
 import { createClient } from "@/lib/supabase/server";
 import { formatDuration, entryDurationMs } from "@/lib/format";
 import { FlowingFeed, type FlowFeedItem } from "@/components/home/flowing-feed";
-import { eventToFeedItem } from "@/lib/event-feed";
+import { eventToFeedItem, eventedObjectKeys } from "@/lib/event-feed";
 import {
   ACTOR_COLORS,
   assembleFeed,
@@ -105,69 +105,86 @@ export default async function HomePage() {
 
   // The events timeline is the canonical feed; the legacy union covers
   // pre-0009 databases and rows written before events existed.
-  const eventItems: FeedItem[] = (eventsRes.error ? [] : eventsRes.data ?? []).map(
-    (e) => eventToFeedItem(e, actorName),
-  );
+  const eventRows = eventsRes.error ? [] : eventsRes.data ?? [];
+  const eventItems: FeedItem[] = eventRows.map((e) => eventToFeedItem(e, actorName));
 
-  // Union of recent activity → one feed.
+  // Objects the timeline already accounts for, so the legacy union below can
+  // skip them instead of double-reporting the same action.
+  const eventedObjects = eventedObjectKeys(eventRows);
+
+  // Union of recent activity → one feed. Rows the timeline already covers are
+  // filtered out; what's left is history from before events existed (or a
+  // client that writes without emitting).
   const legacyCandidates: FeedItem[] = [
-    ...(notesRes.data ?? []).map((n) => ({
-      key: `note:${n.id}:${n.updated_at}`,
-      actorId: n.author_id,
-      actor: actorName(n.author_id),
-      verb: n.created_at === n.updated_at ? "wrote" : "updated",
-      object: n.title,
-      context: "notes",
-      href: `/notes/${n.id}`,
-      kind: "note" as const,
-      at: n.updated_at,
-    })),
-    ...(promptsRes.data ?? []).map((p) => ({
-      key: `prompt:${p.id}`,
-      actorId: p.user_id,
-      actor: actorName(p.user_id),
-      verb: "saved",
-      object: p.title,
-      context: "prompt library",
-      href: "/prompts",
-      kind: "prompt" as const,
-      at: p.created_at,
-    })),
-    ...(ideasRes.data ?? []).map((i) => ({
-      key: `idea:${i.id}`,
-      actorId: i.created_by,
-      actor: actorName(i.created_by),
-      verb: "captured",
-      object: i.title,
-      context: "ideas",
-      href: `/ideas/${i.id}`,
-      kind: "idea" as const,
-      at: i.created_at,
-    })),
-    ...(recentEntriesRes.data ?? []).map((e) => ({
-      key: `time:${e.id}`,
-      actorId: e.user_id,
-      actor: actorName(e.user_id),
-      verb: "logged",
-      object: formatDuration(entryDurationMs(e.started_at, e.ended_at)),
-      context: projectById.get(e.project_id)?.name ?? "a project",
-      href: "/time",
-      kind: "time" as const,
-      at: e.started_at,
-    })),
+    ...(notesRes.data ?? [])
+      .filter((n) => !eventedObjects.has(`note:${n.id}`))
+      .map((n) => ({
+        key: `note:${n.id}:${n.updated_at}`,
+        actorId: n.author_id,
+        actor: actorName(n.author_id),
+        verb: n.created_at === n.updated_at ? "wrote" : "updated",
+        object: n.title,
+        context: "notes",
+        href: `/notes/${n.id}`,
+        kind: "note" as const,
+        at: n.updated_at,
+      })),
+    ...(promptsRes.data ?? [])
+      .filter((p) => !eventedObjects.has(`prompt:${p.id}`))
+      .map((p) => ({
+        key: `prompt:${p.id}`,
+        actorId: p.user_id,
+        actor: actorName(p.user_id),
+        verb: "saved",
+        object: p.title,
+        context: "prompt library",
+        href: "/prompts",
+        kind: "prompt" as const,
+        at: p.created_at,
+      })),
+    ...(ideasRes.data ?? [])
+      .filter((i) => !eventedObjects.has(`idea:${i.id}`))
+      .map((i) => ({
+        key: `idea:${i.id}`,
+        actorId: i.created_by,
+        actor: actorName(i.created_by),
+        verb: "captured",
+        object: i.title,
+        context: "ideas",
+        href: `/ideas/${i.id}`,
+        kind: "idea" as const,
+        at: i.created_at,
+      })),
+    ...(recentEntriesRes.data ?? [])
+      .filter((e) => !eventedObjects.has(`time_entry:${e.id}`))
+      .map((e) => ({
+        key: `time:${e.id}`,
+        actorId: e.user_id,
+        actor: actorName(e.user_id),
+        verb: "logged",
+        object: formatDuration(entryDurationMs(e.started_at, e.ended_at)),
+        context: projectById.get(e.project_id)?.name ?? "a project",
+        href: "/time",
+        kind: "time" as const,
+        at: e.started_at,
+      })),
   ];
 
-  const candidates =
-    eventItems.length > 0 ? eventItems : legacyCandidates;
+  // Both sources, not one or the other: a single event used to hide the entire
+  // pre-events history (and every row written by a client that doesn't emit).
+  // assembleFeed sorts the union by time.
+  const candidates = [...eventItems, ...legacyCandidates];
   const feed = assembleFeed(candidates, FEED_LIMIT);
   const sinceCount = countSince(candidates, now);
 
   // Keyset cursor for "Load more" — only when the feed is event-backed and
   // more events exist past what's shown (legacy fallback can't paginate).
   const lastShown = feed[feed.length - 1];
+  // Only an event-keyed tail yields a valid keyset cursor; a legacy item at the
+  // boundary would hand "Load more" a non-event id.
   const initialCursor =
-    eventItems.length > FEED_LIMIT && lastShown
-      ? { occurredAt: lastShown.at, id: lastShown.key.replace("event:", "") }
+    eventItems.length > FEED_LIMIT && lastShown?.key.startsWith("event:")
+      ? { occurredAt: lastShown.at, id: lastShown.key.slice("event:".length) }
       : null;
 
   const feedItems: FlowFeedItem[] = feed.map((item) => ({

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { eventToFeedItem } from "./event-feed";
+import { eventToFeedItem, eventedObjectKeys } from "./event-feed";
 
 const names = (id: string) => (id === "u1" ? "Luke" : "Someone");
 
@@ -114,5 +114,35 @@ describe("eventToFeedItem", () => {
     expect(item.actor).toBe("System");
     expect(item.object).toBe("Knowledge item");
     expect(item.kind).toBe("knowledge");
+  });
+});
+
+describe("eventedObjectKeys", () => {
+  it("keys rows by type and id so the legacy feed can skip evented objects", () => {
+    const keys = eventedObjectKeys([
+      { object_type: "note", object_id: "n1" },
+      { object_type: "time_entry", object_id: "t1" },
+    ]);
+    expect(keys.has("note:n1")).toBe(true);
+    expect(keys.has("time_entry:t1")).toBe(true);
+    // A note the timeline hasn't recorded must still come through the legacy
+    // union — this is what keeps non-emitting clients (the Mac and iOS apps)
+    // visible in the feed.
+    expect(keys.has("note:n2")).toBe(false);
+  });
+
+  it("collapses repeated events for one object into a single key", () => {
+    const keys = eventedObjectKeys([
+      { object_type: "note", object_id: "n1" },
+      { object_type: "note", object_id: "n1" },
+    ]);
+    expect(keys.size).toBe(1);
+  });
+
+  it("does not collide ids across object types", () => {
+    const keys = eventedObjectKeys([
+      { object_type: "note", object_id: "shared-id" },
+    ]);
+    expect(keys.has("idea:shared-id")).toBe(false);
   });
 });
