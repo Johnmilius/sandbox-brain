@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isAllowedEmail } from "@/lib/allowlist";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 /**
  * OAuth callback: exchanges the Google auth code for a Supabase session.
@@ -9,7 +10,9 @@ import { isAllowedEmail } from "@/lib/allowlist";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  // `next` rides in on the query string, so it is only ever appended to a
+  // host we control once it has been reduced to a same-site path.
+  const next = safeNextPath(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();
