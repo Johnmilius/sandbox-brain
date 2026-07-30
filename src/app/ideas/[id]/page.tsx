@@ -8,7 +8,7 @@ import { PromoteBanner } from "@/components/ideas/promote-banner";
 import { RelatedIdeas } from "@/components/ideas/related-ideas";
 import { verdictMeta } from "@/components/ideas/idea-meta";
 import { HistoryPanel } from "@/components/history-panel";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 
 export default async function IdeaPage({
   params,
@@ -16,10 +16,7 @@ export default async function IdeaPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const [ideaRes, allIdeasRes, linksRes, similarRes] = await Promise.all([

@@ -4,7 +4,7 @@ import { LayoutGrid, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { ProjectFormDialog } from "@/components/projects/project-form-dialog";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import { entryDurationMs } from "@/lib/format";
 import type { ProjectStatus } from "@/lib/database.types";
 
@@ -32,10 +32,7 @@ function initialsFor(label: string): string {
 }
 
 export default async function ProjectsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const [projectsRes, entriesRes, tasksRes, profilesRes] = await Promise.all([

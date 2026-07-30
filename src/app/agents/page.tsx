@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { AgentCard } from "@/components/agents/agent-card";
 import { AgentFormDialog } from "@/components/agents/agent-form-dialog";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import { getTagsByEntity } from "@/lib/tags";
 
 export default async function AgentsPage({
@@ -16,10 +16,7 @@ export default async function AgentsPage({
 }) {
   const { tab } = await searchParams;
   const automationsTab = tab === "automations";
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const [agentsRes, projectsRes, profilesRes, tagsRes, agentTags, promptsRes, linksRes] =

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Rss } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedUser } from "@/lib/supabase/auth";
 import { formatDuration, entryDurationMs } from "@/lib/format";
 import { FlowingFeed, type FlowFeedItem } from "@/components/home/flowing-feed";
 import { eventToFeedItem } from "@/lib/event-feed";
@@ -23,10 +23,7 @@ import {
 const FEED_LIMIT = 8;
 
 export default async function HomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedUser();
   if (!user) redirect("/login");
 
   const now = new Date();
