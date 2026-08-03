@@ -50,7 +50,7 @@ public final class AppState {
     public var links: [EntityLink] = []
 
     public init() {
-        // Reconnect from Keychain on launch; fall back to onboarding.
+        // Reconnect from the stored config on launch; fall back to onboarding.
         if let config = ConfigStore.load(),
            let parsed = URL(string: config.supabaseURL) {
             let key = config.anonKey
