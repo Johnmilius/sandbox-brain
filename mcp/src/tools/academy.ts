@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getActor, supabase } from "../context.js";
-import { fail, formatDuration, guarded, ok } from "../helpers.js";
+import { emitMcpEvent, fail, formatDuration, guarded, ok } from "../helpers.js";
 
 const TIER_LABELS = ["Novice", "Developing", "Strong", "Advanced"] as const;
 const TIER_BY_WORD: Record<string, number> = {
@@ -293,6 +293,11 @@ export function registerAcademyTools(server: McpServer): void {
           { onConflict: "user_id,step_id" },
         );
         if (error) return fail(error.message);
+        await emitMcpEvent({
+          verb: "completed",
+          object: { type: "academy_module", id: mod.id, label: mod.title },
+          metadata: { step_id: target.id, step_no: target.step_no },
+        });
         lines.push(`Completed ${label}.`);
       } else {
         const { error } = await db
@@ -608,6 +613,15 @@ export function registerAcademyTools(server: McpServer): void {
         );
       if (upsertError) return fail(upsertError.message);
 
+      await emitMcpEvent({
+        verb: "rated",
+        object: {
+          type: "academy_outcome",
+          id: matches[0].id,
+          label: matches[0].name,
+        },
+        metadata: { rating: numericRating },
+      });
       return ok(
         `Rated **${matches[0].name}** as **${TIER_LABELS[numericRating - 1]}**` +
           (confidence != null ? ` (confidence ${confidence}/5)` : "") +

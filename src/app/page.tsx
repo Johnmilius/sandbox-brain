@@ -5,21 +5,22 @@ import { EmptyState } from "@/components/empty-state";
 import { createClient } from "@/lib/supabase/server";
 import { formatDuration, entryDurationMs } from "@/lib/format";
 import { FlowingFeed, type FlowFeedItem } from "@/components/home/flowing-feed";
+import { eventToFeedItem } from "@/lib/event-feed";
 import {
+  ACTOR_COLORS,
   assembleFeed,
   bucketMsByDay,
+  buildActorColorMap,
   buildDayBuckets,
   countSince,
   greetingFor,
   monoDate,
   relativeTime,
+  shortNameOf,
   type FeedItem,
 } from "@/lib/home-digest";
 
 const FEED_LIMIT = 8;
-
-/** Identity colors cycled per person (dot ring + actor name). */
-const ACTOR_COLORS = ["#4a5b8a", "#3f7a56", "#8a6a2a", "#5b3fd6"];
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -35,6 +36,7 @@ export default async function HomePage() {
   const [
     profilesRes,
     projectsRes,
+    eventsRes,
     notesRes,
     promptsRes,
     ideasRes,
@@ -44,6 +46,15 @@ export default async function HomePage() {
   ] = await Promise.all([
     supabase.from("profiles").select("id, full_name, email"),
     supabase.from("projects").select("id, name, status"),
+    // The canonical feed source (migration 0009). Errors (table missing
+    // pre-0009) degrade to the legacy per-table union below.
+    supabase
+      .from("events")
+      .select(
+        "id, actor_id, verb, object_type, object_id, object_label, target_type, target_id, target_label, occurred_at",
+      )
+      .order("occurred_at", { ascending: false })
+      .limit(40),
     supabase
       .from("notes")
       .select("id, title, author_id, created_at, updated_at")
@@ -81,17 +92,8 @@ export default async function HomePage() {
   const projectById = new Map(projects.map((p) => [p.id, p]));
 
   // Stable identity color per person.
-  const actorColorById = new Map(
-    [...profiles]
-      .sort((a, b) => a.id.localeCompare(b.id))
-      .map((p, i) => [p.id, ACTOR_COLORS[i % ACTOR_COLORS.length]]),
-  );
-
-  const actorName = (id: string) => {
-    const p = profileById.get(id);
-    const full = p?.full_name ?? p?.email ?? "Someone";
-    return full.split(/[\s@]+/)[0];
-  };
+  const actorColorById = buildActorColorMap(profiles);
+  const actorName = (id: string) => shortNameOf(profileById.get(id));
 
   const profile = profileById.get(user.id);
   const firstName = (
@@ -101,8 +103,14 @@ export default async function HomePage() {
     "there"
   ).split(/[\s@]+/)[0];
 
+  // The events timeline is the canonical feed; the legacy union covers
+  // pre-0009 databases and rows written before events existed.
+  const eventItems: FeedItem[] = (eventsRes.error ? [] : eventsRes.data ?? []).map(
+    (e) => eventToFeedItem(e, actorName),
+  );
+
   // Union of recent activity → one feed.
-  const candidates: FeedItem[] = [
+  const legacyCandidates: FeedItem[] = [
     ...(notesRes.data ?? []).map((n) => ({
       key: `note:${n.id}:${n.updated_at}`,
       actorId: n.author_id,
@@ -149,8 +157,18 @@ export default async function HomePage() {
     })),
   ];
 
+  const candidates =
+    eventItems.length > 0 ? eventItems : legacyCandidates;
   const feed = assembleFeed(candidates, FEED_LIMIT);
   const sinceCount = countSince(candidates, now);
+
+  // Keyset cursor for "Load more" — only when the feed is event-backed and
+  // more events exist past what's shown (legacy fallback can't paginate).
+  const lastShown = feed[feed.length - 1];
+  const initialCursor =
+    eventItems.length > FEED_LIMIT && lastShown
+      ? { occurredAt: lastShown.at, id: lastShown.key.replace("event:", "") }
+      : null;
 
   const feedItems: FlowFeedItem[] = feed.map((item) => ({
     ...item,
@@ -258,6 +276,7 @@ export default async function HomePage() {
             items={feedItems}
             currentUserId={user.id}
             topProject={topProject}
+            initialCursor={initialCursor}
           />
         )}
       </div>

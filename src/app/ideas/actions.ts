@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { emitEvent } from "@sandbox-brain/core";
 import { createClient } from "@/lib/supabase/server";
 import type { IdeaScores, IdeaStatus, IdeaVerdict } from "@/lib/database.types";
 
@@ -32,6 +33,10 @@ export async function createIdea(
     .single();
   if (error) return { id: null, error: error.message };
 
+  await emitEvent(supabase, {
+    verb: "created",
+    object: { type: "idea", id: data.id, label: input.title.trim() },
+  });
   revalidatePath("/ideas");
   return { id: data.id, error: null };
 }
@@ -59,6 +64,10 @@ export async function updateIdea(
     .eq("id", id);
   if (error) return { error: error.message };
 
+  await emitEvent(supabase, {
+    verb: "updated",
+    object: { type: "idea", id, label: input.title.trim() },
+  });
   revalidatePath("/ideas");
   revalidatePath(`/ideas/${id}`);
   revalidatePath("/graph");
@@ -89,8 +98,18 @@ export async function patchIdea(
 
 export async function deleteIdea(id: string): Promise<{ error: string | null }> {
   const supabase = await createClient();
+  const { data: idea } = await supabase
+    .from("ideas")
+    .select("title")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("ideas").delete().eq("id", id);
   if (error) return { error: error.message };
+
+  await emitEvent(supabase, {
+    verb: "deleted",
+    object: { type: "idea", id, label: idea?.title },
+  });
 
   await supabase.from("links").delete().eq("source_type", "idea").eq("source_id", id);
   await supabase.from("links").delete().eq("target_type", "idea").eq("target_id", id);
@@ -116,6 +135,11 @@ export async function linkIdeas(
   });
   if (error && error.code !== "23505") return { error: error.message };
 
+  await emitEvent(supabase, {
+    verb: "linked",
+    object: { type: "idea", id: ideaId },
+    target: { type: "idea", id: relatedIdeaId },
+  });
   revalidatePath(`/ideas/${ideaId}`);
   revalidatePath("/graph");
   return { error: null };
@@ -177,6 +201,12 @@ export async function promoteIdeaToProject(
     relationship: "promoted_to",
   });
 
+  await emitEvent(supabase, {
+    verb: "promoted",
+    object: { type: "idea", id: ideaId, label: idea.title },
+    target: { type: "project", id: project.id, label: idea.title },
+    projectId: project.id,
+  });
   revalidatePath("/ideas");
   revalidatePath(`/ideas/${ideaId}`);
   revalidatePath("/projects");

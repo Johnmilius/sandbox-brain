@@ -36,6 +36,26 @@ export function relativeTime(iso: string, now: Date): string {
   return `${days}d ago`;
 }
 
+/** Identity colors cycled per person (dot ring + actor name). */
+export const ACTOR_COLORS = ["#4a5b8a", "#3f7a56", "#8a6a2a", "#5b3fd6"];
+
+type ProfileLite = { id: string; full_name: string | null; email: string };
+
+/** Stable identity color per person — sorted by id so colors never shift. */
+export function buildActorColorMap(profiles: ProfileLite[]): Map<string, string> {
+  return new Map(
+    [...profiles]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((p, i) => [p.id, ACTOR_COLORS[i % ACTOR_COLORS.length]]),
+  );
+}
+
+/** First name (or email localpart) for feed display. */
+export function shortNameOf(p: ProfileLite | undefined): string {
+  const full = p?.full_name ?? p?.email ?? "Someone";
+  return full.split(/[\s@]+/)[0];
+}
+
 export type FeedItem = {
   /** Stable key for React lists. */
   key: string;
@@ -52,7 +72,16 @@ export type FeedItem = {
   /** Link target for the object. */
   href: string;
   /** Kind drives the feed dot color. */
-  kind: "note" | "prompt" | "time" | "idea";
+  kind:
+    | "note"
+    | "prompt"
+    | "time"
+    | "idea"
+    | "task"
+    | "project"
+    | "knowledge"
+    | "agent"
+    | "academy";
   /** ISO timestamp used for sorting + relative label. */
   at: string;
 };
