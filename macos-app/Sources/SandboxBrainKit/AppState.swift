@@ -4,6 +4,7 @@ import AppKit
 import UIKit
 #endif
 import AuthenticationServices
+import Supabase
 import SwiftUI
 
 // MARK: - App phases
@@ -48,6 +49,12 @@ public final class AppState {
     public var outcomes: [AcademyOutcome] = []
     public var assessments: [OutcomeAssessment] = []
     public var links: [EntityLink] = []
+
+    // Pushes a refresh the instant any device starts/stops a timer, instead of
+    // waiting on RootView's 30s poll — that poll stays as a fallback for when
+    // the socket drops.
+    private var timerSyncTask: Task<Void, Never>?
+    private var timerSyncChannel: RealtimeChannelV2?
 
     public init() {
         // Reconnect from the stored config on launch; fall back to onboarding.
@@ -233,6 +240,7 @@ public final class AppState {
             if try await live.isTeamMember() {
                 phase = .ready
                 await refresh()
+                startTimerSync(live)
             } else {
                 await live.signOut()
                 phase = .denied(email)
@@ -244,6 +252,7 @@ public final class AppState {
     }
 
     public func signOut() {
+        stopTimerSync()
         let b = backend
         Task { await b?.signOut() }
         if isDemo {
@@ -257,6 +266,7 @@ public final class AppState {
     }
 
     public func resetConnection() {
+        stopTimerSync()
         Task { await backend?.signOut() }
         ConfigStore.clear()
         backend = nil
@@ -304,6 +314,37 @@ public final class AppState {
         } catch {
             lastError = "Refresh failed: \(error.localizedDescription)"
         }
+    }
+
+    /// Subscribe to `time_entries` changes so starting or stopping a timer on
+    /// one device refreshes every other signed-in device within a second or
+    /// two, instead of waiting for the next 30s poll. Safe to call more than
+    /// once — restarts the subscription instead of stacking channels.
+    private func startTimerSync(_ live: LiveBackend) {
+        stopTimerSync()
+        let channel = live.client.channel("time-entries-sync")
+        let changes = channel.postgresChange(AnyAction.self, schema: "public", table: "time_entries")
+        timerSyncChannel = channel
+        timerSyncTask = Task { [weak self] in
+            do {
+                try await channel.subscribeWithError()
+            } catch {
+                return // offline or socket rejected — the 30s poll still covers us
+            }
+            for await _ in changes {
+                guard let self else { return }
+                await self.refresh()
+            }
+        }
+    }
+
+    private func stopTimerSync() {
+        timerSyncTask?.cancel()
+        timerSyncTask = nil
+        if let channel = timerSyncChannel {
+            Task { await channel.unsubscribe() }
+        }
+        timerSyncChannel = nil
     }
 
     /// Run a mutation, then refresh; surfaces failures in `lastError`.
