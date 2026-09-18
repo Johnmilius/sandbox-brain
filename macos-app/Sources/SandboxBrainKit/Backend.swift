@@ -7,6 +7,19 @@ import Supabase
 // tables + RLS as the web app); `DemoBackend` serves seeded in-memory data so
 // anyone can explore the app before wiring up credentials.
 
+/// Domain-level errors surfaced to `AppState.lastError` in place of a raw
+/// Postgres message.
+public enum TimerError: LocalizedError {
+    case alreadyRunningElsewhere
+
+    public var errorDescription: String? {
+        switch self {
+        case .alreadyRunningElsewhere:
+            return "You already have a timer running on another device — refreshing to show it."
+        }
+    }
+}
+
 public protocol BrainBackend: Sendable {
     func currentUserId() async -> String?
     func isTeamMember() async throws -> Bool
@@ -210,10 +223,17 @@ final class LiveBackend: BrainBackend {
     }
 
     func startTimer(projectId: String, notes: String?) async throws {
-        let created: [InsertedId] = try await db.from("time_entries")
-            .insert(TimeEntryPayload(project_id: projectId, started_at: isoNow(), ended_at: nil, notes: notes, source: "timer"))
-            .select("id")
-            .execute().value
+        let created: [InsertedId]
+        do {
+            created = try await db.from("time_entries")
+                .insert(TimeEntryPayload(project_id: projectId, started_at: isoNow(), ended_at: nil, notes: notes, source: "timer"))
+                .select("id")
+                .execute().value
+        } catch let error as PostgrestError where error.code == "23505" {
+            // time_entries_one_running_timer — lost a race with another
+            // device (Realtime sync makes this rare, not impossible).
+            throw TimerError.alreadyRunningElsewhere
+        }
         guard let entry = created.first else { return }
         await emit(
             .started,
